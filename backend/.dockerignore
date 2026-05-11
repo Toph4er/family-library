@@ -1,0 +1,6 @@
+vendor
+*.test
+*.out
+.env
+.env.local
+tests/

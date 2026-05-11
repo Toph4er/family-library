@@ -1,0 +1,32 @@
+# Design documents (project preference)
+design-docs/
+
+# Go
+backend/vendor/
+backend/server
+*.test
+*.out
+backend/go.work.sum
+.env
+.env.local
+
+# Node / React
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.vite/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+coverage/
+.coverage

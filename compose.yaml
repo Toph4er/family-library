@@ -1,0 +1,27 @@
+services:
+  library:
+    image: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA:-latest}
+    container_name: library
+    hostname: library.rcsmaine.com
+    environment:
+      - VIRTUAL_HOST=library.rcsmaine.com
+      - LETSENCRYPT_HOST=library.rcsmaine.com
+      - PORT=8080
+      - DATABASE_PATH=/app/data/library.db
+      - ADMIN_USERNAME=${ADMIN_USERNAME}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - GUEST_PASSWORD=${GUEST_PASSWORD}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - library-data:/app/data
+    networks:
+      - reverse-proxy
+    restart: unless-stopped
+
+volumes:
+  library-data:
+
+networks:
+  reverse-proxy:
+    external: true

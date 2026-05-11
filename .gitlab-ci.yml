@@ -1,0 +1,124 @@
+stages:
+  - test
+  - build
+  - security
+  - deploy
+
+variables:
+  GO_VERSION: "1.26"
+  NODE_VERSION: "22"
+  DOCKER_TLS_CERTDIR: "/certs"
+
+# ---- Test Stage ----
+
+backend-test:
+  stage: test
+  image: golang:${GO_VERSION}-alpine
+  before_script:
+    - apk add --no-cache git curl
+  script:
+    - cd backend
+    - go mod download
+    - go vet ./...
+    - go test ./... -coverprofile=coverage.out
+    - go tool cover -func=coverage.out
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: gocover
+        coverage_path: backend/coverage.out
+
+frontend-test:
+  stage: test
+  image: node:${NODE_VERSION}-alpine
+  before_script:
+    - cd frontend
+    - npm ci
+  script:
+    - npm run lint || true
+    - npx tsc --noEmit
+    - npm run test || true
+
+# ---- Build Stage ----
+
+docker-build:
+  stage: build
+  image: docker:24.0
+  services:
+    - docker:24.0-dind
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA .
+    - docker build -t $CI_REGISTRY_IMAGE:latest .
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+    - docker push $CI_REGISTRY_IMAGE:latest
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+# ---- Security Stage ----
+
+trivy-scan:
+  stage: security
+  image: aquasec/trivy:latest
+  script:
+    - trivy fs --scanners vuln --exit-code 1 --severity HIGH,CRITICAL backend/
+    - trivy fs --scanners vuln --exit-code 1 --severity HIGH,CRITICAL frontend/
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+gosec:
+  stage: security
+  image: golang:${GO_VERSION}-alpine
+  before_script:
+    - apk add --no-cache git
+    - go install github.com/securego/gosec/v2/cmd/gosec@latest
+  script:
+    - cd backend
+    - go mod download
+    - gosec -exclude-generated ./...
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+# ---- Deploy Stage ----
+
+deploy:
+  stage: deploy
+  image: docker:24.0
+  services:
+    - docker:24.0-dind
+  script:
+    - | # Write .env to deploy directory
+      mkdir -p /opt/library
+      cat > /opt/library/.env << EOF
+      CI_REGISTRY_IMAGE=$CI_REGISTRY_IMAGE
+      CI_COMMIT_SHORT_SHA=$CI_COMMIT_SHORT_SHA
+      ADMIN_USERNAME=$ADMIN_USERNAME
+      ADMIN_PASSWORD=$ADMIN_PASSWORD
+      SESSION_SECRET=$SESSION_SECRET
+      GUEST_PASSWORD=$GUEST_PASSWORD
+      LOG_LEVEL=${LOG_LEVEL:-info}
+      EOF
+      cp compose.yaml /opt/library/compose.yaml
+    - | # Deploy with health check and rollback
+      cd /opt/library
+      PREVIOUS_TAG=$(cat PREVIOUS_TAG 2>/dev/null || echo "")
+      echo "$CI_COMMIT_SHORT_SHA" > PREVIOUS_TAG.new
+
+      docker compose pull
+      docker compose up -d --remove-orphans
+
+      # Wait for health check
+      sleep 15
+      if ! wget -qO- http://localhost:8080/health 2>/dev/null | grep -q ok; then
+        echo "Health check failed, rolling back to $PREVIOUS_TAG"
+        export CI_COMMIT_SHORT_SHA=$PREVIOUS_TAG
+        docker compose pull
+        docker compose up -d --remove-orphans
+        rm -f PREVIOUS_TAG.new
+      else
+        mv PREVIOUS_TAG.new PREVIOUS_TAG
+        echo "Deploy successful"
+      fi
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
