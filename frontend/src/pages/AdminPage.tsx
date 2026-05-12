@@ -1,4 +1,5 @@
 import { Link } from 'react-router';
+import { api } from '../services/api';
 
 export default function AdminPage() {
   return (
@@ -13,7 +14,7 @@ export default function AdminPage() {
               <Link to="/settings" className="text-primary hover:underline">Settings</Link>
               <button
                 onClick={async () => {
-                  // TODO: implement logout
+                  await api.logout();
                   window.location.href = '/';
                 }}
                 className="text-error hover:underline"

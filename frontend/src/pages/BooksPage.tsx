@@ -11,7 +11,7 @@ export default function BooksPage() {
 
   useEffect(() => {
     loadBooks();
-  }, []);
+  }, [searchQuery]);
 
   const loadBooks = async () => {
     try {

@@ -7,13 +7,14 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children, adminOnly = false }: ProtectedRouteProps) {
+  const location = useLocation();
+
   // TODO: Implement real auth check via /api/v1/auth/me
   // For now, allow access to test the UI
   const isAuthenticated = true;
   const isAdmin = true;
 
   if (!isAuthenticated) {
-    const location = useLocation();
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
