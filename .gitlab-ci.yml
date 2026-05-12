@@ -25,9 +25,6 @@ backend-test:
   artifacts:
     paths:
       - backend/coverage.out
-    reports:
-      coverage_report:
-        coverage_format: gocover
 
 frontend-test:
   stage: test
