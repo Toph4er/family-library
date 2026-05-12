@@ -55,8 +55,12 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth) http.Handler {
 		// Authentication (login endpoints are public)
 		r.Post("/auth/login", handlers.LoginHandler(authSvc))
 		r.Post("/auth/guest-login", handlers.GuestLoginHandler(authSvc))
-		r.Post("/auth/logout", authSvc.RequireAuth(handlers.LogoutHandler(authSvc)))
-		r.Get("/auth/me", authSvc.RequireAuth(handlers.MeHandler(authSvc)))
+		r.Post("/auth/logout", func(w http.ResponseWriter, r *http.Request) {
+			authSvc.RequireAuth(http.HandlerFunc(handlers.LogoutHandler(authSvc))).ServeHTTP(w, r)
+		})
+		r.Get("/auth/me", func(w http.ResponseWriter, r *http.Request) {
+			authSvc.RequireAuth(http.HandlerFunc(handlers.MeHandler(authSvc))).ServeHTTP(w, r)
+		})
 
 		// Books (all require auth)
 		r.Route("/books", func(r chi.Router) {
@@ -64,20 +68,36 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth) http.Handler {
 			r.Get("/", handlers.ListBooksHandler(database))
 			r.Get("/search", handlers.SearchBooksHandler(database))
 			r.Get("/{id}", handlers.GetBookHandler(database))
-			r.Post("/", authSvc.RequireAdmin(handlers.CreateBookHandler(database)))
-			r.Put("/{id}", authSvc.RequireAdmin(handlers.UpdateBookHandler(database)))
-			r.Delete("/{id}", authSvc.RequireAdmin(handlers.DeleteBookHandler(database)))
-			r.Post("/import-isbn", authSvc.RequireAdmin(handlers.ImportISBNHandler(database)))
+			r.Post("/", func(w http.ResponseWriter, r *http.Request) {
+				authSvc.RequireAdmin(http.HandlerFunc(handlers.CreateBookHandler(database))).ServeHTTP(w, r)
+			})
+			r.Put("/{id}", func(w http.ResponseWriter, r *http.Request) {
+				authSvc.RequireAdmin(http.HandlerFunc(handlers.UpdateBookHandler(database))).ServeHTTP(w, r)
+			})
+			r.Delete("/{id}", func(w http.ResponseWriter, r *http.Request) {
+				authSvc.RequireAdmin(http.HandlerFunc(handlers.DeleteBookHandler(database))).ServeHTTP(w, r)
+			})
+			r.Post("/import-isbn", func(w http.ResponseWriter, r *http.Request) {
+				authSvc.RequireAdmin(http.HandlerFunc(handlers.ImportISBNHandler(database))).ServeHTTP(w, r)
+			})
 		})
 
 		// Wishlist (all require auth)
 		r.Route("/wishlist", func(r chi.Router) {
 			r.Use(authSvc.RequireAuth)
 			r.Get("/", handlers.ListWishlistHandler(database))
-			r.Post("/", authSvc.RequireAdmin(handlers.CreateWishlistItemHandler(database)))
-			r.Put("/{id}", authSvc.RequireAdmin(handlers.UpdateWishlistItemHandler(database)))
-			r.Delete("/{id}", authSvc.RequireAdmin(handlers.DeleteWishlistItemHandler(database)))
-			r.Patch("/{id}/fulfill", authSvc.RequireAdmin(handlers.FulfillWishlistItemHandler(database)))
+			r.Post("/", func(w http.ResponseWriter, r *http.Request) {
+				authSvc.RequireAdmin(http.HandlerFunc(handlers.CreateWishlistItemHandler(database))).ServeHTTP(w, r)
+			})
+			r.Put("/{id}", func(w http.ResponseWriter, r *http.Request) {
+				authSvc.RequireAdmin(http.HandlerFunc(handlers.UpdateWishlistItemHandler(database))).ServeHTTP(w, r)
+			})
+			r.Delete("/{id}", func(w http.ResponseWriter, r *http.Request) {
+				authSvc.RequireAdmin(http.HandlerFunc(handlers.DeleteWishlistItemHandler(database))).ServeHTTP(w, r)
+			})
+			r.Patch("/{id}/fulfill", func(w http.ResponseWriter, r *http.Request) {
+				authSvc.RequireAdmin(http.HandlerFunc(handlers.FulfillWishlistItemHandler(database))).ServeHTTP(w, r)
+			})
 		})
 
 		// Settings (admin only)

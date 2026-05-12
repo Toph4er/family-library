@@ -49,6 +49,10 @@ func (a *Auth) RequireAdmin(next http.Handler) http.Handler {
 			return
 		}
 
+		// Attach user to request context
+		ctx := context.WithValue(r.Context(), userContextKey, user)
+		r = r.WithContext(ctx)
+
 		next.ServeHTTP(w, r)
 	})
 }
