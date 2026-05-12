@@ -17,8 +17,201 @@
   --font-accent: 'Caveat', cursive;
 }
 
+/* ── Global body ─────────────────────────────────────────── */
+
 body {
   font-family: var(--font-body);
-  background-color: var(--color-background);
+  color: var(--color-text);
+  /* Subtle parchment gradient */
+  background:
+    linear-gradient(
+      175deg,
+      #faf8f5 0%,
+      #f5f0e8 30%,
+      #efe9dd 70%,
+      #f5f0e8 100%
+    );
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+/* ── Leaf / vine SVG background pattern ──────────────────── */
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cpath d='M60 10 C60 10 40 30 40 50 C40 61 49 70 60 70 C71 70 80 61 80 50 C80 30 60 10 60 10Z' fill='%232d5016'/%3E%3Cpath d='M60 70 L60 110' stroke='%232d5016' stroke-width='2' fill='none'/%3E%3Cpath d='M60 85 C50 80 42 88 42 88' stroke='%232d5016' stroke-width='1.5' fill='none'/%3E%3Cpath d='M60 95 C70 90 78 98 78 98' stroke='%232d5016' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+  background-size: 120px 120px;
+}
+
+/* Ensure page content sits above the pattern */
+#root > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Custom scrollbar ────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #efe9dd;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #b8a88a;
+  border-radius: 5px;
+  border: 2px solid #efe9dd;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #8b4513;
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #b8a88a #efe9dd;
+}
+
+/* ── Smooth transitions on interactive elements ──────────── */
+
+a,
+button,
+input,
+select,
+textarea {
+  transition: all 0.2s ease-in-out;
+}
+
+/* ── Card hover lift effect ──────────────────────────────── */
+
+.card-hover {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 10px 25px rgba(45, 80, 22, 0.12),
+    0 4px 10px rgba(139, 69, 19, 0.08);
+}
+
+/* ── Fade-in animation ───────────────────────────────────── */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes gentlePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 0; transform: scale(0); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.animate-gentle-pulse {
+  animation: gentlePulse 3s ease-in-out infinite;
+}
+
+.animate-sparkle {
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+/* Staggered children */
+.stagger-children > * {
+  opacity: 0;
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+.stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.1s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.2s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.3s; }
+.stagger-children > *:nth-child(7) { animation-delay: 0.35s; }
+.stagger-children > *:nth-child(8) { animation-delay: 0.4s; }
+.stagger-children > *:nth-child(9) { animation-delay: 0.45s; }
+.stagger-children > *:nth-child(10) { animation-delay: 0.5s; }
+
+/* ── Decorative vine divider ─────────────────────────────── */
+
+.vine-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+  color: var(--color-secondary);
+  opacity: 0.4;
+}
+
+.vine-divider::before,
+.vine-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-secondary), transparent);
+}
+
+/* ── Mushroom pill tag ───────────────────────────────────── */
+
+.mushroom-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mushroom-tag:hover {
+  transform: scale(1.05);
+}
+
+/* ── Focus ring (woodland) ───────────────────────────────── */
+
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Selection color ─────────────────────────────────────── */
+
+::selection {
+  background: var(--color-accent);
   color: var(--color-text);
 }
