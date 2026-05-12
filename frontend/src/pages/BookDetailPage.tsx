@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router';
 import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import type { Book, UpdateBookRequest } from '../types/book';
 import Modal from '../components/ui/Modal';
 import BookForm from '../components/books/BookForm';
 
 export default function BookDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { isAdmin } = useAuth();
   const [book, setBook] = useState<Book | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -107,7 +109,7 @@ export default function BookDetailPage() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link to="/books" className="text-primary hover:underline">← Back to Books</Link>
-            {book && (
+            {book && isAdmin && (
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowEditModal(true)}

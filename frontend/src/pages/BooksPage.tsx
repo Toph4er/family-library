@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import type { Book, CreateBookRequest, UpdateBookRequest } from '../types/book';
 import Modal from '../components/ui/Modal';
 import BookForm from '../components/books/BookForm';
 
 export default function BooksPage() {
+  const { isAdmin, logout } = useAuth();
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -45,18 +47,20 @@ export default function BooksPage() {
           <div className="flex items-center justify-between flex-wrap gap-4">
             <h1 className="text-2xl font-heading text-primary">Book Collection</h1>
             <div className="flex items-center gap-4">
-              <button
-                onClick={() => setShowAddModal(true)}
-                className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors font-medium text-sm"
-              >
-                + Add New Book
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={() => setShowAddModal(true)}
+                  className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors font-medium text-sm"
+                >
+                  + Add New Book
+                </button>
+              )}
               <nav className="flex gap-4">
                 <Link to="/wishlist" className="text-primary hover:underline">Wishlist</Link>
-                <Link to="/settings" className="text-primary hover:underline">Settings</Link>
+                {isAdmin && <Link to="/settings" className="text-primary hover:underline">Settings</Link>}
                 <button
                   onClick={async () => {
-                    await api.logout();
+                    await logout();
                     window.location.href = '/';
                   }}
                   className="text-error hover:underline"

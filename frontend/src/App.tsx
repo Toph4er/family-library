@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router';
+import { AuthProvider } from './context/AuthContext';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import GuestLoginPage from './pages/GuestLoginPage';
@@ -11,7 +12,8 @@ import ProtectedRoute from './components/layout/ProtectedRoute';
 
 function App() {
   return (
-    <Routes>
+    <AuthProvider>
+      <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/guest-login" element={<GuestLoginPage />} />
@@ -20,7 +22,8 @@ function App() {
       <Route path="/wishlist" element={<ProtectedRoute><WishlistPage /></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute adminOnly><AdminPage /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute adminOnly><SettingsPage /></ProtectedRoute>} />
-    </Routes>
+      </Routes>
+    </AuthProvider>
   );
 }
 

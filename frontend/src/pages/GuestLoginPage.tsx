@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function GuestLoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -15,6 +17,7 @@ export default function GuestLoginPage() {
 
     try {
       await api.guestLogin(password);
+      await refreshUser();
       navigate('/books');
     } catch (err: any) {
       setError(err.message || 'Guest login failed');
