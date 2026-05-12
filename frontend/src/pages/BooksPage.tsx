@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import { api } from '../services/api';
-import type { Book, CreateBookRequest } from '../types/book';
+import type { Book, CreateBookRequest, UpdateBookRequest } from '../types/book';
 import Modal from '../components/ui/Modal';
 import BookForm from '../components/books/BookForm';
 
@@ -28,7 +28,7 @@ export default function BooksPage() {
     }
   };
 
-  const handleCreateBook = async (data: CreateBookRequest) => {
+  const handleCreateBook = async (data: CreateBookRequest | UpdateBookRequest) => {
     try {
       await api.createBook(data);
       setShowAddModal(false);

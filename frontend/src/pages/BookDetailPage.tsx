@@ -157,7 +157,7 @@ export default function BookDetailPage() {
                 <p className="text-text-light mt-1">Illustrated by {book.illustrators}</p>
               )}
 
-              {renderStars(book.child_rating)}
+              {book.child_rating != null && renderStars(book.child_rating)}
 
               {/* Basic metadata grid */}
               <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4">
