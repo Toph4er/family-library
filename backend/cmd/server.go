@@ -51,7 +51,7 @@ func main() {
 	}
 
 	// -- Initialize database --
-	database, err := db.New(dbPath)
+	database, err := db.Open(dbPath)
 	if err != nil {
 		slog.Error("Failed to connect to database", "error", err)
 		os.Exit(1)
