@@ -23,10 +23,11 @@ backend-test:
     - go test ./... -coverprofile=coverage.out
     - go tool cover -func=coverage.out
   artifacts:
+    paths:
+      - backend/coverage.out
     reports:
       coverage_report:
         coverage_format: gocover
-        coverage_path: backend/coverage.out
 
 frontend-test:
   stage: test
