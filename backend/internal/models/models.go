@@ -157,6 +157,22 @@ type CreateWishlistItemRequest struct {
 	Notes          *string `json:"notes"`
 }
 
+// UpdateWishlistItemRequest represents a wishlist item update request
+//
+type UpdateWishlistItemRequest struct {
+	Title          *string `json:"title"`
+	Author         *string `json:"author"`
+	ISBN           *string `json:"isbn"`
+	Reason         *string `json:"reason"`
+	Priority       *int    `json:"priority"`
+	AmazonURL      *string `json:"amazon_url"`
+	ThriftbooksURL *string `json:"thriftbooks_url"`
+	OtherURLs      *string `json:"other_urls"`
+	CoverImageURL  *string `json:"cover_image_url"`
+	RequestedBy    *string `json:"requested_by"`
+	Notes          *string `json:"notes"`
+}
+
 // APIResponse is a generic API response wrapper
 //
 type APIResponse struct {
