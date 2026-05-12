@@ -119,10 +119,17 @@ func (s *rateLimiterStore) cleanupStale() {
 // Auth endpoints get a stricter limit (10 requests/hour) while general
 // API endpoints get 100 requests/minute.
 func (s *rateLimiterStore) getLimiter(ip string, strict bool) *rate.Limiter {
+	key := ip
+	if strict {
+		key += "|strict"
+	} else {
+		key += "|general"
+	}
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if limiter, ok := s.limits[ip]; ok {
+	if limiter, ok := s.limits[key]; ok {
 		return limiter
 	}
 
@@ -135,7 +142,7 @@ func (s *rateLimiterStore) getLimiter(ip string, strict bool) *rate.Limiter {
 		limiter = rate.NewLimiter(rate.Every(600*time.Millisecond), 1)
 	}
 
-	s.limits[ip] = limiter
+	s.limits[key] = limiter
 	return limiter
 }
 

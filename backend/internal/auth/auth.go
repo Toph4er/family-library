@@ -183,7 +183,7 @@ type User struct {
 	Username     string `json:"username"`
 	PasswordHash string `json:"-"`
 	Role         string `json:"role"`
-	DisplayName  string `json:"display_name"`
+	DisplayName  *string `json:"display_name"`
 	CreatedAt    string `json:"created_at"`
 	UpdatedAt    string `json:"updated_at"`
 }
