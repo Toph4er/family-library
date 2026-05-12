@@ -122,9 +122,7 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth) http.Handler {
 	// -- Static files and SPA fallback --
 	// Serve static files from ./static directory (populated by Docker build)
 	staticFS := http.FS(os.DirFS("./static"))
-	if staticFS != nil {
-		r.FileServer("/static", http.StripPrefix("/static", http.FileServer(staticFS)))
-	}
+	r.Handle("/static/*", http.StripPrefix("/static", http.FileServer(staticFS)))
 
 	// SPA fallback: any non-API, non-static route serves index.html
 	r.HandleFunc("/*", func(w http.ResponseWriter, r *http.Request) {
