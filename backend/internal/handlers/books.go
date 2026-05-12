@@ -44,6 +44,8 @@ func scanBook(s scanner) (*models.Book, error) {
 	var lastReadDate sql.NullString
 	var coverImageURL sql.NullString
 	var coverSource sql.NullString
+	var readCount sql.NullInt64
+	var guestVisibleFields sql.NullString
 
 	err := s.Scan(
 		&b.ID,
@@ -67,11 +69,11 @@ func scanBook(s scanner) (*models.Book, error) {
 		&location,
 		&notes,
 		&childRating,
-		&b.ReadCount,
+		&readCount,
 		&lastReadDate,
 		&coverImageURL,
 		&coverSource,
-		&b.GuestVisibleFields,
+		&guestVisibleFields,
 		&b.CreatedAt,
 		&b.UpdatedAt,
 	)
@@ -101,6 +103,15 @@ func scanBook(s scanner) (*models.Book, error) {
 	b.LastReadDate = nullStrPtr(lastReadDate)
 	b.CoverImageURL = nullStrPtr(coverImageURL)
 	b.CoverSource = nullStrPtr(coverSource)
+
+	// read_count defaults to 0 if NULL
+	if readCount.Valid {
+		b.ReadCount = int(readCount.Int64)
+	}
+	// guest_visible_fields defaults to empty string if NULL
+	if guestVisibleFields.Valid {
+		b.GuestVisibleFields = guestVisibleFields.String
+	}
 
 	return &b, nil
 }
