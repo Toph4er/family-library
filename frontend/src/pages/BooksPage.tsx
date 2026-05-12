@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import { api } from '../services/api';
-import type { Book } from '../types/book';
+import type { Book, CreateBookRequest } from '../types/book';
+import Modal from '../components/ui/Modal';
+import BookForm from '../components/books/BookForm';
 
 export default function BooksPage() {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
     loadBooks();
@@ -25,25 +28,43 @@ export default function BooksPage() {
     }
   };
 
+  const handleCreateBook = async (data: CreateBookRequest) => {
+    try {
+      await api.createBook(data);
+      setShowAddModal(false);
+      await loadBooks();
+    } catch (err: any) {
+      setError(err.message || 'Failed to add book');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-surface shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-4">
             <h1 className="text-2xl font-heading text-primary">Book Collection</h1>
-            <nav className="flex gap-4">
-              <Link to="/wishlist" className="text-primary hover:underline">Wishlist</Link>
-              <Link to="/settings" className="text-primary hover:underline">Settings</Link>
+            <div className="flex items-center gap-4">
               <button
-                onClick={async () => {
-                  await api.logout();
-                  window.location.href = '/';
-                }}
-                className="text-error hover:underline"
+                onClick={() => setShowAddModal(true)}
+                className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors font-medium text-sm"
               >
-                Logout
+                + Add New Book
               </button>
-            </nav>
+              <nav className="flex gap-4">
+                <Link to="/wishlist" className="text-primary hover:underline">Wishlist</Link>
+                <Link to="/settings" className="text-primary hover:underline">Settings</Link>
+                <button
+                  onClick={async () => {
+                    await api.logout();
+                    window.location.href = '/';
+                  }}
+                  className="text-error hover:underline"
+                >
+                  Logout
+                </button>
+              </nav>
+            </div>
           </div>
         </div>
       </header>
@@ -98,6 +119,19 @@ export default function BooksPage() {
           </div>
         )}
       </main>
+
+      {/* Add Book Modal */}
+      <Modal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        title="Add New Book"
+        size="xl"
+      >
+        <BookForm
+          onSubmit={handleCreateBook}
+          onCancel={() => setShowAddModal(false)}
+        />
+      </Modal>
     </div>
   );
 }
