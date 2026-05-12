@@ -135,11 +135,11 @@ func (s *rateLimiterStore) getLimiter(ip string, strict bool) *rate.Limiter {
 
 	var limiter *rate.Limiter
 	if strict {
-		// 10 requests per hour for auth endpoints.
-		limiter = rate.NewLimiter(rate.Every(6*time.Minute), 1)
+		// ~10 requests per hour for auth endpoints (burst of 5, then 1 per 6 min).
+		limiter = rate.NewLimiter(rate.Every(6*time.Minute), 5)
 	} else {
-		// 100 requests per minute for general API.
-		limiter = rate.NewLimiter(rate.Every(600*time.Millisecond), 1)
+		// ~100 requests per minute for general API (burst of 10, then 1 per 600ms).
+		limiter = rate.NewLimiter(rate.Every(600*time.Millisecond), 10)
 	}
 
 	s.limits[key] = limiter
