@@ -3,7 +3,6 @@ package api
 
 import (
 	"database/sql"
-	"embed"
 	"net/http"
 	"os"
 	"strings"
@@ -16,9 +15,6 @@ import (
 	"git.rcsmaine.com/chris/library/backend/internal/handlers"
 	"git.rcsmaine.com/chris/library/backend/internal/middleware"
 )
-
-//go:embed static/*
-var staticFS embed.FS
 
 // NewRouter constructs and returns the application router with all routes
 // and middleware configured.
@@ -104,14 +100,10 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth) http.Handler {
 	})
 
 	// -- Static files and SPA fallback --
-	// Serve static files from embedded filesystem
-	staticSubFS, err := staticFS.ReadFile("static/.gitkeep")
-	if err != nil {
-		// No static files yet (dev mode) — serve from disk
-		serveStaticFromDisk(r)
-	} else {
-		_ = staticSubFS
-		serveStaticEmbedded(r)
+	// Serve static files from ./static directory (populated by Docker build)
+	staticFS := http.FS(os.DirFS("./static"))
+	if staticFS != nil {
+		r.FileServer("/static", http.StripPrefix("/static", http.FileServer(staticFS)))
 	}
 
 	// SPA fallback: any non-API, non-static route serves index.html
@@ -120,32 +112,8 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth) http.Handler {
 			http.NotFound(w, r)
 			return
 		}
-		// Try to serve index.html from embedded FS or disk
-		serveIndexHTML(w, r)
+		http.ServeFile(w, r, "./static/index.html")
 	})
 
 	return r
-}
-
-func serveStaticFromDisk(r chi.Router) {
-	// In dev mode, serve from ./static directory
-	r.FileServer("/static", http.Dir("./static"))
-}
-
-func serveStaticEmbedded(r chi.Router) {
-	// In prod mode, serve from embedded filesystem
-	fs := http.FS(staticFS)
-	r.FileServer("/static", http.StripPrefix("/static", http.FileServer(fs)))
-}
-
-func serveIndexHTML(w http.ResponseWriter, r *http.Request) {
-	// Try embedded first, then disk
-	data, err := staticFS.ReadFile("static/index.html")
-	if err != nil {
-		// Fall back to disk
-		http.ServeFile(w, r, "./static/index.html")
-		return
-	}
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Write(data)
 }
