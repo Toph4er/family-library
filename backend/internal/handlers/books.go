@@ -4,9 +4,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"git.rcsmaine.com/chris/library/backend/internal/models"
 
@@ -616,9 +620,308 @@ func DeleteBookHandler(db *sql.DB) http.HandlerFunc {
 // ImportISBNHandler imports a book by ISBN
 func ImportISBNHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// TODO: Parse ISBN from body, fetch from Google Books/Open Library
-		JSONResponse(w, http.StatusNotImplemented, map[string]interface{}{"error": "not implemented"})
+		// 1. Parse ISBN from request body
+		var req struct {
+			ISBN string `json:"isbn"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			JSONError(w, http.StatusBadRequest, "invalid request body")
+			return
+		}
+		isbn := strings.TrimSpace(req.ISBN)
+		if isbn == "" {
+			JSONError(w, http.StatusBadRequest, "isbn is required")
+			return
+		}
+
+		// 2. Check for duplicate ISBN
+		var existingID int64
+		err := db.QueryRow("SELECT id FROM books WHERE isbn = ?", isbn).Scan(&existingID)
+		if err == nil {
+			// Book exists — return it with 409
+			row := db.QueryRow(`SELECT `+bookColumns+` FROM books WHERE id = ?`, existingID)
+			existingBook, scanErr := scanBook(row)
+			if scanErr != nil {
+				JSONError(w, http.StatusInternalServerError, "database error")
+				return
+			}
+			JSONResponse(w, http.StatusConflict, existingBook)
+			return
+		}
+		if err != sql.ErrNoRows {
+			JSONError(w, http.StatusInternalServerError, "database error")
+			return
+		}
+
+		// 3. Try Google Books API
+		book, coverSource, apiErr := fetchFromGoogleBooks(isbn)
+		if apiErr != nil || book == nil {
+			// 4. Fallback to Open Library API
+			book, coverSource, apiErr = fetchFromOpenLibrary(isbn)
+			if apiErr != nil {
+				JSONError(w, http.StatusBadGateway, "both book APIs failed")
+				return
+			}
+			if book == nil {
+				JSONError(w, http.StatusNotFound, "book not found by either API")
+				return
+			}
+		}
+
+		// 5. Insert the book
+		query := `
+			INSERT INTO books (
+				isbn, title, subtitle, authors, illustrators,
+				publisher, publication_year, page_count, book_type,
+				reading_levels, genres, themes, awards,
+				gift_from, gift_relationship, date_received,
+				condition, location, notes,
+				child_rating, read_count, cover_image_url, cover_source, guest_visible_fields
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)
+		`
+
+		result, err := db.Exec(query,
+			isbn,
+			book.Title,
+			book.Subtitle,
+			book.Authors,
+			book.Illustrators,
+			book.Publisher,
+			book.PublicationYear,
+			book.PageCount,
+			book.BookType,
+			book.ReadingLevels,
+			book.Genres,
+			book.Themes,
+			book.Awards,
+			book.GiftFrom,
+			book.GiftRelationship,
+			book.DateReceived,
+			book.Condition,
+			book.Location,
+			book.Notes,
+			book.ChildRating,
+			book.CoverImageURL,
+			coverSource,
+			defaultGuestVisibleFields(),
+		)
+		if err != nil {
+			JSONError(w, http.StatusInternalServerError, "database error")
+			return
+		}
+
+		id, err := result.LastInsertId()
+		if err != nil {
+			JSONError(w, http.StatusInternalServerError, "database error")
+			return
+		}
+
+		// 6. Return the created book
+		row := db.QueryRow(`SELECT `+bookColumns+` FROM books WHERE id = ?`, id)
+		b, err := scanBook(row)
+		if err != nil {
+			JSONError(w, http.StatusInternalServerError, "database error")
+			return
+		}
+
+		JSONResponse(w, http.StatusCreated, b)
 	}
+}
+
+// apiHTTPClient is shared across all API fetches.
+var apiHTTPClient = &http.Client{
+	Timeout: 10 * time.Second,
+}
+
+// yearRe matches a 4-digit year at the start of a string.
+var yearRe = regexp.MustCompile(`^(\d{4})`)
+
+// fetchFromGoogleBooks fetches book metadata from the Google Books API.
+// Returns the populated book, cover source string, and any error.
+// If no results are found, returns (nil, "", nil).
+func fetchFromGoogleBooks(isbn string) (*models.Book, string, error) {
+	u := fmt.Sprintf("https://www.googleapis.com/books/v1/volumes?q=isbn:%s", url.QueryEscape(isbn))
+	req, err := http.NewRequest("GET", u, nil)
+	if err != nil {
+		return nil, "", fmt.Errorf("building Google Books request: %w", err)
+	}
+	req.Header.Set("User-Agent", "Library-Book-Collection/1.0")
+
+	resp, err := apiHTTPClient.Do(req)
+	if err != nil {
+		return nil, "", fmt.Errorf("Google Books HTTP request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, "", fmt.Errorf("reading Google Books response: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		// Non-200 from Google — treat as "not found" so we can fallback
+		return nil, "", nil
+	}
+
+	var googleResp struct {
+		Items []struct {
+			VolumeInfo struct {
+				Title       string   `json:"title"`
+				Subtitle    string   `json:"subtitle"`
+				Authors     []string `json:"authors"`
+				Publisher   string   `json:"publisher"`
+				PublishedDate string `json:"publishedDate"`
+				PageCount   int      `json:"pageCount"`
+				Categories  []string `json:"categories"`
+				ImageLinks  struct {
+					Thumbnail string `json:"thumbnail"`
+				} `json:"imageLinks"`
+			} `json:"volumeInfo"`
+		} `json:"items"`
+	}
+	if err := json.Unmarshal(body, &googleResp); err != nil {
+		return nil, "", fmt.Errorf("parsing Google Books JSON: %w", err)
+	}
+
+	if len(googleResp.Items) == 0 {
+		return nil, "", nil
+	}
+
+	vi := googleResp.Items[0].VolumeInfo
+	book := &models.Book{
+		Title: vi.Title,
+	}
+	if vi.Subtitle != "" {
+		book.Subtitle = &vi.Subtitle
+	}
+	if len(vi.Authors) > 0 {
+		authorsJSON, _ := json.Marshal(vi.Authors)
+		s := string(authorsJSON)
+		book.Authors = &s
+	}
+	if vi.Publisher != "" {
+		book.Publisher = &vi.Publisher
+	}
+	if m := yearRe.FindStringSubmatch(vi.PublishedDate); m != nil {
+		year, _ := strconv.Atoi(m[1])
+		book.PublicationYear = &year
+	}
+	if vi.PageCount > 0 {
+		book.PageCount = &vi.PageCount
+	}
+	if len(vi.Categories) > 0 {
+		genresJSON, _ := json.Marshal(vi.Categories)
+		s := string(genresJSON)
+		book.Genres = &s
+	}
+	if vi.ImageLinks.Thumbnail != "" {
+		// Google Books placeholder URL — skip it
+		if !strings.Contains(vi.ImageLinks.Thumbnail, "placeholder") {
+			book.CoverImageURL = &vi.ImageLinks.Thumbnail
+		}
+	}
+
+	return book, "google_books", nil
+}
+
+// fetchFromOpenLibrary fetches book metadata from the Open Library API.
+// Returns the populated book, cover source string, and any error.
+// If no results are found, returns (nil, "", nil).
+func fetchFromOpenLibrary(isbn string) (*models.Book, string, error) {
+	u := fmt.Sprintf("https://openlibrary.org/isbn/%s.json", url.PathEscape(isbn))
+	req, err := http.NewRequest("GET", u, nil)
+	if err != nil {
+		return nil, "", fmt.Errorf("building Open Library request: %w", err)
+	}
+
+	resp, err := apiHTTPClient.Do(req)
+	if err != nil {
+		return nil, "", fmt.Errorf("Open Library HTTP request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, "", fmt.Errorf("reading Open Library response: %w", err)
+	}
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, "", nil
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, "", fmt.Errorf("Open Library returned status %d", resp.StatusCode)
+	}
+
+	var olResp map[string]interface{}
+	if err := json.Unmarshal(body, &olResp); err != nil {
+		return nil, "", fmt.Errorf("parsing Open Library JSON: %w", err)
+	}
+
+	book := &models.Book{
+		Title: toString(olResp["title"]),
+	}
+
+	// Subtitle
+	if subtitle, ok := olResp["subtitle"].(string); ok && subtitle != "" {
+		book.Subtitle = &subtitle
+	}
+
+	// Authors: array of {name: "..."}
+	if authorsRaw, ok := olResp["authors"].([]interface{}); ok && len(authorsRaw) > 0 {
+		var authors []string
+		for _, a := range authorsRaw {
+			if m, ok := a.(map[string]interface{}); ok {
+				if name, ok := m["name"].(string); ok {
+					authors = append(authors, name)
+				}
+			}
+		}
+		if len(authors) > 0 {
+			authorsJSON, _ := json.Marshal(authors)
+			s := string(authorsJSON)
+			book.Authors = &s
+		}
+	}
+
+	// Publisher: array of strings
+	if publishersRaw, ok := olResp["publisher"].([]interface{}); ok && len(publishersRaw) > 0 {
+		if pub, ok := publishersRaw[0].(string); ok && pub != "" {
+			book.Publisher = &pub
+		}
+	}
+
+	// Publish date: extract year
+	if publishDate, ok := olResp["publish_date"].(string); ok {
+		if m := yearRe.FindStringSubmatch(publishDate); m != nil {
+			year, _ := strconv.Atoi(m[1])
+			book.PublicationYear = &year
+		}
+	}
+
+	// Page count
+	if pagesRaw, ok := olResp["number_of_pages_num"].(float64); ok && pagesRaw > 0 {
+		pages := int(pagesRaw)
+		book.PageCount = &pages
+	}
+
+	// Cover image
+	if coverIDRaw, ok := olResp["cover_i"].(float64); ok && coverIDRaw > 0 {
+		coverURL := fmt.Sprintf("https://covers.openlibrary.org/b/id/%d-L.jpg", int(coverIDRaw))
+		book.CoverImageURL = &coverURL
+	}
+
+	return book, "open_library", nil
+}
+
+// toString safely converts an interface{} to string.
+func toString(v interface{}) string {
+	if v == nil {
+		return ""
+	}
+	if s, ok := v.(string); ok {
+		return s
+	}
+	return fmt.Sprintf("%v", v)
 }
 
 // defaultGuestVisibleFields returns the default JSON blob for guest visibility.
