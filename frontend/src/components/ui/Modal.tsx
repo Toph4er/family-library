@@ -45,7 +45,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' }:
       }}
     >
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
 
       {/* Modal content */}
       <div
