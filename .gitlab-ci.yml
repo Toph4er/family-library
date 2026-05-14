@@ -109,7 +109,7 @@ deploy:
 
       # Wait for health check
       sleep 15
-      if ! wget -qO- http://localhost:8080/health 2>/dev/null | grep -q ok; then
+      if ! docker exec library wget -qO- http://localhost:8080/health 2>/dev/null | grep -q ok; then
         echo "Health check failed, rolling back to $PREVIOUS_TAG"
         export CI_COMMIT_SHORT_SHA=$PREVIOUS_TAG
         docker compose pull
