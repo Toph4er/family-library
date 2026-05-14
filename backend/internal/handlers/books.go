@@ -73,8 +73,8 @@ func scanBook(s scanner) (*models.Book, error) {
 		&location,
 		&notes,
 		&childRating,
-		&readCount,
 		&lastReadDate,
+		&readCount,
 		&coverImageURL,
 		&coverSource,
 		&guestVisibleFields,
@@ -372,8 +372,8 @@ func CreateBookHandler(db *sql.DB) http.HandlerFunc {
 				reading_levels, genres, themes, awards,
 				gift_from, gift_relationship, date_received,
 				condition, location, notes,
-				child_rating, read_count, cover_source, guest_visible_fields
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
+				child_rating, read_count, last_read_date, cover_image_url, cover_source, guest_visible_fields
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)
 		`
 
 		result, err := db.Exec(query,
@@ -383,6 +383,8 @@ func CreateBookHandler(db *sql.DB) http.HandlerFunc {
 			req.GiftFrom, req.GiftRelationship, req.DateReceived,
 			req.Condition, req.Location, req.Notes,
 			req.ChildRating,
+			nil, // last_read_date
+			nil, // cover_image_url
 			coverSource,
 			defaultGuestVisibleFields(),
 		)
