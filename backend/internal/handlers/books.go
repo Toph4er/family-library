@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -171,6 +172,7 @@ const bookColumns = `
 // ListBooksHandler returns paginated list of books
 func ListBooksHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		slog.Info("handler called", "handler", "ListBooks", "method", r.Method)
 		page, perPage := parsePagination(r)
 		offset := (page - 1) * perPage
 
@@ -190,6 +192,8 @@ func ListBooksHandler(db *sql.DB) http.HandlerFunc {
 
 		var total int
 		if err := db.QueryRow(countQuery, countArgs...).Scan(&total); err != nil {
+			slog.Error("database error", "handler", "ListBooks", "error", err)
+			slog.Error("list books error", "error", err)
 			JSONError(w, http.StatusInternalServerError, "database error")
 			return
 		}
@@ -209,6 +213,7 @@ func ListBooksHandler(db *sql.DB) http.HandlerFunc {
 
 		rows, err := db.Query(dataQuery, dataArgs...)
 		if err != nil {
+			slog.Error("database error", "handler", "ListBooks", "error", err)
 			JSONError(w, http.StatusInternalServerError, "database error")
 			return
 		}
@@ -218,12 +223,14 @@ func ListBooksHandler(db *sql.DB) http.HandlerFunc {
 		for rows.Next() {
 			b, err := scanBook(rows)
 			if err != nil {
+				slog.Error("database error", "handler", "ListBooks", "error", err)
 				JSONError(w, http.StatusInternalServerError, "database error")
 				return
 			}
 			books = append(books, *b)
 		}
 		if err = rows.Err(); err != nil {
+			slog.Error("database error", "handler", "ListBooks", "error", err)
 			JSONError(w, http.StatusInternalServerError, "database error")
 			return
 		}
@@ -288,6 +295,7 @@ func SearchBooksHandler(db *sql.DB) http.HandlerFunc {
 		countQuery := "SELECT COUNT(*) FROM books" + where
 		var total int
 		if err := db.QueryRow(countQuery, args...).Scan(&total); err != nil {
+			slog.Error("database error", "handler", "SearchBooks", "error", err)
 			JSONError(w, http.StatusInternalServerError, "database error")
 			return
 		}
@@ -298,6 +306,7 @@ func SearchBooksHandler(db *sql.DB) http.HandlerFunc {
 
 		rows, err := db.Query(dataQuery, dataArgs...)
 		if err != nil {
+			slog.Error("database error", "handler", "SearchBooks", "error", err)
 			JSONError(w, http.StatusInternalServerError, "database error")
 			return
 		}
@@ -307,12 +316,14 @@ func SearchBooksHandler(db *sql.DB) http.HandlerFunc {
 		for rows.Next() {
 			b, err := scanBook(rows)
 			if err != nil {
+				slog.Error("database error", "handler", "SearchBooks", "error", err)
 				JSONError(w, http.StatusInternalServerError, "database error")
 				return
 			}
 			books = append(books, *b)
 		}
 		if err = rows.Err(); err != nil {
+			slog.Error("database error", "handler", "SearchBooks", "error", err)
 			JSONError(w, http.StatusInternalServerError, "database error")
 			return
 		}
@@ -340,6 +351,7 @@ func GetBookHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 		if err != nil {
+			slog.Error("database error", "handler", "GetBook", "error", err)
 			JSONError(w, http.StatusInternalServerError, "database error")
 			return
 		}
@@ -351,6 +363,7 @@ func GetBookHandler(db *sql.DB) http.HandlerFunc {
 // CreateBookHandler creates a new book
 func CreateBookHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		slog.Info("handler called", "handler", "CreateBook", "method", r.Method)
 		var req models.CreateBookRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			JSONError(w, http.StatusBadRequest, "invalid request body")
@@ -393,12 +406,15 @@ func CreateBookHandler(db *sql.DB) http.HandlerFunc {
 				JSONError(w, http.StatusConflict, "a book with this ISBN already exists")
 				return
 			}
+			slog.Error("database error", "handler", "CreateBook", "error", err)
+			slog.Error("create book error", "error", err)
 			JSONError(w, http.StatusInternalServerError, "database error")
 			return
 		}
 
 		id, err := result.LastInsertId()
 		if err != nil {
+			slog.Error("database error", "handler", "CreateBook", "error", err)
 			JSONError(w, http.StatusInternalServerError, "database error")
 			return
 		}
@@ -407,6 +423,7 @@ func CreateBookHandler(db *sql.DB) http.HandlerFunc {
 		row := db.QueryRow(`SELECT `+bookColumns+` FROM books WHERE id = ?`, id)
 		b, err := scanBook(row)
 		if err != nil {
+			slog.Error("database error", "handler", "CreateBook", "error", err)
 			JSONError(w, http.StatusInternalServerError, "database error")
 			return
 		}
@@ -544,6 +561,7 @@ func UpdateBookHandler(db *sql.DB) http.HandlerFunc {
 				return
 			}
 			if err != nil {
+				slog.Error("database error", "handler", "UpdateBook", "error", err)
 				JSONError(w, http.StatusInternalServerError, "database error")
 				return
 			}
@@ -560,12 +578,14 @@ func UpdateBookHandler(db *sql.DB) http.HandlerFunc {
 				JSONError(w, http.StatusConflict, "a book with this ISBN already exists")
 				return
 			}
+			slog.Error("database error", "handler", "UpdateBook", "error", err)
 			JSONError(w, http.StatusInternalServerError, "database error")
 			return
 		}
 
 		rowsAffected, err := result.RowsAffected()
 		if err != nil {
+			slog.Error("database error", "handler", "UpdateBook", "error", err)
 			JSONError(w, http.StatusInternalServerError, "database error")
 			return
 		}
@@ -578,6 +598,7 @@ func UpdateBookHandler(db *sql.DB) http.HandlerFunc {
 		row := db.QueryRow(`SELECT `+bookColumns+` FROM books WHERE id = ?`, id)
 		b, err := scanBook(row)
 		if err != nil {
+			slog.Error("database error", "handler", "UpdateBook", "error", err)
 			JSONError(w, http.StatusInternalServerError, "database error")
 			return
 		}
@@ -598,12 +619,14 @@ func DeleteBookHandler(db *sql.DB) http.HandlerFunc {
 
 		result, err := db.Exec("DELETE FROM books WHERE id = ?", id)
 		if err != nil {
+			slog.Error("database error", "handler", "DeleteBook", "error", err)
 			JSONError(w, http.StatusInternalServerError, "database error")
 			return
 		}
 
 		rowsAffected, err := result.RowsAffected()
 		if err != nil {
+			slog.Error("database error", "handler", "DeleteBook", "error", err)
 			JSONError(w, http.StatusInternalServerError, "database error")
 			return
 		}
