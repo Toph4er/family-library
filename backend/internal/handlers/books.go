@@ -159,14 +159,14 @@ func parsePagination(r *http.Request) (page, perPage int) {
 }
 
 const bookColumns = `
-	b.id, b.isbn, b.title, b.subtitle, b.authors, b.illustrators,
-	b.publisher, b.publication_year, b.page_count, b.book_type,
-	b.reading_levels, b.genres, b.themes, b.awards,
-	b.gift_from, b.gift_relationship, b.date_received,
-	b.condition, b.location, b.notes,
-	b.child_rating, b.read_count, b.last_read_date,
-	b.cover_image_url, b.cover_source, b.guest_visible_fields,
-	b.created_at, b.updated_at
+	id, isbn, title, subtitle, authors, illustrators,
+	publisher, publication_year, page_count, book_type,
+	reading_levels, genres, themes, awards,
+	gift_from, gift_relationship, date_received,
+	condition, location, notes,
+	child_rating, read_count, last_read_date,
+	cover_image_url, cover_source, guest_visible_fields,
+	created_at, updated_at
 `
 
 // ListBooksHandler returns paginated list of books
