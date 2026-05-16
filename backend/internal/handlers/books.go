@@ -363,7 +363,10 @@ func CreateBookHandler(db *sql.DB) http.HandlerFunc {
 		}
 
 		// Normalize ISBN: strip hyphens for consistent storage
-		isbn := strings.ReplaceAll(req.ISBN, "-", "")
+		isbn := ""
+		if req.ISBN != nil {
+			isbn = strings.ReplaceAll(*req.ISBN, "-", "")
+		}
 
 		// Default cover_source to 'none'
 		coverSource := "none"
