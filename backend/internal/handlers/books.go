@@ -362,6 +362,9 @@ func CreateBookHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
+		// Normalize ISBN: strip hyphens for consistent storage
+		isbn := strings.ReplaceAll(req.ISBN, "-", "")
+
 		// Default cover_source to 'none'
 		coverSource := "none"
 
@@ -377,7 +380,7 @@ func CreateBookHandler(db *sql.DB) http.HandlerFunc {
 		`
 
 		result, err := db.Exec(query,
-			req.ISBN, req.Title, req.Subtitle, req.Authors, req.Illustrators,
+			isbn, req.Title, req.Subtitle, req.Authors, req.Illustrators,
 			req.Publisher, req.PublicationYear, req.PageCount, req.BookType,
 			req.ReadingLevels, req.Genres, req.Themes, req.Awards,
 			req.GiftFrom, req.GiftRelationship, req.DateReceived,
@@ -436,8 +439,9 @@ func UpdateBookHandler(db *sql.DB) http.HandlerFunc {
 		args := []interface{}{}
 
 		if req.ISBN != nil {
+			normalizedISBN := strings.ReplaceAll(*req.ISBN, "-", "")
 			sets = append(sets, "isbn = ?")
-			args = append(args, *req.ISBN)
+			args = append(args, normalizedISBN)
 		}
 		if req.Title != nil {
 			sets = append(sets, "title = ?")
@@ -630,7 +634,7 @@ func ImportISBNHandler(db *sql.DB) http.HandlerFunc {
 			JSONError(w, http.StatusBadRequest, "invalid request body")
 			return
 		}
-		isbn := strings.TrimSpace(req.ISBN)
+		isbn := strings.ReplaceAll(strings.TrimSpace(req.ISBN), "-", "")
 		if isbn == "" {
 			JSONError(w, http.StatusBadRequest, "isbn is required")
 			return

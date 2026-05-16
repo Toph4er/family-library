@@ -120,7 +120,7 @@ export default function BookForm({ book, onSubmit, onCancel }: BookFormProps) {
       subtitle: subtitle.trim() || undefined,
       authors: authors.trim() || undefined,
       illustrators: illustrators.trim() || undefined,
-      isbn: isbn.trim() || undefined,
+      isbn: isbn.replace(/\D/g, '').trim() || undefined,
       publisher: publisher.trim() || undefined,
       publication_year: publication_year ? parseInt(publication_year, 10) : undefined,
       page_count: page_count ? parseInt(page_count, 10) : undefined,
@@ -220,7 +220,15 @@ export default function BookForm({ book, onSubmit, onCancel }: BookFormProps) {
             id="isbn"
             type="text"
             value={isbn}
-            onChange={(e) => setIsbn(e.target.value)}
+            onChange={(e) => setIsbn(e.target.value.replace(/\D/g, ''))}
+            onBlur={(e) => {
+              const digits = e.target.value.replace(/\D/g, '');
+              if (digits.length === 13) {
+                setIsbn(`${digits.slice(0, 3)}-${digits.slice(3, 4)}-${digits.slice(4, 7)}-${digits.slice(7, 12)}-${digits.slice(12)}`);
+              } else if (digits.length === 10) {
+                setIsbn(`${digits.slice(0, 1)}-${digits.slice(1, 4)}-${digits.slice(4, 9)}-${digits.slice(9)}`);
+              }
+            }}
             className={inputClass}
             placeholder="978-..."
           />
