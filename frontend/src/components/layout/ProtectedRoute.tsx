@@ -11,8 +11,8 @@ export default function ProtectedRoute({ children, adminOnly = false }: Protecte
   const location = useLocation();
   const { user, isAdmin, loading } = useAuth();
 
-  // Redirect to /books if we're still loading auth on the books route
-  if (loading && location.pathname === '/books') {
+  // Wait for auth check to complete before redirecting
+  if (loading) {
     return null;
   }
 
