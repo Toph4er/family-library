@@ -15,10 +15,10 @@ import (
 )
 
 const wishlistColumns = `
-	w.id, w.title, w.author, w.isbn, w.reason, w.priority,
-	w.amazon_url, w.thriftbooks_url, w.other_urls,
-	w.cover_image_url, w.requested_by, w.requested_at,
-	w.fulfilled, w.fulfilled_at, w.notes
+	id, title, author, isbn, reason, priority,
+	amazon_url, thriftbooks_url, other_urls,
+	cover_image_url, requested_by, requested_at,
+	fulfilled, fulfilled_at, notes
 `
 
 // scanWishlistItem scans a row into a WishlistItem struct.
