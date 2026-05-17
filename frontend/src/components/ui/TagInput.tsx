@@ -160,8 +160,6 @@ export default function TagInput({
 
   const formatLabel = (tag: string) => tag.replace(/_/g, ' ');
 
-  const inputClass =
-    'w-full px-3 py-2 border border-secondary/30 rounded-md bg-surface text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent';
   const labelClass = 'block text-sm font-medium text-text-light mb-1';
   const errorClass = 'text-error text-xs mt-1';
 
