@@ -94,14 +94,38 @@ export default function BookForm({ book, onSubmit, onCancel }: BookFormProps) {
       // Auto-fill fields from lookup result
       if (data.title) setTitle(data.title);
       if (data.subtitle) setSubtitle(data.subtitle);
-      if (data.authors) setAuthors(data.authors);
-      if (data.illustrators) setIllustrators(data.illustrators);
       if (data.publisher) setPublisher(data.publisher);
       if (data.publication_year) setPublicationYear(data.publication_year.toString());
       if (data.page_count) setPageCount(data.page_count.toString());
       if (data.cover_image_url) setCoverImageUrl(data.cover_image_url);
 
-      // Parse JSON array fields (genres from Google Books categories)
+      // Parse JSON array fields from lookup and populate form state
+
+      // Authors: backend returns JSON array string; convert to comma-separated for text input
+      if (data.authors) {
+        try {
+          const parsed = JSON.parse(data.authors);
+          if (Array.isArray(parsed)) setAuthors(parsed.map(String).join(', '));
+          else setAuthors(String(data.authors));
+        } catch {
+          // Not JSON, use as-is
+          setAuthors(String(data.authors));
+        }
+      }
+
+      // Illustrators: backend returns JSON array string; convert to comma-separated for text input
+      if (data.illustrators) {
+        try {
+          const parsed = JSON.parse(data.illustrators);
+          if (Array.isArray(parsed)) setIllustrators(parsed.map(String).join(', '));
+          else setIllustrators(String(data.illustrators));
+        } catch {
+          // Not JSON, use as-is
+          setIllustrators(String(data.illustrators));
+        }
+      }
+
+      // Genres: backend returns JSON array string; populate multi-select
       if (data.genres) {
         try {
           const parsed = JSON.parse(data.genres);

@@ -946,7 +946,8 @@ func fetchFromOpenLibrary(isbn string) (*models.Book, string, error) {
 		book.Subtitle = &subtitle
 	}
 
-	// Authors: array of {name: "..."}
+	// Authors: array of {name: "..."} or {key: "..."}
+	// If "name" is present, use it; if only "key" is present, skip (can't resolve without another API call)
 	if authorsRaw, ok := olResp["authors"].([]interface{}); ok && len(authorsRaw) > 0 {
 		var authors []string
 		for _, a := range authorsRaw {
@@ -954,6 +955,7 @@ func fetchFromOpenLibrary(isbn string) (*models.Book, string, error) {
 				if name, ok := m["name"].(string); ok {
 					authors = append(authors, name)
 				}
+				// If only "key" is present (e.g. {"key": "/authors/OL8031454A"}), skip — we can't resolve it
 			}
 		}
 		if len(authors) > 0 {
@@ -963,10 +965,19 @@ func fetchFromOpenLibrary(isbn string) (*models.Book, string, error) {
 		}
 	}
 
-	// Publisher: array of strings
-	if publishersRaw, ok := olResp["publisher"].([]interface{}); ok && len(publishersRaw) > 0 {
-		if pub, ok := publishersRaw[0].(string); ok && pub != "" {
-			book.Publisher = &pub
+	// Publisher: can be a single string or an array of strings
+	if pubRaw, ok := olResp["publisher"]; ok {
+		switch p := pubRaw.(type) {
+		case string:
+			if p != "" {
+				book.Publisher = &p
+			}
+		case []interface{}:
+			if len(p) > 0 {
+				if pub, ok := p[0].(string); ok && pub != "" {
+					book.Publisher = &pub
+				}
+			}
 		}
 	}
 
@@ -978,10 +989,42 @@ func fetchFromOpenLibrary(isbn string) (*models.Book, string, error) {
 		}
 	}
 
-	// Page count
-	if pagesRaw, ok := olResp["number_of_pages_num"].(float64); ok && pagesRaw > 0 {
+	// Page count: field is "number_of_pages" (not "number_of_pages_num")
+	if pagesRaw, ok := olResp["number_of_pages"].(float64); ok && pagesRaw > 0 {
 		pages := int(pagesRaw)
 		book.PageCount = &pages
+	}
+
+	// Subjects: map to genres
+	if subjectsRaw, ok := olResp["subjects"].([]interface{}); ok && len(subjectsRaw) > 0 {
+		var subjects []string
+		for _, s := range subjectsRaw {
+			if subject, ok := s.(string); ok && subject != "" {
+				subjects = append(subjects, subject)
+			}
+		}
+		if len(subjects) > 0 {
+			subjectsJSON, _ := json.Marshal(subjects)
+			s := string(subjectsJSON)
+			book.Genres = &s
+		}
+	}
+
+	// Illustrators: array of {name: "..."} (similar to authors)
+	if illustratorsRaw, ok := olResp["illustrators"].([]interface{}); ok && len(illustratorsRaw) > 0 {
+		var illustrators []string
+		for _, il := range illustratorsRaw {
+			if m, ok := il.(map[string]interface{}); ok {
+				if name, ok := m["name"].(string); ok {
+					illustrators = append(illustrators, name)
+				}
+			}
+		}
+		if len(illustrators) > 0 {
+			illustratorsJSON, _ := json.Marshal(illustrators)
+			s := string(illustratorsJSON)
+			book.Illustrators = &s
+		}
 	}
 
 	// Cover image
