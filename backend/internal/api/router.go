@@ -65,23 +65,29 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth) http.Handler {
 		// Books (all require auth)
 		r.Route("/books", func(r chi.Router) {
 			r.Use(authSvc.RequireAuth)
+
+			// Static GET routes must be registered before parameterized ones
 			r.Get("/", handlers.ListBooksHandler(database))
 			r.Get("/search", handlers.SearchBooksHandler(database))
+			r.Get("/lookup-isbn", func(w http.ResponseWriter, r *http.Request) {
+				authSvc.RequireAdmin(http.HandlerFunc(handlers.LookupISBNHandler(database))).ServeHTTP(w, r)
+			})
 			r.Get("/{id}", handlers.GetBookHandler(database))
+
+			// POST routes
 			r.Post("/", func(w http.ResponseWriter, r *http.Request) {
 				authSvc.RequireAdmin(http.HandlerFunc(handlers.CreateBookHandler(database))).ServeHTTP(w, r)
 			})
+			r.Post("/import-isbn", func(w http.ResponseWriter, r *http.Request) {
+				authSvc.RequireAdmin(http.HandlerFunc(handlers.ImportISBNHandler(database))).ServeHTTP(w, r)
+			})
+
+			// Parameterized PUT/DELETE
 			r.Put("/{id}", func(w http.ResponseWriter, r *http.Request) {
 				authSvc.RequireAdmin(http.HandlerFunc(handlers.UpdateBookHandler(database))).ServeHTTP(w, r)
 			})
 			r.Delete("/{id}", func(w http.ResponseWriter, r *http.Request) {
 				authSvc.RequireAdmin(http.HandlerFunc(handlers.DeleteBookHandler(database))).ServeHTTP(w, r)
-			})
-			r.Get("/lookup-isbn", func(w http.ResponseWriter, r *http.Request) {
-				authSvc.RequireAdmin(http.HandlerFunc(handlers.LookupISBNHandler(database))).ServeHTTP(w, r)
-			})
-			r.Post("/import-isbn", func(w http.ResponseWriter, r *http.Request) {
-				authSvc.RequireAdmin(http.HandlerFunc(handlers.ImportISBNHandler(database))).ServeHTTP(w, r)
 			})
 		})
 
