@@ -34,7 +34,7 @@ func SecurityHeaders(next http.Handler) http.Handler {
 			"default-src 'self'; "+
 				"script-src 'self'; "+
 				"style-src 'self' 'unsafe-inline' fonts.googleapis.com; "+
-				"img-src 'self' data:; "+
+				"img-src 'self' data: https:; "+
 				"font-src 'self' fonts.gstatic.com; "+
 				"connect-src 'self'; "+
 				"frame-ancestors 'none'; "+
