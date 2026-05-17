@@ -1,6 +1,7 @@
-import { useState, type ChangeEvent } from 'react';
+import { useState } from 'react';
 import type { Book, CreateBookRequest, UpdateBookRequest } from '@/types/book';
 import { api } from '@/services/api';
+import TagInput from '@/components/ui/TagInput';
 
 interface BookFormProps {
   book?: Book | null;
@@ -171,35 +172,6 @@ export default function BookForm({ book, onSubmit, onCancel }: BookFormProps) {
     }
   };
 
-  // Reading level options from plan.md Appendix A
-  const readingLevelOptions = [
-    'board_book', 'picture_book', 'early_reader', 'chapter_book', 'middle_grade', 'young_adult',
-  ];
-
-  // Genre options from plan.md Appendix B
-  const genreOptions = [
-    'fantasy', 'science_fiction', 'mystery', 'adventure', 'humor', 'non_fiction',
-    'biography', 'poetry', 'fairy_tale', 'folklore', 'mythology', 'historical_fiction',
-    'nature_science', 'animals', 'holidays_seasons', 'religious_spiritual',
-    'educational_reference', 'social_emotional', 'diversity_culture',
-  ];
-
-  // Theme options from plan.md Appendix C
-  const themeOptions = [
-    'animals', 'friendship', 'family', 'courage', 'diversity', 'nature', 'space',
-    'ocean_water', 'holidays', 'emotions_feelings', 'bedtime_sleep', 'counting_numbers',
-    'alphabet_letters', 'colors', 'music_dance', 'food_cooking', 'transportation',
-    'dinosaurs', 'superheroes', 'magic_fantasy_creatures',
-  ];
-
-  // Award options from plan.md Appendix D
-  const awardOptions = [
-    'caldecott_medal', 'caldecott_honor', 'newbery_medal', 'newbery_honor',
-    'coretta_scott_king', 'george', 'pura_belpre', 'odyssey', 'moms_choice',
-    'parents_choice_gold', 'sibert', 'batchelder', 'schneider_family',
-    'national_book_award', 'printz', 'printz_honor', 'other',
-  ];
-
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!title.trim()) newErrors.title = 'Title is required';
@@ -236,14 +208,6 @@ export default function BookForm({ book, onSubmit, onCancel }: BookFormProps) {
     };
 
     onSubmit(data);
-  };
-
-  const handleSelectChange = (
-    e: ChangeEvent<HTMLSelectElement>,
-    setter: React.Dispatch<React.SetStateAction<string[]>>
-  ) => {
-    const selected = Array.from(e.target.selectedOptions).map((o) => o.value);
-    setter(selected);
   };
 
   const inputClass =
@@ -484,82 +448,42 @@ export default function BookForm({ book, onSubmit, onCancel }: BookFormProps) {
         </div>
       </div>
 
-      {/* Multi-select fields */}
-      <div>
-        <label htmlFor="reading_levels" className={labelClass}>Reading Levels</label>
-        <select
-          id="reading_levels"
-          multiple
-          value={readingLevels}
-          onChange={(e) => handleSelectChange(e, setReadingLevels)}
-          className={inputClass}
-          size={Math.min(readingLevelOptions.length, 4)}
-        >
-          {readingLevelOptions.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt.replace(/_/g, ' ')}
-            </option>
-          ))}
-        </select>
-        <p className="text-xs text-text-light mt-1">Hold Ctrl/Cmd to select multiple</p>
-      </div>
+      {/* Tag input fields */}
+      <TagInput
+        id="reading_levels"
+        label="Reading Levels"
+        value={readingLevels}
+        onChange={setReadingLevels}
+        tagType="reading_levels"
+        placeholder="e.g. picture_book, early_reader"
+      />
 
-      <div>
-        <label htmlFor="genres" className={labelClass}>Genres</label>
-        <select
-          id="genres"
-          multiple
-          value={genres}
-          onChange={(e) => handleSelectChange(e, setGenres)}
-          className={inputClass}
-          size={Math.min(genreOptions.length, 5)}
-        >
-          {genreOptions.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt.replace(/_/g, ' ')}
-            </option>
-          ))}
-        </select>
-        <p className="text-xs text-text-light mt-1">Hold Ctrl/Cmd to select multiple</p>
-      </div>
+      <TagInput
+        id="genres"
+        label="Genres"
+        value={genres}
+        onChange={setGenres}
+        tagType="genres"
+        placeholder="e.g. fantasy, mystery"
+      />
 
-      <div>
-        <label htmlFor="themes" className={labelClass}>Themes</label>
-        <select
-          id="themes"
-          multiple
-          value={themes}
-          onChange={(e) => handleSelectChange(e, setThemes)}
-          className={inputClass}
-          size={Math.min(themeOptions.length, 5)}
-        >
-          {themeOptions.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt.replace(/_/g, ' ')}
-            </option>
-          ))}
-        </select>
-        <p className="text-xs text-text-light mt-1">Hold Ctrl/Cmd to select multiple</p>
-      </div>
+      <TagInput
+        id="themes"
+        label="Themes"
+        value={themes}
+        onChange={setThemes}
+        tagType="themes"
+        placeholder="e.g. friendship, adventure"
+      />
 
-      <div>
-        <label htmlFor="awards" className={labelClass}>Awards</label>
-        <select
-          id="awards"
-          multiple
-          value={awards}
-          onChange={(e) => handleSelectChange(e, setAwards)}
-          className={inputClass}
-          size={Math.min(awardOptions.length, 5)}
-        >
-          {awardOptions.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt.replace(/_/g, ' ')}
-            </option>
-          ))}
-        </select>
-        <p className="text-xs text-text-light mt-1">Hold Ctrl/Cmd to select multiple</p>
-      </div>
+      <TagInput
+        id="awards"
+        label="Awards"
+        value={awards}
+        onChange={setAwards}
+        tagType="awards"
+        placeholder="e.g. caldecott_medal, newbery_honor"
+      />
 
       {/* Advanced section toggle */}
       <div className="border-t border-secondary/20 pt-4">

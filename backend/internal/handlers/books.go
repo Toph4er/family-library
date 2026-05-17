@@ -627,6 +627,63 @@ func DeleteBookHandler(db *sql.DB) http.HandlerFunc {
 	}
 }
 
+// GetTagsHandler returns distinct tag values for a given tag type.
+// Supported types: genres, themes, awards, reading_levels.
+// The tags column stores JSON arrays like ["Fantasy","Adventure"], so we
+// extract individual values using json_each in SQLite.
+func GetTagsHandler(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		tagType := r.URL.Query().Get("type")
+
+		// Map the query parameter to the actual DB column name
+		column, ok := map[string]string{
+			"genres":         "genres",
+			"themes":         "themes",
+			"awards":         "awards",
+			"reading_levels": "reading_levels",
+		}[tagType]
+		if !ok {
+			JSONError(w, http.StatusBadRequest, "invalid tag type; must be one of: genres, themes, awards, reading_levels")
+			return
+		}
+
+		// SQLite's json_each extracts each element of a JSON array as a row.
+		// We get distinct, non-null values, ordered alphabetically.
+		query := fmt.Sprintf(
+			`SELECT DISTINCT value FROM books, json_each(books.%s) WHERE value IS NOT NULL AND value != '' ORDER BY value COLLATE NOCASE`,
+			column,
+		)
+
+		rows, err := db.Query(query)
+		if err != nil {
+			JSONError(w, http.StatusInternalServerError, "database error")
+			return
+		}
+		defer rows.Close()
+
+		tags := make([]string, 0)
+		for rows.Next() {
+			var tag string
+			if err := rows.Scan(&tag); err != nil {
+				JSONError(w, http.StatusInternalServerError, "database error")
+				return
+			}
+			if tag != "" {
+				tags = append(tags, tag)
+			}
+		}
+		if err = rows.Err(); err != nil {
+			JSONError(w, http.StatusInternalServerError, "database error")
+			return
+		}
+
+		JSONResponse(w, http.StatusOK, map[string]interface{}{
+			"type": tagType,
+			"tags": tags,
+		})
+	}
+}
+
 // LookupISBNHandler looks up book metadata by ISBN without creating a record.
 // Returns the data from Google Books or Open Library as JSON.
 func LookupISBNHandler(db *sql.DB) http.HandlerFunc {

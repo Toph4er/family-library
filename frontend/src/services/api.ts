@@ -56,6 +56,7 @@ export const api = {
     body: JSON.stringify({ isbn }),
   }),
   lookupISBN: (isbn: string) => fetchAPI(`/books/lookup-isbn?isbn=${encodeURIComponent(isbn)}`),
+  getTags: (type: string) => fetchAPI(`/books/tags?type=${encodeURIComponent(type)}`),
 
   // Wishlist
   getWishlist: () => fetchAPI('/wishlist'),

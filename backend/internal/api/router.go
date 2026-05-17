@@ -69,6 +69,9 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth) http.Handler {
 			// Static GET routes must be registered before parameterized ones
 			r.Get("/", handlers.ListBooksHandler(database))
 			r.Get("/search", handlers.SearchBooksHandler(database))
+			r.Get("/tags", func(w http.ResponseWriter, r *http.Request) {
+				authSvc.RequireAdmin(http.HandlerFunc(handlers.GetTagsHandler(database))).ServeHTTP(w, r)
+			})
 			r.Get("/lookup-isbn", func(w http.ResponseWriter, r *http.Request) {
 				authSvc.RequireAdmin(http.HandlerFunc(handlers.LookupISBNHandler(database))).ServeHTTP(w, r)
 			})
