@@ -55,7 +55,11 @@ export const api = {
     method: 'POST',
     body: JSON.stringify({ isbn }),
   }),
-  lookupISBN: (isbn: string) => fetchAPI(`/books/lookup-isbn?isbn=${encodeURIComponent(isbn)}`),
+  lookupISBN: (isbn: string, force?: boolean) => {
+    const params = new URLSearchParams({ isbn: encodeURIComponent(isbn) });
+    if (force) params.set('force', 'true');
+    return fetchAPI(`/books/lookup-isbn?${params.toString()}`);
+  },
   getTags: (type: string) => fetchAPI(`/books/tags?type=${encodeURIComponent(type)}`),
 
   // Wishlist

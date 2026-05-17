@@ -684,8 +684,54 @@ func GetTagsHandler(db *sql.DB) http.HandlerFunc {
 	}
 }
 
+// buildLookupResponse builds the JSON response map from a looked-up Book.
+func buildLookupResponse(book *models.Book, coverSource string) map[string]interface{} {
+	resp := map[string]interface{}{
+		"title":        book.Title,
+		"cover_source": coverSource,
+	}
+	if book.Subtitle != nil {
+		resp["subtitle"] = *book.Subtitle
+	}
+	if book.Authors != nil {
+		resp["authors"] = *book.Authors
+	}
+	if book.Illustrators != nil {
+		resp["illustrators"] = *book.Illustrators
+	}
+	if book.Publisher != nil {
+		resp["publisher"] = *book.Publisher
+	}
+	if book.PublicationYear != nil {
+		resp["publication_year"] = *book.PublicationYear
+	}
+	if book.PageCount != nil {
+		resp["page_count"] = *book.PageCount
+	}
+	if book.BookType != nil {
+		resp["book_type"] = *book.BookType
+	}
+	if book.ReadingLevels != nil {
+		resp["reading_levels"] = *book.ReadingLevels
+	}
+	if book.Genres != nil {
+		resp["genres"] = *book.Genres
+	}
+	if book.Themes != nil {
+		resp["themes"] = *book.Themes
+	}
+	if book.Awards != nil {
+		resp["awards"] = *book.Awards
+	}
+	if book.CoverImageURL != nil {
+		resp["cover_image_url"] = *book.CoverImageURL
+	}
+	return resp
+}
+
 // LookupISBNHandler looks up book metadata by ISBN without creating a record.
-// Returns the data from Google Books or Open Library as JSON.
+// Returns the data from Open Library as JSON, with SQLite caching (24h TTL).
+// Pass ?force=true to bypass the cache.
 func LookupISBNHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		isbn := strings.ReplaceAll(strings.TrimSpace(r.URL.Query().Get("isbn")), "-", "")
@@ -693,63 +739,44 @@ func LookupISBNHandler(db *sql.DB) http.HandlerFunc {
 			JSONError(w, http.StatusBadRequest, "isbn query parameter is required")
 			return
 		}
+		force := r.URL.Query().Get("force") == "true"
 
-		// Try Google Books API first
-		book, coverSource, apiErr := fetchFromGoogleBooks(isbn)
-		if apiErr != nil || book == nil {
-			// Fallback to Open Library API
-			book, coverSource, apiErr = fetchFromOpenLibrary(isbn)
-			if apiErr != nil {
-				JSONError(w, http.StatusBadGateway, "both book APIs failed")
-				return
-			}
-			if book == nil {
-				JSONError(w, http.StatusNotFound, "book not found by either API")
-				return
+		// Check cache unless forced
+		if !force {
+			var cachedData string
+			var cachedAt string
+			err := db.QueryRow("SELECT data, fetched_at FROM isbn_cache WHERE isbn = ?", isbn).Scan(&cachedData, &cachedAt)
+			if err == nil {
+				// Check if cache is within 24h
+				if t, parseErr := time.Parse(time.RFC3339, cachedAt); parseErr == nil && time.Since(t) < 24*time.Hour {
+					var resp map[string]interface{}
+					if jsonErr := json.Unmarshal([]byte(cachedData), &resp); jsonErr == nil {
+						JSONResponse(w, http.StatusOK, resp)
+						return
+					}
+				}
 			}
 		}
 
-		// Return a simple response with the looked-up fields
-		resp := map[string]interface{}{
-			"title":          book.Title,
-			"cover_source":   coverSource,
+		// Fetch from Open Library
+		book, coverSource, apiErr := fetchFromOpenLibrary(isbn)
+		if apiErr != nil {
+			JSONError(w, http.StatusBadGateway, "book lookup service is unavailable")
+			return
 		}
-		if book.Subtitle != nil {
-			resp["subtitle"] = *book.Subtitle
+		if book == nil {
+			JSONError(w, http.StatusNotFound, "book not found")
+			return
 		}
-		if book.Authors != nil {
-			resp["authors"] = *book.Authors
-		}
-		if book.Illustrators != nil {
-			resp["illustrators"] = *book.Illustrators
-		}
-		if book.Publisher != nil {
-			resp["publisher"] = *book.Publisher
-		}
-		if book.PublicationYear != nil {
-			resp["publication_year"] = *book.PublicationYear
-		}
-		if book.PageCount != nil {
-			resp["page_count"] = *book.PageCount
-		}
-		if book.BookType != nil {
-			resp["book_type"] = *book.BookType
-		}
-		if book.ReadingLevels != nil {
-			resp["reading_levels"] = *book.ReadingLevels
-		}
-		if book.Genres != nil {
-			resp["genres"] = *book.Genres
-		}
-		if book.Themes != nil {
-			resp["themes"] = *book.Themes
-		}
-		if book.Awards != nil {
-			resp["awards"] = *book.Awards
-		}
-		if book.CoverImageURL != nil {
-			resp["cover_image_url"] = *book.CoverImageURL
-		}
+
+		resp := buildLookupResponse(book, coverSource)
+
+		// Cache the result
+		dataJSON, _ := json.Marshal(resp)
+		_, _ = db.Exec(
+			`INSERT OR REPLACE INTO isbn_cache (isbn, data, fetched_at) VALUES (?, ?, ?)`,
+			isbn, string(dataJSON), time.Now().UTC().Format(time.RFC3339),
+		)
 
 		JSONResponse(w, http.StatusOK, resp)
 	}
@@ -791,19 +818,15 @@ func ImportISBNHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// 3. Try Google Books API
-		book, coverSource, apiErr := fetchFromGoogleBooks(isbn)
-		if apiErr != nil || book == nil {
-			// 4. Fallback to Open Library API
-			book, coverSource, apiErr = fetchFromOpenLibrary(isbn)
-			if apiErr != nil {
-				JSONError(w, http.StatusBadGateway, "both book APIs failed")
-				return
-			}
-			if book == nil {
-				JSONError(w, http.StatusNotFound, "book not found by either API")
-				return
-			}
+		// 3. Fetch from Open Library
+		book, coverSource, apiErr := fetchFromOpenLibrary(isbn)
+		if apiErr != nil {
+			JSONError(w, http.StatusBadGateway, "book lookup service is unavailable")
+			return
+		}
+		if book == nil {
+			JSONError(w, http.StatusNotFound, "book not found")
+			return
 		}
 
 		// 5. Insert the book
@@ -873,94 +896,6 @@ var apiHTTPClient = &http.Client{
 
 // yearRe matches a 4-digit year at the start of a string.
 var yearRe = regexp.MustCompile(`^(\d{4})`)
-
-// fetchFromGoogleBooks fetches book metadata from the Google Books API.
-// Returns the populated book, cover source string, and any error.
-// If no results are found, returns (nil, "", nil).
-func fetchFromGoogleBooks(isbn string) (*models.Book, string, error) {
-	u := fmt.Sprintf("https://www.googleapis.com/books/v1/volumes?q=isbn:%s", url.QueryEscape(isbn))
-	req, err := http.NewRequest("GET", u, nil)
-	if err != nil {
-		return nil, "", fmt.Errorf("building Google Books request: %w", err)
-	}
-	req.Header.Set("User-Agent", "Library-Book-Collection/1.0")
-
-	resp, err := apiHTTPClient.Do(req)
-	if err != nil {
-		return nil, "", fmt.Errorf("Google Books HTTP request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, "", fmt.Errorf("reading Google Books response: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		// Non-200 from Google — treat as "not found" so we can fallback
-		return nil, "", nil
-	}
-
-	var googleResp struct {
-		Items []struct {
-			VolumeInfo struct {
-				Title       string   `json:"title"`
-				Subtitle    string   `json:"subtitle"`
-				Authors     []string `json:"authors"`
-				Publisher   string   `json:"publisher"`
-				PublishedDate string `json:"publishedDate"`
-				PageCount   int      `json:"pageCount"`
-				Categories  []string `json:"categories"`
-				ImageLinks  struct {
-					Thumbnail string `json:"thumbnail"`
-				} `json:"imageLinks"`
-			} `json:"volumeInfo"`
-		} `json:"items"`
-	}
-	if err := json.Unmarshal(body, &googleResp); err != nil {
-		return nil, "", fmt.Errorf("parsing Google Books JSON: %w", err)
-	}
-
-	if len(googleResp.Items) == 0 {
-		return nil, "", nil
-	}
-
-	vi := googleResp.Items[0].VolumeInfo
-	book := &models.Book{
-		Title: vi.Title,
-	}
-	if vi.Subtitle != "" {
-		book.Subtitle = &vi.Subtitle
-	}
-	if len(vi.Authors) > 0 {
-		authorsJSON, _ := json.Marshal(vi.Authors)
-		s := string(authorsJSON)
-		book.Authors = &s
-	}
-	if vi.Publisher != "" {
-		book.Publisher = &vi.Publisher
-	}
-	if m := yearRe.FindStringSubmatch(vi.PublishedDate); m != nil {
-		year, _ := strconv.Atoi(m[1])
-		book.PublicationYear = &year
-	}
-	if vi.PageCount > 0 {
-		book.PageCount = &vi.PageCount
-	}
-	if len(vi.Categories) > 0 {
-		genresJSON, _ := json.Marshal(vi.Categories)
-		s := string(genresJSON)
-		book.Genres = &s
-	}
-	if vi.ImageLinks.Thumbnail != "" {
-		// Google Books placeholder URL — skip it
-		if !strings.Contains(vi.ImageLinks.Thumbnail, "placeholder") {
-			book.CoverImageURL = &vi.ImageLinks.Thumbnail
-		}
-	}
-
-	return book, "google_books", nil
-}
 
 // fetchFromOpenLibrary fetches book metadata from the Open Library API.
 // Returns the populated book, cover source string, and any error.

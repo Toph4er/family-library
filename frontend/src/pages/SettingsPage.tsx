@@ -42,26 +42,6 @@ const SETTING_FIELDS: SettingField[] = [
     type: 'text',
   },
   {
-    key: 'cover_image_provider',
-    label: 'Cover Image Provider',
-    description: 'Primary API used to fetch book cover images.',
-    type: 'select',
-    options: [
-      { value: 'google_books', label: 'Google Books' },
-      { value: 'open_library', label: 'Open Library' },
-    ],
-  },
-  {
-    key: 'cover_image_fallback',
-    label: 'Cover Image Fallback',
-    description: 'Fallback API when the primary provider fails.',
-    type: 'select',
-    options: [
-      { value: 'google_books', label: 'Google Books' },
-      { value: 'open_library', label: 'Open Library' },
-    ],
-  },
-  {
     key: 'default_guest_visibility',
     label: 'Guest Visible Fields',
     description: 'Which book fields are visible to guest viewers.',

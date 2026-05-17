@@ -177,6 +177,16 @@ export default function BookDetailPage() {
                   className="w-full h-64 md:h-80 object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-surface via-transparent to-transparent" />
+                {book.isbn && (
+                  <a
+                    href={`https://openlibrary.org/isbn/${book.isbn}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="absolute bottom-2 right-3 text-[11px] text-white/60 hover:text-white/90 transition-colors z-10 underline underline-offset-2"
+                  >
+                    Cover via Open Library
+                  </a>
+                )}
               </div>
             ) : (
               <div className="w-full h-40 bg-gradient-to-br from-primary/10 via-secondary/5 to-accent/10 flex items-center justify-center">

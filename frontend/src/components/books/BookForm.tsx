@@ -81,16 +81,17 @@ export default function BookForm({ book, onSubmit, onCancel }: BookFormProps) {
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
 
-  const handleLookupISBN = async () => {
+  const handleLookupISBN = async (event?: React.MouseEvent) => {
     const digits = isbn.replace(/\D/g, '');
     if (digits.length < 10) {
       setLookupError('Please enter a valid ISBN-10 or ISBN-13');
       return;
     }
+    const force = event?.shiftKey || false;
     setLookupLoading(true);
     setLookupError(null);
     try {
-      const data = await api.lookupISBN(digits);
+      const data = await api.lookupISBN(digits, force);
 
       // Auto-fill fields from lookup result
       if (data.title) setTitle(data.title);
@@ -162,7 +163,7 @@ export default function BookForm({ book, onSubmit, onCancel }: BookFormProps) {
     } catch (err: any) {
       if (err.message?.includes('not found')) {
         setLookupError('No book found for this ISBN');
-      } else if (err.message?.includes('both book APIs failed')) {
+      } else if (err.message?.includes('book lookup service is unavailable')) {
         setLookupError('Book lookup service is unavailable. Please try again later.');
       } else {
         setLookupError(err.message || 'Failed to look up ISBN');
@@ -266,25 +267,30 @@ export default function BookForm({ book, onSubmit, onCancel }: BookFormProps) {
             className={inputClass}
             placeholder="978-..."
           />
-          <button
-            type="button"
-            onClick={handleLookupISBN}
-            disabled={lookupLoading || isbn.replace(/\D/g, '').length < 10}
-            className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 whitespace-nowrap"
-            aria-label="Look up book by ISBN"
-          >
-            {lookupLoading ? (
-              <>
-                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                </svg>
-                Looking up...
-              </>
-            ) : (
-              'Lookup'
-            )}
-          </button>
+          <div className="relative group">
+            <button
+              type="button"
+              onClick={handleLookupISBN}
+              disabled={lookupLoading || isbn.replace(/\D/g, '').length < 10}
+              className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 whitespace-nowrap"
+              aria-label="Look up book by ISBN. Shift+Click to force refresh."
+            >
+              {lookupLoading ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                  </svg>
+                  Looking up...
+                </>
+              ) : (
+                'Lookup'
+              )}
+            </button>
+            <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] text-text-light/50 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+              Shift+Click to force refresh
+            </span>
+          </div>
         </div>
         {lookupError && (
           <p className="text-error text-xs mt-1" role="alert">{lookupError}</p>
