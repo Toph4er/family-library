@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"git.rcsmaine.com/chris/library/backend/internal/models"
@@ -947,17 +948,9 @@ func fetchFromOpenLibrary(isbn string) (*models.Book, string, error) {
 	}
 
 	// Authors: array of {name: "..."} or {key: "..."}
-	// If "name" is present, use it; if only "key" is present, skip (can't resolve without another API call)
+	// If "name" is present, use it; if only "key" is present, resolve via the authors API.
 	if authorsRaw, ok := olResp["authors"].([]interface{}); ok && len(authorsRaw) > 0 {
-		var authors []string
-		for _, a := range authorsRaw {
-			if m, ok := a.(map[string]interface{}); ok {
-				if name, ok := m["name"].(string); ok {
-					authors = append(authors, name)
-				}
-				// If only "key" is present (e.g. {"key": "/authors/OL8031454A"}), skip — we can't resolve it
-			}
-		}
+		authors := resolveOpenLibraryAuthorKeys(authorsRaw)
 		if len(authors) > 0 {
 			authorsJSON, _ := json.Marshal(authors)
 			s := string(authorsJSON)
@@ -965,8 +958,8 @@ func fetchFromOpenLibrary(isbn string) (*models.Book, string, error) {
 		}
 	}
 
-	// Publisher: can be a single string or an array of strings
-	if pubRaw, ok := olResp["publisher"]; ok {
+	// Publisher: the API returns "publishers" (plural) as an array of strings.
+	if pubRaw, ok := olResp["publishers"]; ok {
 		switch p := pubRaw.(type) {
 		case string:
 			if p != "" {
@@ -1010,16 +1003,9 @@ func fetchFromOpenLibrary(isbn string) (*models.Book, string, error) {
 		}
 	}
 
-	// Illustrators: array of {name: "..."} (similar to authors)
+	// Illustrators: array of {name: "..."} or {key: "..."} (same pattern as authors)
 	if illustratorsRaw, ok := olResp["illustrators"].([]interface{}); ok && len(illustratorsRaw) > 0 {
-		var illustrators []string
-		for _, il := range illustratorsRaw {
-			if m, ok := il.(map[string]interface{}); ok {
-				if name, ok := m["name"].(string); ok {
-					illustrators = append(illustrators, name)
-				}
-			}
-		}
+		illustrators := resolveOpenLibraryAuthorKeys(illustratorsRaw)
 		if len(illustrators) > 0 {
 			illustratorsJSON, _ := json.Marshal(illustrators)
 			s := string(illustratorsJSON)
@@ -1034,6 +1020,71 @@ func fetchFromOpenLibrary(isbn string) (*models.Book, string, error) {
 	}
 
 	return book, "open_library", nil
+}
+
+// resolveOpenLibraryAuthorKeys resolves author entries from the Open Library API.
+// Each entry is a map with either a "name" field or a "key" field.
+// Entries with "name" are used directly. Entries with only "key" are resolved
+// by fetching the author record from the Open Library authors API.
+func resolveOpenLibraryAuthorKeys(raw []interface{}) []string {
+	var named []string
+	var keysToResolve []string
+
+	for _, a := range raw {
+		if m, ok := a.(map[string]interface{}); ok {
+			if name, ok := m["name"].(string); ok && name != "" {
+				named = append(named, name)
+			} else if key, ok := m["key"].(string); ok && key != "" {
+				keysToResolve = append(keysToResolve, key)
+			}
+		}
+	}
+
+	// Resolve author keys in parallel
+	if len(keysToResolve) > 0 {
+		results := make(chan string, len(keysToResolve))
+		var wg sync.WaitGroup
+		for _, key := range keysToResolve {
+			wg.Add(1)
+			go func(k string) {
+				defer wg.Done()
+				if name := fetchOpenLibraryAuthorName(k); name != "" {
+					results <- name
+				}
+			}(key)
+		}
+		wg.Wait()
+		close(results)
+		for name := range results {
+			named = append(named, name)
+		}
+	}
+
+	return named
+}
+
+// fetchOpenLibraryAuthorName fetches the name of a single author by their OL key.
+func fetchOpenLibraryAuthorName(key string) string {
+	u := fmt.Sprintf("https://openlibrary.org%s.json", key)
+	resp, err := apiHTTPClient.Get(u)
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return ""
+	}
+
+	var data map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		return ""
+	}
+
+	if name, ok := data["name"].(string); ok {
+		return name
+	}
+	return ""
 }
 
 // toString safely converts an interface{} to string.
