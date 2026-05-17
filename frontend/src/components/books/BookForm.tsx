@@ -1,5 +1,6 @@
 import { useState, type ChangeEvent } from 'react';
 import type { Book, CreateBookRequest, UpdateBookRequest } from '@/types/book';
+import { api } from '@/services/api';
 
 interface BookFormProps {
   book?: Book | null;
@@ -74,6 +75,77 @@ export default function BookForm({ book, onSubmit, onCancel }: BookFormProps) {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showAdvanced, setShowAdvanced] = useState(false);
+
+  // ISBN lookup state
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupError, setLookupError] = useState<string | null>(null);
+
+  const handleLookupISBN = async () => {
+    const digits = isbn.replace(/\D/g, '');
+    if (digits.length < 10) {
+      setLookupError('Please enter a valid ISBN-10 or ISBN-13');
+      return;
+    }
+    setLookupLoading(true);
+    setLookupError(null);
+    try {
+      const data = await api.lookupISBN(digits);
+
+      // Auto-fill fields from lookup result
+      if (data.title) setTitle(data.title);
+      if (data.subtitle) setSubtitle(data.subtitle);
+      if (data.authors) setAuthors(data.authors);
+      if (data.illustrators) setIllustrators(data.illustrators);
+      if (data.publisher) setPublisher(data.publisher);
+      if (data.publication_year) setPublicationYear(data.publication_year.toString());
+      if (data.page_count) setPageCount(data.page_count.toString());
+      if (data.cover_image_url) setCoverImageUrl(data.cover_image_url);
+
+      // Parse JSON array fields (genres from Google Books categories)
+      if (data.genres) {
+        try {
+          const parsed = JSON.parse(data.genres);
+          if (Array.isArray(parsed)) setGenres(parsed.map(String));
+        } catch {
+          // Not JSON, skip
+        }
+      }
+      if (data.reading_levels) {
+        try {
+          const parsed = JSON.parse(data.reading_levels);
+          if (Array.isArray(parsed)) setReadingLevels(parsed.map(String));
+        } catch {
+          // Not JSON, skip
+        }
+      }
+      if (data.themes) {
+        try {
+          const parsed = JSON.parse(data.themes);
+          if (Array.isArray(parsed)) setThemes(parsed.map(String));
+        } catch {
+          // Not JSON, skip
+        }
+      }
+      if (data.awards) {
+        try {
+          const parsed = JSON.parse(data.awards);
+          if (Array.isArray(parsed)) setAwards(parsed.map(String));
+        } catch {
+          // Not JSON, skip
+        }
+      }
+    } catch (err: any) {
+      if (err.message?.includes('not found')) {
+        setLookupError('No book found for this ISBN');
+      } else if (err.message?.includes('both book APIs failed')) {
+        setLookupError('Book lookup service is unavailable. Please try again later.');
+      } else {
+        setLookupError(err.message || 'Failed to look up ISBN');
+      }
+    } finally {
+      setLookupLoading(false);
+    }
+  };
 
   // Reading level options from plan.md Appendix A
   const readingLevelOptions = [
@@ -176,6 +248,61 @@ export default function BookForm({ book, onSubmit, onCancel }: BookFormProps) {
           </ul>
         </div>
       )}
+
+      {/* ISBN with Lookup button */}
+      <div>
+        <label htmlFor="isbn" className={labelClass}>ISBN</label>
+        <div className="flex gap-2">
+          <input
+            id="isbn"
+            type="text"
+            value={isbn}
+            onChange={(e) => {
+              setIsbn(e.target.value.replace(/\D/g, ''));
+              setLookupError(null);
+            }}
+            onBlur={(e) => {
+              const digits = e.target.value.replace(/\D/g, '');
+              if (digits.length === 13) {
+                setIsbn(`${digits.slice(0, 3)}-${digits.slice(3, 4)}-${digits.slice(4, 7)}-${digits.slice(7, 12)}-${digits.slice(12)}`);
+              } else if (digits.length === 10) {
+                setIsbn(`${digits.slice(0, 1)}-${digits.slice(1, 4)}-${digits.slice(4, 9)}-${digits.slice(9)}`);
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleLookupISBN();
+              }
+            }}
+            className={inputClass}
+            placeholder="978-..."
+          />
+          <button
+            type="button"
+            onClick={handleLookupISBN}
+            disabled={lookupLoading || isbn.replace(/\D/g, '').length < 10}
+            className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 whitespace-nowrap"
+            aria-label="Look up book by ISBN"
+          >
+            {lookupLoading ? (
+              <>
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                </svg>
+                Looking up...
+              </>
+            ) : (
+              'Lookup'
+            )}
+          </button>
+        </div>
+        {lookupError && (
+          <p className="text-error text-xs mt-1" role="alert">{lookupError}</p>
+        )}
+      </div>
+
       {/* Title */}
       <div>
         <label htmlFor="title" className={labelClass}>
@@ -234,38 +361,17 @@ export default function BookForm({ book, onSubmit, onCancel }: BookFormProps) {
         </div>
       </div>
 
-      {/* ISBN & Publisher */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="isbn" className={labelClass}>ISBN</label>
-          <input
-            id="isbn"
-            type="text"
-            value={isbn}
-            onChange={(e) => setIsbn(e.target.value.replace(/\D/g, ''))}
-            onBlur={(e) => {
-              const digits = e.target.value.replace(/\D/g, '');
-              if (digits.length === 13) {
-                setIsbn(`${digits.slice(0, 3)}-${digits.slice(3, 4)}-${digits.slice(4, 7)}-${digits.slice(7, 12)}-${digits.slice(12)}`);
-              } else if (digits.length === 10) {
-                setIsbn(`${digits.slice(0, 1)}-${digits.slice(1, 4)}-${digits.slice(4, 9)}-${digits.slice(9)}`);
-              }
-            }}
-            className={inputClass}
-            placeholder="978-..."
-          />
-        </div>
-        <div>
-          <label htmlFor="publisher" className={labelClass}>Publisher</label>
-          <input
-            id="publisher"
-            type="text"
-            value={publisher}
-            onChange={(e) => setPublisher(e.target.value)}
-            className={inputClass}
-            placeholder="Publisher name"
-          />
-        </div>
+      {/* Publisher */}
+      <div>
+        <label htmlFor="publisher" className={labelClass}>Publisher</label>
+        <input
+          id="publisher"
+          type="text"
+          value={publisher}
+          onChange={(e) => setPublisher(e.target.value)}
+          className={inputClass}
+          placeholder="Publisher name"
+        />
       </div>
 
       {/* Year & Pages */}

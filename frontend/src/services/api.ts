@@ -55,6 +55,7 @@ export const api = {
     method: 'POST',
     body: JSON.stringify({ isbn }),
   }),
+  lookupISBN: (isbn: string) => fetchAPI(`/books/lookup-isbn?isbn=${encodeURIComponent(isbn)}`),
 
   // Wishlist
   getWishlist: () => fetchAPI('/wishlist'),

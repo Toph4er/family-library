@@ -626,6 +626,77 @@ func DeleteBookHandler(db *sql.DB) http.HandlerFunc {
 	}
 }
 
+// LookupISBNHandler looks up book metadata by ISBN without creating a record.
+// Returns the data from Google Books or Open Library as JSON.
+func LookupISBNHandler(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		isbn := strings.ReplaceAll(strings.TrimSpace(r.URL.Query().Get("isbn")), "-", "")
+		if isbn == "" {
+			JSONError(w, http.StatusBadRequest, "isbn query parameter is required")
+			return
+		}
+
+		// Try Google Books API first
+		book, coverSource, apiErr := fetchFromGoogleBooks(isbn)
+		if apiErr != nil || book == nil {
+			// Fallback to Open Library API
+			book, coverSource, apiErr = fetchFromOpenLibrary(isbn)
+			if apiErr != nil {
+				JSONError(w, http.StatusBadGateway, "both book APIs failed")
+				return
+			}
+			if book == nil {
+				JSONError(w, http.StatusNotFound, "book not found by either API")
+				return
+			}
+		}
+
+		// Return a simple response with the looked-up fields
+		resp := map[string]interface{}{
+			"title":          book.Title,
+			"cover_source":   coverSource,
+		}
+		if book.Subtitle != nil {
+			resp["subtitle"] = *book.Subtitle
+		}
+		if book.Authors != nil {
+			resp["authors"] = *book.Authors
+		}
+		if book.Illustrators != nil {
+			resp["illustrators"] = *book.Illustrators
+		}
+		if book.Publisher != nil {
+			resp["publisher"] = *book.Publisher
+		}
+		if book.PublicationYear != nil {
+			resp["publication_year"] = *book.PublicationYear
+		}
+		if book.PageCount != nil {
+			resp["page_count"] = *book.PageCount
+		}
+		if book.BookType != nil {
+			resp["book_type"] = *book.BookType
+		}
+		if book.ReadingLevels != nil {
+			resp["reading_levels"] = *book.ReadingLevels
+		}
+		if book.Genres != nil {
+			resp["genres"] = *book.Genres
+		}
+		if book.Themes != nil {
+			resp["themes"] = *book.Themes
+		}
+		if book.Awards != nil {
+			resp["awards"] = *book.Awards
+		}
+		if book.CoverImageURL != nil {
+			resp["cover_image_url"] = *book.CoverImageURL
+		}
+
+		JSONResponse(w, http.StatusOK, resp)
+	}
+}
+
 // ImportISBNHandler imports a book by ISBN
 func ImportISBNHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
