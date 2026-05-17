@@ -28,8 +28,9 @@ export default function GuestLoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
+      <span id="main-content" className="sr-only" />
       {/* Background decorative vines */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <svg className="absolute -top-12 -left-12 w-48 h-48 text-primary/5" viewBox="0 0 200 200" fill="currentColor">
           <path d="M0 0 C40 30 80 60 100 100 C120 140 140 170 200 200" stroke="currentColor" strokeWidth="3" fill="none" />
           <path d="M40 40 C60 30 80 50 70 70 C60 90 40 80 30 60" fill="currentColor" opacity="0.5" />
@@ -42,9 +43,9 @@ export default function GuestLoginPage() {
         </svg>
       </div>
 
-      <div className="w-full max-w-md p-8 bg-surface/95 backdrop-blur-sm rounded-2xl shadow-xl border border-secondary/10 animate-fade-in-up relative">
+      <main role="main" className="w-full max-w-md p-8 bg-surface/95 backdrop-blur-sm rounded-2xl shadow-xl border border-secondary/10 animate-fade-in-up relative">
         {/* Decorative top leaf accent */}
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2" aria-hidden="true">
           <svg className="w-6 h-6 text-secondary/30 rotate-180" viewBox="0 0 24 24" fill="currentColor">
             <path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z" />
           </svg>
@@ -53,7 +54,7 @@ export default function GuestLoginPage() {
         {/* Header */}
         <div className="text-center mb-6">
           {/* Leaf icon */}
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-secondary/10 mb-4">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-secondary/10 mb-4" aria-hidden="true">
             <svg className="w-7 h-7 text-secondary" viewBox="0 0 24 24" fill="currentColor">
               <path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z" />
             </svg>
@@ -63,21 +64,21 @@ export default function GuestLoginPage() {
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-error/10 border border-error/20 rounded-xl text-error text-sm flex items-center gap-2">
-            <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+          <div className="mb-4 p-3 bg-error/10 border border-error/20 rounded-xl text-error text-sm flex items-center gap-2" role="alert">
+            <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
             </svg>
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div>
             <label htmlFor="guest-password" className="block text-sm font-medium text-text mb-1.5">
               Guest Password
             </label>
             <div className="relative">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-light/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-light/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                 <path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
@@ -90,6 +91,8 @@ export default function GuestLoginPage() {
                 required
                 autoFocus
                 placeholder="Enter the guest password"
+                autoComplete="current-password"
+                aria-required="true"
               />
             </div>
           </div>
@@ -104,10 +107,11 @@ export default function GuestLoginPage() {
                        focus:outline-none focus:ring-2 focus:ring-secondary/50
                        disabled:opacity-50 disabled:cursor-not-allowed
                        transition-all duration-200 ease-in-out"
+            aria-label={loading ? 'Signing in, please wait' : 'Sign in as a guest'}
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
-                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="4 4" />
                 </svg>
                 Signing in...
@@ -117,18 +121,18 @@ export default function GuestLoginPage() {
         </form>
 
         {/* Divider */}
-        <div className="vine-divider mt-6 mb-4">
+        <div className="vine-divider mt-6 mb-4" aria-hidden="true">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
             <path d="M6 1 C6 1 4 4 4 6 C4 7.1 4.9 8 6 8 C7.1 8 8 7.1 8 6 C8 4 6 1 6 1Z" />
           </svg>
         </div>
 
         <div className="text-center">
-          <Link to="/login" className="text-primary hover:text-text-light transition-colors text-sm font-medium">
+          <Link to="/login" className="text-primary hover:text-text-light transition-colors text-sm font-medium" aria-label="Sign in as admin instead">
             Admin login →
           </Link>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

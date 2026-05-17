@@ -86,12 +86,16 @@ function WishlistForm({ item, onSubmit, onCancel }: WishlistFormProps) {
         <input
           id="wishlist-title"
           type="text"
+          required
+          aria-required="true"
+          aria-invalid={!!errors.title}
+          aria-describedby={errors.title ? 'wishlist-title-error' : undefined}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           className={`${inputClass} ${errors.title ? 'border-error ring-1 ring-error' : ''}`}
           placeholder="Book title"
         />
-        {errors.title && <p className={errorClass}>{errors.title}</p>}
+        {errors.title && <p id="wishlist-title-error" className={errorClass} role="alert">{errors.title}</p>}
       </div>
 
       {/* Author & ISBN */}
@@ -293,7 +297,7 @@ export default function WishlistPage() {
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-3">
               {/* Star icon */}
-              <svg className="w-6 h-6 text-accent" viewBox="0 0 24 24" fill="currentColor">
+              <svg className="w-6 h-6 text-accent" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
               </svg>
               <h1 className="text-2xl font-heading text-primary">Wishlist</h1>
@@ -302,27 +306,29 @@ export default function WishlistPage() {
               {isAdmin && (
                 <button
                   onClick={() => setShowAddModal(true)}
+                  aria-label="Add new item to wishlist"
                   className="px-5 py-2.5 bg-primary text-white rounded-xl
                              shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30
                              hover:-translate-y-0.5 active:translate-y-0
                              font-medium text-sm transition-all duration-200 ease-in-out
-                             flex items-center gap-2"
+                             flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2"
                 >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
                     <path d="M12 5v14M5 12h14" />
                   </svg>
                   Add to Wishlist
                 </button>
               )}
-              <nav className="flex gap-4">
-                <Link to="/books" className="text-primary hover:text-text-light transition-colors font-medium text-sm">Books</Link>
-                {isAdmin && <Link to="/settings" className="text-primary hover:text-text-light transition-colors font-medium text-sm">Settings</Link>}
+              <nav className="flex gap-4" aria-label="Page navigation">
+                <Link to="/books" className="text-primary hover:text-text-light transition-colors font-medium text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 rounded">Books</Link>
+                {isAdmin && <Link to="/settings" className="text-primary hover:text-text-light transition-colors font-medium text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 rounded">Settings</Link>}
                 <button
                   onClick={async () => {
                     await logout();
                     window.location.href = '/';
                   }}
-                  className="text-error hover:text-error/80 transition-colors font-medium text-sm"
+                  aria-label="Logout"
+                  className="text-error hover:text-error/80 transition-colors font-medium text-sm focus:outline-none focus:ring-2 focus:ring-error/50 rounded"
                 >
                   Logout
                 </button>
@@ -335,20 +341,20 @@ export default function WishlistPage() {
       <main className="max-w-4xl mx-auto px-4 py-8">
         {loading ? (
           <div className="text-center py-16 animate-gentle-pulse">
-            <svg className="w-12 h-12 mx-auto text-primary/30 animate-spin" viewBox="0 0 40 40" fill="none">
+            <svg className="w-12 h-12 mx-auto text-primary/30 animate-spin" viewBox="0 0 40 40" fill="none" aria-hidden="true">
               <circle cx="20" cy="20" r="18" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" />
               <circle cx="20" cy="20" r="12" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
               <circle cx="20" cy="20" r="6" stroke="currentColor" strokeWidth="1" strokeDasharray="2 2" />
             </svg>
-            <p className="text-text-light mt-4 font-accent text-xl">Checking the wish list...</p>
+            <p className="text-text-light mt-4 font-accent text-xl" aria-live="polite">Checking the wish list...</p>
           </div>
         ) : error ? (
-          <div className="text-center py-12">
+          <div className="text-center py-12" role="alert">
             <p className="text-error">{error}</p>
           </div>
         ) : sortedItems.length === 0 ? (
           <div className="text-center py-16 animate-fade-in">
-            <svg className="w-16 h-16 mx-auto text-accent/20 mb-4" viewBox="0 0 24 24" fill="currentColor">
+            <svg className="w-16 h-16 mx-auto text-accent/20 mb-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
             </svg>
             <p className="text-text-light mb-2 font-accent text-2xl">No items on the wishlist yet.</p>
@@ -376,7 +382,7 @@ export default function WishlistPage() {
                         </h3>
                         {item.fulfilled && (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-success/15 text-success rounded-full text-xs font-medium">
-                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                               <polyline points="20 6 9 17 4 12" />
                             </svg>
                             Fulfilled
@@ -410,10 +416,11 @@ export default function WishlistPage() {
                       {isAdmin && !item.fulfilled && (
                         <button
                           onClick={() => handleFulfillItem(item.id)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-success/10 text-success hover:bg-success/20 transition-colors border border-success/15"
+                          aria-label={`Mark ${item.title} as fulfilled`}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-success/10 text-success hover:bg-success/20 focus:outline-none focus:ring-2 focus:ring-success/50 focus:ring-offset-2 transition-colors border border-success/15"
                           title="Mark as fulfilled"
                         >
-                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                             <polyline points="20 6 9 17 4 12" />
                           </svg>
                           Fulfill
@@ -430,9 +437,10 @@ export default function WishlistPage() {
                           href={item.amazon_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-sm font-medium hover:bg-primary/20 transition-colors"
+                          aria-label={`View ${item.title} on Amazon (opens in new tab)`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-sm font-medium hover:bg-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-colors"
                         >
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                             <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
                             <polyline points="15 3 21 3 21 9" />
                             <line x1="10" y1="14" x2="21" y2="3" />
@@ -445,9 +453,10 @@ export default function WishlistPage() {
                           href={item.thriftbooks_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary/10 text-secondary rounded-lg text-sm font-medium hover:bg-secondary/20 transition-colors"
+                          aria-label={`View ${item.title} on ThriftBooks (opens in new tab)`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary/10 text-secondary rounded-lg text-sm font-medium hover:bg-secondary/20 focus:outline-none focus:ring-2 focus:ring-secondary/50 transition-colors"
                         >
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                             <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
                             <polyline points="15 3 21 3 21 9" />
                             <line x1="10" y1="14" x2="21" y2="3" />
@@ -470,9 +479,10 @@ export default function WishlistPage() {
                     <div className="mt-4 pt-3 border-t border-secondary/10 flex justify-end gap-2">
                       <button
                         onClick={() => setEditingItem(item)}
-                        className="px-3 py-1.5 border border-secondary/30 rounded-lg text-text-light hover:bg-background transition-all duration-200 text-xs font-medium flex items-center gap-1.5"
+                        aria-label={`Edit wishlist item: ${item.title}`}
+                        className="px-3 py-1.5 border border-secondary/30 rounded-lg text-text-light hover:bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 transition-all duration-200 text-xs font-medium flex items-center gap-1.5"
                       >
-                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                         </svg>
@@ -480,9 +490,10 @@ export default function WishlistPage() {
                       </button>
                       <button
                         onClick={() => setDeletingId(item.id)}
-                        className="px-3 py-1.5 border border-error/30 rounded-lg text-error hover:bg-error/5 transition-all duration-200 text-xs font-medium flex items-center gap-1.5"
+                        aria-label={`Delete wishlist item: ${item.title}`}
+                        className="px-3 py-1.5 border border-error/30 rounded-lg text-error hover:bg-error/5 focus:outline-none focus:ring-2 focus:ring-error/50 focus:ring-offset-2 transition-all duration-200 text-xs font-medium flex items-center gap-1.5"
                       >
-                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                           <polyline points="3 6 5 6 21 6" />
                           <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                         </svg>
@@ -544,14 +555,16 @@ export default function WishlistPage() {
           <button
             onClick={() => setDeletingId(null)}
             disabled={deleting}
-            className="px-4 py-2 border border-secondary/30 rounded-xl text-text hover:bg-background transition-colors disabled:opacity-50"
+            aria-label="Cancel delete"
+            className="px-4 py-2 border border-secondary/30 rounded-xl text-text hover:bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 transition-colors disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             onClick={handleDeleteItem}
             disabled={deleting}
-            className="px-4 py-2 bg-error text-white rounded-xl hover:bg-error/90 transition-colors font-medium disabled:opacity-50"
+            aria-label="Confirm remove wishlist item"
+            className="px-4 py-2 bg-error text-white rounded-xl hover:bg-error/90 focus:outline-none focus:ring-2 focus:ring-error/50 focus:ring-offset-2 transition-colors font-medium disabled:opacity-50"
           >
             {deleting ? 'Deleting...' : 'Remove'}
           </button>

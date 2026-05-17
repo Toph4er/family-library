@@ -8,8 +8,8 @@
   --color-surface: #faf8f5;
   --color-text: #1a2f0a;
   --color-text-light: #4a5d23;
-  --color-success: #4a7c2e;
-  --color-warning: #c75b39;
+  --color-success: #457528;
+  --color-warning: #a84a2e;
   --color-error: #8b2500;
 
   --font-heading: 'Playfair Display', serif;
@@ -214,4 +214,28 @@ textarea {
 ::selection {
   background: var(--color-accent);
   color: var(--color-text);
+}
+
+/* ── Skip to content link (WCAG 2.1 AA) ──────────────────── */
+
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  padding: 0.75rem 1.5rem;
+  background: var(--color-primary);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 1rem;
+  border-radius: 0 0 0.5rem 0.5rem;
+  text-decoration: none;
+  transition: top 0.15s ease;
+}
+
+.skip-link:focus {
+  top: 0;
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
 }

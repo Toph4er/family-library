@@ -105,6 +105,7 @@ function Toast({ message, onDismiss }: { message: ToastMessage; onDismiss: (id: 
 
   return (
     <div
+      role="alert"
       className={`flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-lg border backdrop-blur-sm animate-fade-in ${
         message.type === 'success'
           ? 'bg-success/90 border-success/30 text-white'
@@ -112,11 +113,11 @@ function Toast({ message, onDismiss }: { message: ToastMessage; onDismiss: (id: 
       }`}
     >
       {message.type === 'success' ? (
-        <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M20 6L9 17l-5-5" />
         </svg>
       ) : (
-        <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <circle cx="12" cy="12" r="10" />
           <path d="M15 9l-6 6M9 9l6 6" />
         </svg>
@@ -124,10 +125,10 @@ function Toast({ message, onDismiss }: { message: ToastMessage; onDismiss: (id: 
       <span className="text-sm font-medium">{message.text}</span>
       <button
         onClick={() => onDismiss(message.id)}
-        className="ml-2 opacity-70 hover:opacity-100 transition-opacity"
         aria-label="Dismiss notification"
+        className="ml-2 opacity-70 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-white/50 rounded transition-opacity"
       >
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M18 6L6 18M6 6l12 12" />
         </svg>
       </button>
@@ -225,12 +226,12 @@ export default function SettingsPage() {
         <PageHeader />
         <main className="max-w-4xl mx-auto px-4 py-8">
           <div className="text-center py-20 animate-gentle-pulse">
-            <svg className="w-16 h-16 mx-auto text-primary/30 animate-spin" viewBox="0 0 40 40" fill="none">
+            <svg className="w-16 h-16 mx-auto text-primary/30 animate-spin" viewBox="0 0 40 40" fill="none" aria-hidden="true">
               <circle cx="20" cy="20" r="18" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" />
               <circle cx="20" cy="20" r="12" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
               <circle cx="20" cy="20" r="6" stroke="currentColor" strokeWidth="1" strokeDasharray="2 2" />
             </svg>
-            <p className="text-text-light mt-6 font-accent text-2xl">Gathering the settings...</p>
+            <p className="text-text-light mt-6 font-accent text-2xl" aria-live="polite">Gathering the settings...</p>
           </div>
         </main>
       </div>
@@ -245,15 +246,16 @@ export default function SettingsPage() {
         <PageHeader />
         <main className="max-w-4xl mx-auto px-4 py-8">
           <div className="bg-surface rounded-2xl shadow-lg border border-error/20 p-8 text-center animate-fade-in">
-            <svg className="w-12 h-12 mx-auto text-error/60 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg className="w-12 h-12 mx-auto text-error/60 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <circle cx="12" cy="12" r="10" />
               <path d="M12 8v4M12 16h.01" />
             </svg>
             <h2 className="text-xl font-heading text-primary mb-2">Unable to Load Settings</h2>
-            <p className="text-error mb-6">{loadError}</p>
+            <p className="text-error mb-6" role="alert">{loadError}</p>
             <button
               onClick={loadSettings}
-              className="px-6 py-2.5 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors font-medium text-sm"
+              aria-label="Try loading settings again"
+              className="px-6 py-2.5 bg-primary text-white rounded-xl hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 transition-colors font-medium text-sm"
             >
               Try Again
             </button>
@@ -283,7 +285,7 @@ export default function SettingsPage() {
           <h1 className="text-3xl font-heading text-primary mb-2">Site Settings</h1>
           <p className="text-text-light font-accent text-xl">Configure your woodland library</p>
           <div className="vine-divider">
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C5 16 17 8 17 8z" />
             </svg>
           </div>
@@ -309,7 +311,8 @@ export default function SettingsPage() {
                   <button
                     onClick={() => saveSetting(field.key, drafts[field.key] || '')}
                     disabled={saving[field.key]}
-                    className={`flex-shrink-0 px-5 py-2 rounded-xl text-sm font-medium transition-all ${
+                    aria-label={`Save ${field.label}`}
+                    className={`flex-shrink-0 px-5 py-2 rounded-xl text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 ${
                       saving[field.key]
                         ? 'bg-primary/30 text-white/60 cursor-wait'
                         : 'bg-primary text-white hover:bg-primary/90 hover:shadow-md active:scale-[0.98]'
@@ -317,7 +320,7 @@ export default function SettingsPage() {
                   >
                     {saving[field.key] ? (
                       <span className="flex items-center gap-2">
-                        <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
                           <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
                         </svg>
                         Saving...

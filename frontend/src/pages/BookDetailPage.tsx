@@ -9,7 +9,7 @@ import BookForm from '../components/books/BookForm';
 // Vine divider component
 const VineDivider = () => (
   <div className="vine-divider">
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
       <path d="M7 1 C7 1 4 5 4 7 C4 8.7 5.3 10 7 10 C8.7 10 10 8.7 10 7 C10 5 7 1 7 1Z" />
     </svg>
   </div>
@@ -69,7 +69,7 @@ export default function BookDetailPage() {
   const renderStars = (rating: number) => {
     if (!rating || rating === 0) return null;
     return (
-      <div className="flex gap-1 mt-2">
+      <div className="flex gap-1 mt-2" role="img" aria-label={rating ? `${rating} out of 5 stars` : 'No rating'}>
         {[1, 2, 3, 4, 5].map((star) => (
           <span key={star} className={`text-2xl ${star <= rating ? 'text-accent drop-shadow-sm' : 'text-secondary/15'}`}>
             ★
@@ -116,8 +116,8 @@ export default function BookDetailPage() {
       <header className="bg-surface/90 backdrop-blur-sm shadow-md border-b border-secondary/10">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link to="/books" className="text-primary hover:text-text-light transition-colors font-medium flex items-center gap-2">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <Link to="/books" className="text-primary hover:text-text-light transition-colors font-medium flex items-center gap-2" aria-label="Back to books list">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M19 12H5M12 19l-7-7 7-7" />
               </svg>
               Back to Books
@@ -126,9 +126,10 @@ export default function BookDetailPage() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowEditModal(true)}
-                  className="px-4 py-2 border border-secondary/30 rounded-xl text-text hover:bg-background transition-all duration-200 text-sm font-medium flex items-center gap-1.5"
+                  aria-label="Edit book"
+                  className="px-4 py-2 border border-secondary/30 rounded-xl text-text hover:bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 transition-all duration-200 text-sm font-medium flex items-center gap-1.5"
                 >
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                   </svg>
@@ -136,9 +137,10 @@ export default function BookDetailPage() {
                 </button>
                 <button
                   onClick={() => setShowDeleteModal(true)}
-                  className="px-4 py-2 border border-error/30 rounded-xl text-error hover:bg-error/5 transition-all duration-200 text-sm font-medium flex items-center gap-1.5"
+                  aria-label="Delete book"
+                  className="px-4 py-2 border border-error/30 rounded-xl text-error hover:bg-error/5 focus:outline-none focus:ring-2 focus:ring-error/50 focus:ring-offset-2 transition-all duration-200 text-sm font-medium flex items-center gap-1.5"
                 >
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <polyline points="3 6 5 6 21 6" />
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                   </svg>
@@ -153,15 +155,15 @@ export default function BookDetailPage() {
       <main className="max-w-5xl mx-auto px-4 py-8">
         {loading ? (
           <div className="text-center py-16 animate-gentle-pulse">
-            <svg className="w-12 h-12 mx-auto text-primary/30 animate-spin" viewBox="0 0 40 40" fill="none">
+            <svg className="w-12 h-12 mx-auto text-primary/30 animate-spin" viewBox="0 0 40 40" fill="none" aria-hidden="true">
               <circle cx="20" cy="20" r="18" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" />
               <circle cx="20" cy="20" r="12" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
               <circle cx="20" cy="20" r="6" stroke="currentColor" strokeWidth="1" strokeDasharray="2 2" />
             </svg>
-            <p className="text-text-light mt-4 font-accent text-xl">Opening the book...</p>
+            <p className="text-text-light mt-4 font-accent text-xl" aria-live="polite">Opening the book...</p>
           </div>
         ) : error ? (
-          <div className="text-center py-12">
+          <div className="text-center py-12" role="alert">
             <p className="text-error">{error}</p>
           </div>
         ) : book ? (
@@ -178,7 +180,7 @@ export default function BookDetailPage() {
               </div>
             ) : (
               <div className="w-full h-40 bg-gradient-to-br from-primary/10 via-secondary/5 to-accent/10 flex items-center justify-center">
-                <svg className="w-20 h-20 text-primary/15" viewBox="0 0 24 24" fill="currentColor">
+                <svg className="w-20 h-20 text-primary/15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                   <path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z" />
                 </svg>
               </div>
@@ -253,7 +255,7 @@ export default function BookDetailPage() {
                   <VineDivider />
                   <div>
                     <h3 className="font-heading text-lg text-primary mb-3 flex items-center gap-2">
-                      <svg className="w-5 h-5 text-accent" viewBox="0 0 24 24" fill="currentColor">
+                      <svg className="w-5 h-5 text-accent" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                         <path d="M20 6h-2.18c.11-.31.18-.65.18-1a3 3 0 0 0-3-3c-1.1 0-2.04.6-2.57 1.5h-.03c-.53-.9-1.47-1.5-2.57-1.5a3 3 0 0 0-3 3c0 .35.07.69.18 1H4a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2zm-5-1c0 .55-.45 1-1 1s-1-.45-1-1 .45-1 1-1 1 .45 1 1zm-8 0c0 .55-.45 1-1 1s-1-.45-1-1 .45-1 1-1 1 .45 1 1z" />
                       </svg>
                       Gift Information
@@ -273,7 +275,7 @@ export default function BookDetailPage() {
                   <VineDivider />
                   <div>
                     <h3 className="font-heading text-lg text-primary mb-2 flex items-center gap-2">
-                      <svg className="w-5 h-5 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg className="w-5 h-5 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                         <polyline points="14 2 14 8 20 8" />
                         <line x1="16" y1="13" x2="8" y2="13" />
@@ -327,14 +329,16 @@ export default function BookDetailPage() {
           <button
             onClick={() => setShowDeleteModal(false)}
             disabled={deleting}
-            className="px-4 py-2 border border-secondary/30 rounded-xl text-text hover:bg-background transition-colors disabled:opacity-50"
+            aria-label="Cancel delete"
+            className="px-4 py-2 border border-secondary/30 rounded-xl text-text hover:bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 transition-colors disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             onClick={handleDeleteBook}
             disabled={deleting}
-            className="px-4 py-2 bg-error text-white rounded-xl hover:bg-error/90 transition-colors font-medium disabled:opacity-50"
+            aria-label="Confirm delete book"
+            className="px-4 py-2 bg-error text-white rounded-xl hover:bg-error/90 focus:outline-none focus:ring-2 focus:ring-error/50 focus:ring-offset-2 transition-colors font-medium disabled:opacity-50"
           >
             {deleting ? 'Deleting...' : 'Delete Book'}
           </button>

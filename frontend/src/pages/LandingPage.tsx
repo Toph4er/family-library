@@ -28,8 +28,11 @@ const Sparkle = ({ delay = 0, className = '' }: { delay?: number; className?: st
 export default function LandingPage() {
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
+      {/* Skip link target for pages without a main element */}
+      <span id="main-content" className="sr-only" />
+
       {/* Background decorative elements */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
         {/* Top-left vine */}
         <svg className="absolute -top-8 -left-8 w-40 h-40 text-primary/5" viewBox="0 0 160 160" fill="currentColor">
           <path d="M0 0 C40 20 60 60 40 100 C30 120 10 140 0 160" stroke="currentColor" strokeWidth="3" fill="none" />
@@ -44,7 +47,7 @@ export default function LandingPage() {
         </svg>
       </div>
 
-      <div className="text-center relative animate-fade-in-up">
+      <main role="main" className="text-center relative animate-fade-in-up">
         {/* Heading with leaf decorations */}
         <div className="relative inline-block mb-2">
           <LeafLeft />
@@ -66,7 +69,7 @@ export default function LandingPage() {
         <Sparkle delay={1.5} className="bottom-0 right-1/3" />
 
         {/* Decorative divider */}
-        <div className="vine-divider justify-center mb-8">
+        <div className="vine-divider justify-center mb-8" aria-hidden="true">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
             <path d="M8 1 C8 1 5 5 5 8 C5 9.7 6.3 11 8 11 C9.7 11 11 9.7 11 8 C11 5 8 1 8 1Z" />
           </svg>
@@ -81,10 +84,11 @@ export default function LandingPage() {
                        hover:-translate-y-0.5 active:translate-y-0
                        font-medium text-lg tracking-wide
                        transition-all duration-200 ease-in-out"
+            aria-label="Sign in as administrator"
           >
             <span className="flex items-center gap-2">
               {/* Key icon */}
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
               </svg>
               Admin Login
@@ -97,10 +101,11 @@ export default function LandingPage() {
                        hover:-translate-y-0.5 active:translate-y-0
                        font-medium text-lg tracking-wide
                        transition-all duration-200 ease-in-out"
+            aria-label="Sign in as guest to browse the collection"
           >
             <span className="flex items-center gap-2">
               {/* Leaf icon */}
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z" />
               </svg>
               Guest Login
@@ -112,7 +117,7 @@ export default function LandingPage() {
         <p className="mt-12 text-sm text-text-light/50 font-accent text-lg">
           🍄 Step into the enchanted forest of stories 🍄
         </p>
-      </div>
+      </main>
     </div>
   );
 }

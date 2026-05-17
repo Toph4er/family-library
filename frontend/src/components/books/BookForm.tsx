@@ -155,12 +155,31 @@ export default function BookForm({ book, onSubmit, onCancel }: BookFormProps) {
   const labelClass = 'block text-sm font-medium text-text-light mb-1';
   const errorClass = 'text-error text-xs mt-1';
 
+  // Build error summary for screen readers (WCAG 2.1 AA)
+  const errorSummaryId = 'form-error-summary';
+  const hasErrors = Object.keys(errors).length > 0;
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+      {/* Error summary announced to screen readers */}
+      {hasErrors && (
+        <div
+          id={errorSummaryId}
+          role="alert"
+          className="p-3 bg-error/10 border border-error/20 rounded-xl text-error text-sm"
+        >
+          <p className="font-medium">Please fix the following errors:</p>
+          <ul className="mt-1 list-disc list-inside">
+            {Object.entries(errors).map(([field, message]) => (
+              <li key={field}>{message}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       {/* Title */}
       <div>
         <label htmlFor="title" className={labelClass}>
-          Title <span className="text-error">*</span>
+          Title <span className="text-error" aria-hidden="true">*</span>
         </label>
         <input
           id="title"
@@ -169,8 +188,11 @@ export default function BookForm({ book, onSubmit, onCancel }: BookFormProps) {
           onChange={(e) => setTitle(e.target.value)}
           className={`${inputClass} ${errors.title ? 'border-error ring-1 ring-error' : ''}`}
           placeholder="Enter book title"
+          aria-required="true"
+          aria-invalid={!!errors.title}
+          aria-describedby={errors.title ? 'title-error' : undefined}
         />
-        {errors.title && <p className={errorClass}>{errors.title}</p>}
+        {errors.title && <p id="title-error" className={errorClass} role="alert">{errors.title}</p>}
       </div>
 
       {/* Subtitle */}

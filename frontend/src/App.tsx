@@ -13,6 +13,10 @@ import ProtectedRoute from './components/layout/ProtectedRoute';
 function App() {
   return (
     <AuthProvider>
+      {/* Skip to main content link (WCAG 2.1 AA) */}
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
       <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
