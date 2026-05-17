@@ -1005,9 +1005,19 @@ func fetchFromOpenLibrary(isbn string) (*models.Book, string, error) {
 		}
 	}
 
-	// Cover image
-	if coverIDRaw, ok := olResp["cover_i"].(float64); ok && coverIDRaw > 0 {
-		coverURL := fmt.Sprintf("https://covers.openlibrary.org/b/id/%d-L.jpg", int(coverIDRaw))
+	// Cover image: try cover_i first, then fall back to the covers array.
+	// We intentionally do NOT use ISBN-based URLs (/b/isbn/{isbn}-L.jpg) because
+	// they return 1x1 placeholder images when no cover actually exists.
+	var coverID float64
+	if ci, ok := olResp["cover_i"].(float64); ok && ci > 0 {
+		coverID = ci
+	} else if coversRaw, ok := olResp["covers"].([]interface{}); ok && len(coversRaw) > 0 {
+		if firstCover, ok := coversRaw[0].(float64); ok && firstCover > 0 {
+			coverID = firstCover
+		}
+	}
+	if coverID > 0 {
+		coverURL := fmt.Sprintf("https://covers.openlibrary.org/b/id/%d-L.jpg", int(coverID))
 		book.CoverImageURL = &coverURL
 	}
 
