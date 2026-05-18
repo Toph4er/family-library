@@ -84,15 +84,21 @@ func (r *statusRecorder) WriteHeader(code int) {
 	r.ResponseWriter.WriteHeader(code)
 }
 
+// limiterEntry wraps a rate limiter with its last-access timestamp.
+type limiterEntry struct {
+	limiter    *rate.Limiter
+	lastAccess time.Time
+}
+
 // rateLimiterStore holds per-IP rate limiters.
 type rateLimiterStore struct {
 	mu      sync.Mutex
-	limits  map[string]*rate.Limiter
+	limits  map[string]*limiterEntry
 	cleanup *time.Ticker
 }
 
 var limiterStore = &rateLimiterStore{
-	limits: make(map[string]*rate.Limiter),
+	limits: make(map[string]*limiterEntry),
 }
 
 func init() {
@@ -105,13 +111,19 @@ func init() {
 	}()
 }
 
-// cleanupStale removes stale rate limiters to prevent memory leaks.
-//
-// TODO: Track last-access time per IP for smarter eviction.
-// For now, this is a no-op — limiters are lightweight and the map
-// naturally bounds itself by the number of unique IPs seen.
+// cleanupStale removes rate limiter entries that haven't been accessed
+// in over an hour, preventing unbounded memory growth from stale IPs.
 func (s *rateLimiterStore) cleanupStale() {
-	// Placeholder — implement last-access tracking when needed.
+	cutoff := time.Now().Add(-1 * time.Hour)
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for key, entry := range s.limits {
+		if entry.lastAccess.Before(cutoff) {
+			delete(s.limits, key)
+		}
+	}
 }
 
 // getLimiter returns (or creates) a rate limiter for the given IP.
@@ -129,8 +141,9 @@ func (s *rateLimiterStore) getLimiter(ip string, strict bool) *rate.Limiter {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if limiter, ok := s.limits[key]; ok {
-		return limiter
+	if entry, ok := s.limits[key]; ok {
+		entry.lastAccess = time.Now()
+		return entry.limiter
 	}
 
 	var limiter *rate.Limiter
@@ -142,7 +155,10 @@ func (s *rateLimiterStore) getLimiter(ip string, strict bool) *rate.Limiter {
 		limiter = rate.NewLimiter(rate.Every(600*time.Millisecond), 10)
 	}
 
-	s.limits[key] = limiter
+	s.limits[key] = &limiterEntry{
+		limiter:    limiter,
+		lastAccess: time.Now(),
+	}
 	return limiter
 }
 

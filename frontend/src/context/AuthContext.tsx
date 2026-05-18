@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import { api } from '../services/api';
+import { api, initCSRF } from '../services/api';
 import type { SessionUser } from '../types/user';
 
 interface AuthContextValue {
@@ -49,7 +49,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   useEffect(() => {
-    refreshUser();
+    // Initialize CSRF token before any authenticated requests.
+    initCSRF().then(() => {
+      refreshUser();
+    });
   }, [refreshUser]);
 
   const isAdmin = user?.role === 'admin';

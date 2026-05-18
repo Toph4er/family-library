@@ -41,7 +41,7 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth) http.Handler {
 		AllowedOrigins:   []string{corsOrigin},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-		ExposedHeaders:   []string{"Link"},
+		ExposedHeaders:   []string{"Link", "X-CSRF-Token"},
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
@@ -52,9 +52,15 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth) http.Handler {
 
 	// -- API routes --
 	r.Route("/api/v1", func(r chi.Router) {
-		// Authentication (login endpoints are public)
+		// Public endpoints (before CSRF middleware)
+		r.Get("/csrf", handlers.CSRFTokenHandler(authSvc))
 		r.Post("/auth/login", handlers.LoginHandler(authSvc))
 		r.Post("/auth/guest-login", handlers.GuestLoginHandler(authSvc))
+
+		// CSRF protection for all subsequent routes
+		r.Use(middleware.CSRFProtection(authSvc.Store(), auth.SessionID))
+
+		// Authentication (protected endpoints)
 		r.Post("/auth/logout", func(w http.ResponseWriter, r *http.Request) {
 			authSvc.RequireAuth(http.HandlerFunc(handlers.LogoutHandler(authSvc))).ServeHTTP(w, r)
 		})

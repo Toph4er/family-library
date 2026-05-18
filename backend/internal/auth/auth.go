@@ -6,6 +6,8 @@ import (
 
 	"github.com/gorilla/sessions"
 	"golang.org/x/crypto/bcrypt"
+
+	"git.rcsmaine.com/chris/library/backend/internal/middleware"
 )
 
 const (
@@ -45,6 +47,17 @@ func (a *Auth) Store() *sessions.CookieStore {
 	return a.store
 }
 
+// getSession retrieves the session from the request context (set by the CSRF
+// middleware) or loads it from the cookie store.  Using the context session
+// avoids a second cookie read and prevents save-ordering conflicts when both
+// the CSRF middleware and an auth handler touch the session.
+func (a *Auth) getSession(r *http.Request) (*sessions.Session, error) {
+	if s := middleware.GetSessionFromContext(r); s != nil {
+		return s, nil
+	}
+	return a.store.Get(r, SessionID)
+}
+
 // HashPassword hashes a password using bcrypt
 //
 func HashPassword(password string) (string, error) {
@@ -80,7 +93,7 @@ func (a *Auth) Login(w http.ResponseWriter, r *http.Request, username, password 
 	}
 
 	// Create session
-	session, err := a.store.Get(r, SessionID)
+	session, err := a.getSession(r)
 	if err != nil {
 		return nil, err
 	}
@@ -91,8 +104,14 @@ func (a *Auth) Login(w http.ResponseWriter, r *http.Request, username, password 
 	session.Values[IsGuestKey] = false
 	session.Options.MaxAge = 24 * 60 * 60 // 24 hours for admin
 
-	if err := session.Save(r, w); err != nil {
-		return nil, err
+	// Don't save here — the CSRF middleware will save the shared session
+	// after the handler completes, preserving both the rotated token and
+	// the auth fields.  Only save if the session came from the store
+	// (no CSRF middleware in the chain, e.g. login endpoint).
+	if middleware.GetSessionFromContext(r) == nil {
+		if err := session.Save(r, w); err != nil {
+			return nil, err
+		}
 	}
 
 	return &user, nil
@@ -113,7 +132,7 @@ func (a *Auth) GuestLogin(w http.ResponseWriter, r *http.Request, password strin
 	}
 
 	// Create guest session
-	session, err := a.store.Get(r, SessionID)
+	session, err := a.getSession(r)
 	if err != nil {
 		return err
 	}
@@ -122,7 +141,11 @@ func (a *Auth) GuestLogin(w http.ResponseWriter, r *http.Request, password strin
 	session.Values[RoleKey] = "guest"
 	session.Options.MaxAge = 4 * 60 * 60 // 4 hours for guest
 
-	return session.Save(r, w)
+	// Only save if not in the CSRF middleware chain.
+	if middleware.GetSessionFromContext(r) == nil {
+		return session.Save(r, w)
+	}
+	return nil
 }
 
 // Logout destroys the session
