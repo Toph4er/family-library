@@ -48,6 +48,12 @@ describe('TagInput', () => {
 
   afterEach(() => {
     cleanup();
+    // Clear any pending debounce timers from the component's useEffect
+    vi.clearAllTimers();
+    // Reset jsdom DOM to prevent container accumulation across tests
+    document.body.innerHTML = '';
+    // Clear mock call histories and restore implementations
+    vi.clearAllMocks();
     vi.restoreAllMocks();
   });
 
