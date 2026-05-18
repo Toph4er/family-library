@@ -316,7 +316,7 @@ func TestUpdateBookHandler_Success(t *testing.T) {
 	handler := handlers.UpdateBookHandler(env.db)
 	req := httptest.NewRequest("PUT", "/books/1", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
-	req = setURLParam(req, "id", string(id))
+	req = setURLParam(req, "id", fmt.Sprintf("%d", id))
 	rec := httptest.NewRecorder()
 
 	handler.ServeHTTP(rec, req)
@@ -361,7 +361,7 @@ func TestDeleteBookHandler_Success(t *testing.T) {
 
 	handler := handlers.DeleteBookHandler(env.db)
 	req := httptest.NewRequest("DELETE", "/books/1", nil)
-	req = setURLParam(req, "id", string(id))
+	req = setURLParam(req, "id", fmt.Sprintf("%d", id))
 	rec := httptest.NewRecorder()
 
 	handler.ServeHTTP(rec, req)
