@@ -119,7 +119,7 @@ func CSRFProtection(store *sessions.CookieStore, sessionName string) func(http.H
 				slog.Error("csrf: failed to save session", "error", err)
 			}
 		})
-	})
+	}
 }
 
 func writeJSONError(w http.ResponseWriter, status int, message string) {
