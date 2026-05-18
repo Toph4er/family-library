@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	"git.rcsmaine.com/chris/library/backend/internal/handlers"
 )
 
 // buildAuthRouter creates a chi router that wraps the given handler with
