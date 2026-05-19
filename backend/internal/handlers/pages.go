@@ -71,10 +71,16 @@ func RenderLandingPage(tmpl *template.Template, db *sql.DB, store *sessions.Cook
 	}
 }
 
-// RenderBooksPage renders the public books listing page.
+// RenderBooksPage renders the books listing page (auth required).
 func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := buildPageContext(r, store, sessionName)
+
+		// Defense-in-depth: reject unauthenticated requests before querying the DB.
+		if !ctx.IsAuthenticated {
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
 
 		rows, err := db.Query("SELECT id, title, authors, isbn, cover_image_url, created_at FROM books ORDER BY title ASC")
 		if err != nil {
@@ -111,10 +117,16 @@ func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 	}
 }
 
-// RenderBookDetailPage renders the public book detail page.
+// RenderBookDetailPage renders the book detail page (auth required).
 func RenderBookDetailPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := buildPageContext(r, store, sessionName)
+
+		// Defense-in-depth: reject unauthenticated requests before querying the DB.
+		if !ctx.IsAuthenticated {
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
 
 		id := chi.URLParam(r, "id")
 
@@ -152,6 +164,12 @@ func RenderBookDetailPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 func RenderWishlistPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := buildPageContext(r, store, sessionName)
+
+		// Defense-in-depth: reject unauthenticated requests before querying the DB.
+		if !ctx.IsAuthenticated {
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
 
 		rows, err := db.Query("SELECT id, isbn, title, author, priority, notes, fulfilled, requested_by, requested_at, fulfilled_at FROM wishlist ORDER BY priority DESC, requested_at DESC")
 		if err != nil {
@@ -204,6 +222,16 @@ func RenderAdminPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := buildPageContext(r, store, sessionName)
 
+		// Defense-in-depth: reject unauthenticated or non-admin requests before querying the DB.
+		if !ctx.IsAuthenticated {
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
+		if !ctx.IsAdmin {
+			http.Redirect(w, r, "/", http.StatusFound)
+			return
+		}
+
 		rows, err := db.Query("SELECT id, username, role, display_name, created_at FROM users ORDER BY id")
 		if err != nil {
 			http.Error(w, "database error", http.StatusInternalServerError)
@@ -245,6 +273,16 @@ func RenderAdminPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := buildPageContext(r, store, sessionName)
+
+		// Defense-in-depth: reject unauthenticated or non-admin requests before querying the DB.
+		if !ctx.IsAuthenticated {
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
+		if !ctx.IsAdmin {
+			http.Redirect(w, r, "/", http.StatusFound)
+			return
+		}
 
 		rows, err := db.Query("SELECT key, value FROM settings ORDER BY key ASC")
 		if err != nil {
