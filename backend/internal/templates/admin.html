@@ -1,0 +1,86 @@
+{{template "base" .}}
+
+{{define "title"}}Admin — Woodland Library{{end}}
+
+{{define "content"}}
+<div class="flex flex-col gap-6 animate-fade-in-up">
+
+  <!-- Page Header -->
+  <header class="text-center py-6">
+    <h1 class="text-4xl md:text-5xl font-heading text-primary mb-3 leading-tight">
+      User Management
+    </h1>
+    <p class="text-text-light/80 text-lg max-w-2xl mx-auto font-accent text-xl">
+      Add, edit, and manage the forest dwellers who tend the library.
+    </p>
+  </header>
+
+  <!-- Vine divider -->
+  <div class="vine-divider max-w-md mx-auto" aria-hidden="true"></div>
+
+  <!-- Add User Button -->
+  <div class="flex justify-end">
+    <button
+      type="button"
+      hx-get="/admin/users/new-form"
+      hx-target="#modal-target"
+      hx-swap="innerHTML"
+      class="px-5 py-2.5 rounded-xl font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+      style="background-color: var(--color-primary);"
+      onmouseenter="this.style.backgroundColor='var(--color-text-light)'"
+      onmouseleave="this.style.backgroundColor='var(--color-primary)'"
+      aria-label="Add a new user"
+    >
+      <span class="flex items-center gap-2">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Add User
+      </span>
+    </button>
+  </div>
+
+  <!-- Users Table -->
+  <section aria-label="Registered users">
+    <div class="overflow-x-auto rounded-xl shadow-sm" style="background-color: var(--color-surface); border: 1px solid rgba(139, 69, 19, 0.1);">
+      <table class="w-full" role="table">
+        <caption class="sr-only">List of registered library users</caption>
+        <thead>
+          <tr class="border-b" style="border-color: rgba(139, 69, 19, 0.1);">
+            <th scope="col" class="text-left py-3 px-4 font-heading text-primary text-sm">Username</th>
+            <th scope="col" class="text-left py-3 px-4 font-heading text-primary text-sm">Display Name</th>
+            <th scope="col" class="text-left py-3 px-4 font-heading text-primary text-sm">Role</th>
+            <th scope="col" class="text-left py-3 px-4 font-heading text-primary text-sm">Created</th>
+            <th scope="col" class="text-left py-3 px-4 font-heading text-primary text-sm">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="users-list">
+          {{range .Users}}
+            {{template "partials/user-row" .}}
+          {{else}}
+            <!-- Empty state -->
+            <tr>
+              <td colspan="5" class="py-16 text-center">
+                <div class="flex flex-col items-center justify-center">
+                  <svg class="w-20 h-20 text-text-light/20 mb-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                  </svg>
+                  <h2 class="text-xl font-heading text-primary mb-2">No users found</h2>
+                  <p class="text-text-light/70 max-w-sm">
+                    The forest is quiet. Add your first user to get started.
+                  </p>
+                </div>
+              </td>
+            </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Modal Container -->
+  <div id="modal-target"></div>
+
+</div>
+{{end}}

@@ -1,0 +1,444 @@
+{{define "base"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A woodland library collection tracker">
+  <title>{{block "title" .}}Woodland Library{{end}}</title>
+
+  <!-- Tailwind CSS v4 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --color-primary: #2d5016;
+      --color-secondary: #8b4513;
+      --color-accent: #d4a574;
+      --color-background: #f5f0e8;
+      --color-surface: #faf8f5;
+      --color-text: #1a2f0a;
+      --color-text-light: #4a5d23;
+      --color-success: #457528;
+      --color-warning: #a84a2e;
+      --color-error: #8b2500;
+
+      --font-heading: 'Playfair Display', serif;
+      --font-body: 'Inter', sans-serif;
+      --font-accent: 'Caveat', cursive;
+    }
+
+    body {
+      font-family: var(--font-body);
+      color: var(--color-text);
+      background: linear-gradient(175deg, #faf8f5 0%, #f5f0e8 30%, #efe9dd 70%, #f5f0e8 100%);
+      background-attachment: fixed;
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.03;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cpath d='M60 10 C60 10 40 30 40 50 C40 61 49 70 60 70 C71 70 80 61 80 50 C80 30 60 10 60 10Z' fill='%232d5016'/%3E%3Cpath d='M60 70 L60 110' stroke='%232d5016' stroke-width='2' fill='none'/%3E%3Cpath d='M60 85 C50 80 42 88 42 88' stroke='%232d5016' stroke-width='1.5' fill='none'/%3E%3Cpath d='M60 95 C70 90 78 98 78 98' stroke='%232d5016' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+      background-size: 120px 120px;
+    }
+
+    #page-wrapper > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: #efe9dd; border-radius: 5px; }
+    ::-webkit-scrollbar-thumb { background: #b8a88a; border-radius: 5px; border: 2px solid #efe9dd; }
+    ::-webkit-scrollbar-thumb:hover { background: #8b4513; }
+    * { scrollbar-width: thin; scrollbar-color: #b8a88a #efe9dd; }
+
+    a, button, input, select, textarea {
+      transition: all 0.2s ease-in-out;
+    }
+
+    .card-hover {
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .card-hover:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 25px rgba(45, 80, 22, 0.12), 0 4px 10px rgba(139, 69, 19, 0.08);
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes gentlePulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    @keyframes sparkle {
+      0%, 100% { opacity: 0; transform: scale(0); }
+      50% { opacity: 1; transform: scale(1); }
+    }
+
+    .animate-fade-in-up { animation: fadeInUp 0.6s ease-out forwards; }
+    .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+    .animate-gentle-pulse { animation: gentlePulse 3s ease-in-out infinite; }
+    .animate-sparkle { animation: sparkle 2s ease-in-out infinite; }
+
+    .stagger-children > * {
+      opacity: 0;
+      animation: fadeInUp 0.5s ease-out forwards;
+    }
+    .stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
+    .stagger-children > *:nth-child(2) { animation-delay: 0.1s; }
+    .stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
+    .stagger-children > *:nth-child(4) { animation-delay: 0.2s; }
+    .stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
+    .stagger-children > *:nth-child(6) { animation-delay: 0.3s; }
+    .stagger-children > *:nth-child(7) { animation-delay: 0.35s; }
+    .stagger-children > *:nth-child(8) { animation-delay: 0.4s; }
+    .stagger-children > *:nth-child(9) { animation-delay: 0.45s; }
+    .stagger-children > *:nth-child(10) { animation-delay: 0.5s; }
+
+    .vine-divider {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin: 1.5rem 0;
+      color: var(--color-secondary);
+      opacity: 0.4;
+    }
+    .vine-divider::before,
+    .vine-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--color-secondary), transparent);
+    }
+
+    .mushroom-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .mushroom-tag:hover {
+      transform: scale(1.05);
+    }
+
+    *:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+
+    ::selection {
+      background: var(--color-accent);
+      color: var(--color-text);
+    }
+
+    .skip-link {
+      position: absolute;
+      top: -100%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      padding: 0.75rem 1.5rem;
+      background: var(--color-primary);
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 1rem;
+      border-radius: 0 0 0.5rem 0.5rem;
+      text-decoration: none;
+      transition: top 0.15s ease;
+    }
+    .skip-link:focus {
+      top: 0;
+      outline: 3px solid var(--color-accent);
+      outline-offset: 2px;
+    }
+
+    .htmx-indicator {
+      opacity: 0;
+      transition: opacity 200ms ease-in;
+    }
+    .htmx-request .htmx-indicator {
+      opacity: 1;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      animation: fadeIn 0.2s ease-out;
+    }
+    .modal-content {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      background: var(--color-surface);
+      border-radius: 1rem;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(139, 69, 19, 0.1);
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      animation: fadeInUp 0.3s ease-out;
+    }
+    .modal-sm { max-width: 28rem; }
+    .modal-md { max-width: 32rem; }
+    .modal-lg { max-width: 42rem; }
+    .modal-xl { max-width: 56rem; }
+
+    .toast-container {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .toast {
+      padding: 0.75rem 1.25rem;
+      border-radius: 0.75rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      animation: fadeInUp 0.3s ease-out;
+      max-width: 24rem;
+    }
+    .toast-success {
+      background: var(--color-success);
+      color: #ffffff;
+    }
+    .toast-error {
+      background: var(--color-error);
+      color: #ffffff;
+    }
+    .toast-info {
+      background: var(--color-primary);
+      color: #ffffff;
+    }
+  </style>
+
+  {{block "extra-head" .}}{{end}}
+</head>
+<body class="min-h-screen flex flex-col">
+  <div id="page-wrapper" class="flex flex-col min-h-screen">
+
+    <!-- Skip to content link (WCAG 2.1 AA) -->
+    <a href="#main-content" class="skip-link">
+      Skip to main content
+    </a>
+
+    <!-- Header / Navigation -->
+    <header class="bg-surface/90 backdrop-blur-sm shadow-md border-b" style="border-color: rgba(139, 69, 19, 0.1);">
+      <div class="max-w-7xl mx-auto px-4 py-4">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+          <!-- Brand -->
+          <a href="/" class="flex items-center gap-3 no-underline" aria-label="Woodland Library home">
+            <svg class="w-7 h-7 text-primary" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z" />
+            </svg>
+            <span class="text-2xl font-heading text-primary">Woodland Library</span>
+          </a>
+
+          <!-- Desktop nav -->
+          <nav class="hidden md:flex items-center gap-6" aria-label="Main navigation">
+            <a href="/books" class="text-primary hover:text-text-light transition-colors font-medium text-sm no-underline">Books</a>
+            <a href="/wishlist" class="text-primary hover:text-text-light transition-colors font-medium text-sm no-underline">Wishlist</a>
+            {{if .IsAdmin}}
+            <a href="/admin" class="text-primary hover:text-text-light transition-colors font-medium text-sm no-underline">Admin</a>
+            <a href="/settings" class="text-primary hover:text-text-light transition-colors font-medium text-sm no-underline">Settings</a>
+            {{end}}
+            {{if .IsAuthenticated}}
+            <form action="/api/v1/auth/logout" method="post" class="inline">
+              <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+              <button type="submit" class="text-error hover:text-error/80 transition-colors font-medium text-sm bg-transparent border-none cursor-pointer p-0">
+                Logout
+              </button>
+            </form>
+            {{else}}
+            <a href="/login" class="text-primary hover:text-text-light transition-colors font-medium text-sm no-underline">Login</a>
+            {{end}}
+          </nav>
+
+          <!-- Mobile hamburger -->
+          <div class="md:hidden">
+            <button
+              type="button"
+              x-data="{ open: false }"
+              @click="open = !open"
+              class="text-text-light hover:text-primary transition-colors p-2 rounded-lg hover:bg-background"
+              :aria-expanded="open"
+              aria-controls="mobile-menu"
+              aria-label="Toggle navigation menu"
+            >
+              <svg class="w-6 h-6" x-show="!open" x-cloak viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <path d="M3 12h18M3 6h18M3 18h18" />
+              </svg>
+              <svg class="w-6 h-6" x-show="open" x-cloak viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Mobile menu -->
+        <div
+          id="mobile-menu"
+          x-data="{ open: false }"
+          x-show="open"
+          x-cloak
+          x-transition:enter="transition ease-out duration-200"
+          x-transition:enter-start="opacity-0 -translate-y-2"
+          x-transition:enter-end="opacity-100 translate-y-0"
+          x-transition:leave="transition ease-in duration-150"
+          x-transition:leave-start="opacity-100 translate-y-0"
+          x-transition:leave-end="opacity-0 -translate-y-2"
+          class="md:hidden mt-4 pb-2 border-t"
+          style="border-color: rgba(139, 69, 19, 0.1);"
+          role="menu"
+        >
+          <div class="flex flex-col gap-2 pt-3">
+            <a href="/books" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Books</a>
+            <a href="/wishlist" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Wishlist</a>
+            {{if .IsAdmin}}
+            <a href="/admin" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Admin</a>
+            <a href="/settings" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Settings</a>
+            {{end}}
+            {{if .IsAuthenticated}}
+            <form action="/api/v1/auth/logout" method="post" class="py-2 px-3">
+              <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+              <button type="submit" role="menuitem" class="text-error hover:text-error/80 transition-colors font-medium text-sm bg-transparent border-none cursor-pointer p-0">
+                Logout
+              </button>
+            </form>
+            {{else}}
+            <a href="/login" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Login</a>
+            {{end}}
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main content -->
+    <main id="main-content" class="flex-1 max-w-7xl mx-auto px-4 py-8 w-full">
+      {{block "content" .}}{{end}}
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t" style="border-color: rgba(139, 69, 19, 0.1);">
+      <div class="max-w-7xl mx-auto px-4 py-6">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+          <p class="text-text-light/60 text-sm">
+            &copy; {{.Year}} Woodland Library. All rights reserved.
+          </p>
+          <p class="text-text-light/40 text-xs font-accent text-lg">
+            Where stories grow like ancient trees — 🌿
+          </p>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Toast container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Alpine.js (must load before HTMX for x-data attributes) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
+
+  <!-- HTMX -->
+  <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js"></script>
+
+  <script>
+    // HTMX configuration
+    document.body.addEventListener('htmx:configRequest', (event) => {
+      event.detail.headers['X-CSRF-Token'] = '{{.CSRFToken}}';
+      event.detail.headers['Content-Type'] = 'application/json';
+    });
+
+    // Toast notification helper
+    function showToast(message, type, duration) {
+      type = type || 'info';
+      duration = duration || 3000;
+      var container = document.getElementById('toast-container');
+      var toast = document.createElement('div');
+      toast.className = 'toast toast-' + type;
+      toast.setAttribute('role', 'alert');
+      toast.setAttribute('aria-live', 'polite');
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(function() {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s ease';
+        setTimeout(function() { toast.remove(); }, 300);
+      }, duration);
+    }
+
+    // HTMX response handling for toasts
+    document.body.addEventListener('htmx:afterRequest', function(event) {
+      var path = event.detail.requestPath;
+      if (event.detail.failed) {
+        var resp = event.detail.xhr?.response;
+        var msg = 'An error occurred';
+        try {
+          var data = JSON.parse(resp);
+          msg = data.error || msg;
+        } catch(e) {}
+        showToast(msg, 'error');
+      } else if (event.detail.elt && event.detail.elt.getAttribute('hx-confirm-toast')) {
+        showToast('Success', 'success');
+      }
+    });
+
+    // Collapsible sections
+    document.querySelectorAll('[data-collapse-trigger]').forEach(function(trigger) {
+      trigger.addEventListener('click', function() {
+        var targetId = this.getAttribute('data-collapse-trigger');
+        var target = document.getElementById(targetId);
+        if (!target) return;
+        var expanded = this.getAttribute('aria-expanded') === 'true';
+        this.setAttribute('aria-expanded', String(!expanded));
+        target.setAttribute('hidden', String(expanded));
+      });
+    });
+
+    // Close mobile menu on link click
+    document.querySelectorAll('#mobile-menu a').forEach(function(link) {
+      link.addEventListener('click', function() {
+        var menu = document.getElementById('mobile-menu');
+        if (menu) {
+          var btn = menu.previousElementSibling?.querySelector('button[x-data]');
+          if (btn) btn.click();
+        }
+      });
+    });
+  </script>
+
+  {{block "scripts" .}}{{end}}
+</body>
+</html>
+{{end}}

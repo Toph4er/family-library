@@ -1,0 +1,17 @@
+{{define "partials/settings-row"}}
+<div class="flex items-center justify-between py-2 border-b" style="border-color: rgba(139, 69, 19, 0.1);">
+  <label for="setting-{{.Key}}" class="font-medium text-text w-40">{{.Key}}</label>
+  <input type="{{.InputType}}"
+    id="setting-{{.Key}}"
+    name="{{.Key}}"
+    value="{{.Value}}"
+    class="flex-1 px-3 py-2 rounded-lg border bg-surface text-right"
+    style="border-color: var(--color-secondary);"
+    hx-put="/api/v1/settings/{{.Key}}"
+    hx-target="#settings-result"
+    hx-indicator="#settings-result .htmx-indicator"
+    aria-label="Update {{.Key}}">
+  <span class="htmx-indicator ml-2">⟳</span>
+</div>
+<div id="settings-result" class="htmx-indicator text-sm text-text-light mt-1"></div>
+{{end}}

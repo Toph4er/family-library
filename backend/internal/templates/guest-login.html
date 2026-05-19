@@ -1,0 +1,73 @@
+{{template "base" .}}
+
+{{define "title"}}Guest Login — Woodland Library{{end}}
+
+{{define "content"}}
+<div class="min-h-screen flex items-center justify-center py-12">
+  <div class="w-full max-w-md animate-fade-in-up">
+    <!-- Branding -->
+    <div class="text-center mb-8">
+      <svg class="w-16 h-16 text-accent mx-auto mb-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M12 2C12 2 6 8 6 14C6 17.3 8.7 20 12 20C15.3 20 18 17.3 18 14C18 8 12 2 12 2Z" />
+        <path d="M12 20V22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <h1 class="text-3xl font-heading text-primary mb-2">Guest Access</h1>
+      <p class="text-text-light">Browse our collection</p>
+    </div>
+
+    <!-- Login card -->
+    <div class="bg-surface rounded-2xl shadow-lg p-8 border" style="border-color: rgba(139, 69, 19, 0.1);">
+      <form hx-post="/api/v1/auth/guest-login" hx-swap="none" hx-target="#guest-error" hx-indicator="#guest-form">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        
+        <div>
+          <label for="guest-password" class="block text-sm font-medium text-text mb-1">Guest Password</label>
+          <input type="password" id="guest-password" name="password" required
+            class="w-full px-3 py-2.5 rounded-lg border bg-surface focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            style="border-color: var(--color-secondary);"
+            aria-required="true"
+            autocomplete="current-password">
+        </div>
+        
+        <div id="guest-error" class="mt-4"></div>
+        
+        <button type="submit" id="guest-form"
+          class="w-full mt-6 px-4 py-2.5 rounded-lg font-medium text-white transition-colors"
+          style="background-color: var(--color-accent);"
+          onmouseenter="this.style.backgroundColor='var(--color-secondary)'"
+          onmouseleave="this.style.backgroundColor='var(--color-accent)'">
+          Enter as Guest
+        </button>
+      </form>
+    </div>
+
+    <!-- Footer links -->
+    <div class="text-center mt-6 space-y-2">
+      <p class="text-text-light/60 text-sm">
+        Admin login?
+      </p>
+      <a href="/login" class="text-primary hover:text-text-light transition-colors font-medium text-sm no-underline">
+        Admin Sign In →
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelector('form[hx-post="/api/v1/auth/guest-login"]').addEventListener('htmx:afterRequest', function(event) {
+    if (event.detail.failed) {
+      var resp = event.detail.xhr?.response;
+      var msg = 'Invalid guest password';
+      try {
+        var data = JSON.parse(resp);
+        msg = data.error || msg;
+      } catch(e) {}
+      document.getElementById('guest-error').innerHTML = 
+        '<div class="p-3 rounded-lg bg-error/10 border border-error/20 text-error text-sm" role="alert">' + msg + '</div>';
+    } else {
+      // Success - redirect to books page
+      window.location.href = '/books';
+    }
+  });
+</script>
+{{end}}

@@ -1,0 +1,33 @@
+{{template "base" .}}
+
+{{define "title"}}Logged Out — Woodland Library{{end}}
+
+{{define "content"}}
+<div class="min-h-screen flex items-center justify-center py-12">
+  <div class="w-full max-w-md animate-fade-in-up text-center">
+    <!-- Confirmation card -->
+    <div class="bg-surface rounded-2xl shadow-lg p-8 border" style="border-color: rgba(212, 165, 116, 0.2);">
+      <!-- Leaf decoration -->
+      <div class="flex items-center justify-center mb-4" aria-hidden="true">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C12 2 6 8 6 14C6 17.3 8.7 20 12 20C15.3 20 18 17.3 18 14C18 8 12 2 12 2Z" fill="var(--color-success)"/>
+          <path d="M12 20V22" stroke="var(--color-success)" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <h1 class="text-2xl font-heading text-primary mb-2">You've Been Logged Out</h1>
+      <p class="text-text-light mb-6">Thank you for visiting Woodland Library. See you next time!</p>
+
+      <!-- Action links -->
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <a href="/login" class="px-6 py-2.5 rounded-lg font-medium text-white text-center cursor-pointer" style="background-color: var(--color-primary);">
+          Admin Login
+        </a>
+        <a href="/guest-login" class="px-6 py-2.5 rounded-lg font-medium text-center cursor-pointer border" style="color: var(--color-primary); border-color: var(--color-primary);">
+          Guest Login
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}

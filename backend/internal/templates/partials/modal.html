@@ -1,0 +1,17 @@
+{{define "partials/modal"}}
+<div id="modal-backdrop" class="modal-backdrop" hx-on::click="if(event.target===this)document.getElementById('modal-backdrop').remove()">
+  <div class="modal-content modal-lg p-6" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="flex items-center justify-between mb-4 pb-3 border-b" style="border-color: rgba(139, 69, 19, 0.1);">
+      <h2 id="modal-title" class="text-xl font-heading font-semibold text-primary">{{.Title}}</h2>
+      <button type="button"
+        hx-on::click="document.getElementById('modal-backdrop').remove()"
+        class="text-text-light hover:text-text transition-colors text-2xl no-underline"
+        aria-label="Close modal"
+      >×</button>
+    </div>
+    <div class="flex-1 overflow-y-auto max-h-[60vh]">
+      {{.Content}}
+    </div>
+  </div>
+</div>
+{{end}}

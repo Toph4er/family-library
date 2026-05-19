@@ -1,0 +1,13 @@
+{{define "partials/toast"}}
+<div class="toast toast-{{.Type}}" role="alert" aria-live="polite">
+  <div class="flex items-center gap-2">
+    <span>{{.Icon}}</span>
+    <span>{{.Message}}</span>
+    <button type="button"
+      hx-on::click="this.parentElement.remove()"
+      class="ml-auto text-white/70 hover:text-white no-underline"
+      aria-label="Dismiss"
+    >×</button>
+  </div>
+</div>
+{{end}}

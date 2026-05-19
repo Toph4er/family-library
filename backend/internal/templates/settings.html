@@ -1,0 +1,61 @@
+{{template "base" .}}
+
+{{define "title"}}Settings — Woodland Library{{end}}
+
+{{define "content"}}
+<div class="flex flex-col gap-6 animate-fade-in-up">
+
+  <!-- Page Header -->
+  <header class="text-center py-6">
+    <h1 class="text-4xl md:text-5xl font-heading text-primary mb-3 leading-tight">
+      Settings
+    </h1>
+    <p class="text-text-light/80 text-lg max-w-2xl mx-auto font-accent text-xl">
+      Configure your woodland library's preferences and behavior.
+    </p>
+  </header>
+
+  <!-- Vine divider -->
+  <div class="vine-divider max-w-md mx-auto" aria-hidden="true"></div>
+
+  <!-- Settings List -->
+  <section aria-label="Site settings">
+    {{if .Settings}}
+    <div class="overflow-x-auto rounded-xl shadow-sm" style="background-color: var(--color-surface); border: 1px solid rgba(139, 69, 19, 0.1);">
+      {{range $key, $value := .Settings}}
+        {{if or (eq $key "theme_colors") (eq $key "default_guest_visibility")}}
+          <!-- JSON settings displayed as code block -->
+          <div class="px-4 py-3">
+            <div class="flex items-center gap-4">
+              <span class="font-medium text-text w-40">{{.Key}}</span>
+              <pre class="flex-1 px-3 py-2 rounded-lg border bg-surface text-sm overflow-x-auto" style="border-color: var(--color-secondary);"><code>{{.Value}}</code></pre>
+            </div>
+          </div>
+        {{else}}
+          {{template "partials/settings-row" (dict "Key" $key "Value" $value "InputType" "text")}}
+        {{end}}
+      {{end}}
+    </div>
+    {{else}}
+    <!-- Empty state -->
+    <div class="flex flex-col items-center justify-center py-16 text-center rounded-xl" style="background-color: var(--color-surface); border: 1px solid rgba(139, 69, 19, 0.1);">
+      <svg class="w-20 h-20 text-text-light/20 mb-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+      </svg>
+      <h2 class="text-xl font-heading text-primary mb-2">No settings configured</h2>
+      <p class="text-text-light/70 max-w-sm">
+        No settings are configured yet. Contact your system administrator.
+      </p>
+    </div>
+    {{end}}
+  </section>
+
+  <!-- Note about guest password -->
+  <div class="p-4 rounded-xl" style="background-color: rgba(212, 165, 116, 0.15); border: 1px solid rgba(212, 165, 116, 0.3);">
+    <p class="text-sm text-text-light">
+      <strong>Note:</strong> The guest password is managed separately via the admin panel. It is not stored as a plain setting for security reasons.
+    </p>
+  </div>
+
+</div>
+{{end}}

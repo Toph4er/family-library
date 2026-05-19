@@ -1,0 +1,341 @@
+{{template "base" .}}
+
+{{define "title"}}{{.Book.Title}} — Woodland Library{{end}}
+
+{{define "content"}}
+<div class="flex flex-col gap-6 animate-fade-in-up">
+
+  <!-- Breadcrumb -->
+  <nav aria-label="Breadcrumb">
+    <ol class="flex items-center gap-2 text-sm">
+      <li>
+        <a href="/books" class="text-primary hover:text-text-light transition-colors no-underline">
+          Books
+        </a>
+      </li>
+      <li class="text-text-light/50" aria-hidden="true">→</li>
+      <li class="text-text-light font-medium" aria-current="page">{{.Book.Title}}</li>
+    </ol>
+  </nav>
+
+  <!-- Two-column layout: cover + details -->
+  <div class="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-8">
+
+    <!-- Left: Cover image -->
+    <div class="flex justify-center md:justify-start">
+      <div class="w-full max-w-[280px] rounded-xl overflow-hidden shadow-lg border" style="border-color: rgba(139, 69, 19, 0.1);">
+        {{if .Book.CoverImageURL}}
+        <img src="{{.Book.CoverImageURL}}" alt="Cover of {{.Book.Title}}" class="w-full aspect-[2/3] object-cover">
+        {{else}}
+        <div class="w-full aspect-[2/3] bg-background flex flex-col items-center justify-center" aria-label="No cover image available">
+          <svg class="w-20 h-20 text-text-light/20 mb-3" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z"/>
+          </svg>
+          <span class="text-text-light/40 text-sm font-accent text-lg">No cover</span>
+        </div>
+        {{end}}
+      </div>
+    </div>
+
+    <!-- Right: Title, subtitle, authors, metadata -->
+    <div class="flex flex-col gap-5">
+
+      <!-- Title & subtitle -->
+      <div>
+        <h1 class="text-3xl md:text-4xl font-heading text-primary leading-tight">
+          {{.Book.Title}}
+        </h1>
+        {{if .Book.Subtitle}}
+        <p class="text-xl font-accent text-text-light/80 mt-1">{{.Book.Subtitle}}</p>
+        {{end}}
+      </div>
+
+      <!-- Authors -->
+      {{if .Book.Authors}}
+      <div>
+        <span class="text-sm font-medium text-text-light/60">By</span>
+        <p class="text-lg text-text mt-1">
+          {{range (split .Book.Authors)}}{{.}}{{if ne . (index (split .Book.Authors) (sub (len (split .Book.Authors)) 1))}}, {{end}}{{end}}
+        </p>
+      </div>
+      {{end}}
+
+      <!-- Illustrators -->
+      {{if .Book.Illustrators}}
+      <div>
+        <span class="text-sm font-medium text-text-light/60">Illustrated by</span>
+        <p class="text-lg text-text mt-1">
+          {{range (split .Book.Illustrators)}}{{.}}{{if ne . (index (split .Book.Illustrators) (sub (len (split .Book.Illustrators)) 1))}}, {{end}}{{end}}
+        </p>
+      </div>
+      {{end}}
+
+      <!-- Star rating -->
+      {{if .Book.ChildRating}}
+      {{if gt .Book.ChildRating 0}}
+      <div aria-label="Child rating: {{.Book.ChildRating}} out of 5 stars">
+        <span class="text-sm font-medium text-text-light/60">Child Rating</span>
+        <div class="flex items-center gap-1 mt-1">
+          {{range seq .Book.ChildRating}}<span class="text-accent text-2xl" aria-hidden="true">★</span>{{end}}
+          {{range seq (sub 5 .Book.ChildRating)}}<span class="text-text-light/30 text-2xl" aria-hidden="true">★</span>{{end}}
+        </div>
+      </div>
+      {{end}}
+      {{end}}
+
+      <!-- Key metadata -->
+      <div class="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+        {{if .Book.ISBN}}
+        <div>
+          <span class="text-text-light/60">ISBN:</span>
+          <span class="text-text ml-1">{{formatISBN .Book.ISBN}}</span>
+        </div>
+        {{end}}
+        {{if .Book.Publisher}}
+        <div>
+          <span class="text-text-light/60">Publisher:</span>
+          <span class="text-text ml-1">{{.Book.Publisher}}</span>
+        </div>
+        {{end}}
+        {{if .Book.PublicationYear}}
+        <div>
+          <span class="text-text-light/60">Year:</span>
+          <span class="text-text ml-1">{{.Book.PublicationYear}}</span>
+        </div>
+        {{end}}
+        {{if .Book.PageCount}}
+        <div>
+          <span class="text-text-light/60">Pages:</span>
+          <span class="text-text ml-1">{{.Book.PageCount}}</span>
+        </div>
+        {{end}}
+        {{if .Book.BookType}}
+        <div>
+          <span class="text-text-light/60">Type:</span>
+          <span class="text-text ml-1 capitalize">{{.Book.BookType}}</span>
+        </div>
+        {{end}}
+        {{if .Book.Condition}}
+        <div>
+          <span class="text-text-light/60">Condition:</span>
+          <span class="text-text ml-1 capitalize">{{.Book.Condition}}</span>
+        </div>
+        {{end}}
+      </div>
+
+      <!-- Admin actions -->
+      {{if .IsAdmin}}
+      <div class="flex gap-3 pt-2">
+        <button
+          type="button"
+          hx-get="/books/{{.Book.ID}}/edit-form"
+          hx-target="#modal-target"
+          hx-swap="innerHTML"
+          class="px-5 py-2.5 rounded-xl font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+          style="background-color: var(--color-primary);"
+          onmouseenter="this.style.backgroundColor='var(--color-text-light)'"
+          onmouseleave="this.style.backgroundColor='var(--color-primary)'"
+          aria-label="Edit {{.Book.Title}}"
+        >
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            Edit
+          </span>
+        </button>
+        <button
+          type="button"
+          hx-delete="/api/v1/books/{{.Book.ID}}"
+          hx-confirm="Are you sure you want to delete this book?"
+          hx-swap="none"
+          class="px-5 py-2.5 rounded-xl font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+          style="background-color: var(--color-error);"
+          onmouseenter="this.style.backgroundColor='var(--color-warning)'"
+          onmouseleave="this.style.backgroundColor='var(--color-error)'"
+          aria-label="Delete {{.Book.Title}}"
+          hx-on::after-request="if(event.detail.successful) window.location.href='/books'"
+        >
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+            </svg>
+            Delete
+          </span>
+        </button>
+      </div>
+      {{end}}
+
+    </div>
+  </div>
+
+  <!-- Vine divider -->
+  <div class="vine-divider" aria-hidden="true"></div>
+
+  <!-- Tags section -->
+  <div class="flex flex-col gap-4">
+    {{if .Book.Genres}}
+    <div>
+      <h2 class="text-sm font-medium text-text-light/60 mb-2">Genres</h2>
+      <div class="flex flex-wrap gap-2">
+        {{range (split .Book.Genres)}}
+        <span class="mushroom-tag bg-primary/10 text-primary">{{.}}</span>
+        {{end}}
+      </div>
+    </div>
+    {{end}}
+
+    {{if .Book.Themes}}
+    <div>
+      <h2 class="text-sm font-medium text-text-light/60 mb-2">Themes</h2>
+      <div class="flex flex-wrap gap-2">
+        {{range (split .Book.Themes)}}
+        <span class="mushroom-tag bg-secondary/10 text-secondary">{{.}}</span>
+        {{end}}
+      </div>
+    </div>
+    {{end}}
+
+    {{if .Book.Awards}}
+    <div>
+      <h2 class="text-sm font-medium text-text-light/60 mb-2">Awards</h2>
+      <div class="flex flex-wrap gap-2">
+        {{range (split .Book.Awards)}}
+        <span class="mushroom-tag bg-accent/20 text-accent">{{.}}</span>
+        {{end}}
+      </div>
+    </div>
+    {{end}}
+
+    {{if .Book.ReadingLevels}}
+    <div>
+      <h2 class="text-sm font-medium text-text-light/60 mb-2">Reading Levels</h2>
+      <div class="flex flex-wrap gap-2">
+        {{range (split .Book.ReadingLevels)}}
+        <span class="mushroom-tag bg-text-light/10 text-text-light">{{.}}</span>
+        {{end}}
+      </div>
+    </div>
+    {{end}}
+  </div>
+
+  <!-- Vine divider -->
+  <div class="vine-divider" aria-hidden="true"></div>
+
+  <!-- Advanced info (collapsible with Alpine.js) -->
+  <div x-data="{ showAdvanced: false }">
+    <button
+      type="button"
+      @click="showAdvanced = !showAdvanced"
+      class="flex items-center gap-2 text-primary hover:text-text-light transition-colors font-medium text-sm no-underline"
+      :aria-expanded="showAdvanced"
+      aria-controls="advanced-info"
+    >
+      <svg class="w-4 h-4 transition-transform duration-200" :class="{'rotate-90': showAdvanced}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+      Additional Details
+    </button>
+
+    <div
+      id="advanced-info"
+      x-show="showAdvanced"
+      x-cloak
+      x-transition:enter="transition ease-out duration-200"
+      x-transition:enter-start="opacity-0 -translate-y-2"
+      x-transition:enter-end="opacity-100 translate-y-0"
+      x-transition:leave="transition ease-in duration-150"
+      x-transition:leave-start="opacity-100 translate-y-0"
+      x-transition:leave-end="opacity-0 -translate-y-2"
+      class="mt-4 p-6 rounded-xl bg-surface/60 border"
+      style="border-color: rgba(139, 69, 19, 0.1);"
+    >
+      <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
+
+        <!-- Gift info -->
+        {{if .Book.GiftFrom}}
+        <div>
+          <dt class="text-text-light/60 font-medium">Gift From</dt>
+          <dd class="text-text mt-1">{{.Book.GiftFrom}}</dd>
+        </div>
+        {{end}}
+        {{if .Book.GiftRelationship}}
+        <div>
+          <dt class="text-text-light/60 font-medium">Relationship</dt>
+          <dd class="text-text mt-1">{{.Book.GiftRelationship}}</dd>
+        </div>
+        {{end}}
+        {{if .Book.DateReceived}}
+        <div>
+          <dt class="text-text-light/60 font-medium">Date Received</dt>
+          <dd class="text-text mt-1">{{.Book.DateReceived}}</dd>
+        </div>
+        {{end}}
+
+        <!-- Location -->
+        {{if .Book.Location}}
+        <div>
+          <dt class="text-text-light/60 font-medium">Location</dt>
+          <dd class="text-text mt-1">{{.Book.Location}}</dd>
+        </div>
+        {{end}}
+
+        <!-- Read count -->
+        <div>
+          <dt class="text-text-light/60 font-medium">Read Count</dt>
+          <dd class="text-text mt-1">{{.Book.ReadCount}}</dd>
+        </div>
+
+        <!-- Last read date -->
+        {{if .Book.LastReadDate}}
+        <div>
+          <dt class="text-text-light/60 font-medium">Last Read</dt>
+          <dd class="text-text mt-1">{{.Book.LastReadDate}}</dd>
+        </div>
+        {{end}}
+
+        <!-- Notes -->
+        {{if .Book.Notes}}
+        <div class="sm:col-span-2">
+          <dt class="text-text-light/60 font-medium">Notes</dt>
+          <dd class="text-text mt-1 whitespace-pre-wrap">{{.Book.Notes}}</dd>
+        </div>
+        {{end}}
+
+        <!-- Timestamps -->
+        <div>
+          <dt class="text-text-light/60 font-medium">Added</dt>
+          <dd class="text-text mt-1">{{formatTime .Book.CreatedAt}}</dd>
+        </div>
+        <div>
+          <dt class="text-text-light/60 font-medium">Last Updated</dt>
+          <dd class="text-text mt-1">{{formatTime .Book.UpdatedAt}}</dd>
+        </div>
+
+      </dl>
+    </div>
+  </div>
+
+  <!-- Open Library attribution -->
+  {{if .Book.CoverSource}}
+  {{if eq .Book.CoverSource "open_library"}}
+  <div class="text-center pt-2">
+    <a href="https://openlibrary.org" target="_blank" rel="noopener noreferrer" class="text-text-light/50 hover:text-text-light/80 transition-colors text-xs no-underline inline-flex items-center gap-1">
+      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+        <polyline points="15 3 21 3 21 9"/>
+        <line x1="10" y1="14" x2="21" y2="3"/>
+      </svg>
+      Cover image sourced from Open Library
+    </a>
+  </div>
+  {{end}}
+  {{end}}
+
+  <!-- Modal container for edit form -->
+  <div id="modal-target"></div>
+
+</div>
+{{end}}

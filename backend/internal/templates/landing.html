@@ -1,0 +1,142 @@
+{{template "base" .}}
+
+{{define "title"}}{{.SiteName}} — Woodland Library{{end}}
+
+{{define "content"}}
+<div class="flex flex-col items-center justify-center min-h-[70vh] py-12 animate-fade-in-up">
+
+  <!-- Decorative leaf SVGs -->
+  <div class="absolute top-24 left-8 opacity-10 pointer-events-none" aria-hidden="true">
+    <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
+      <path d="M60 10 C60 10 30 40 30 70 C30 90 44 105 60 105 C76 105 90 90 90 70 C90 40 60 10 60 10Z" fill="currentColor" class="text-primary"/>
+      <path d="M60 30 L60 95" stroke="currentColor" stroke-width="1.5" class="text-primary" opacity="0.5"/>
+      <path d="M60 50 C50 45 42 55 42 55" stroke="currentColor" stroke-width="1" class="text-primary" opacity="0.4"/>
+      <path d="M60 65 C70 60 78 70 78 70" stroke="currentColor" stroke-width="1" class="text-primary" opacity="0.4"/>
+      <path d="M60 80 C52 76 44 84 44 84" stroke="currentColor" stroke-width="1" class="text-primary" opacity="0.3"/>
+    </svg>
+  </div>
+  <div class="absolute bottom-32 right-8 opacity-10 pointer-events-none" aria-hidden="true">
+    <svg width="100" height="100" viewBox="0 0 100 100" fill="none">
+      <path d="M50 5 C50 5 25 30 25 55 C25 72 36 85 50 85 C64 85 75 72 75 55 C75 30 50 5 50 5Z" fill="currentColor" class="text-secondary"/>
+      <path d="M50 25 L50 75" stroke="currentColor" stroke-width="1.5" class="text-secondary" opacity="0.5"/>
+      <path d="M50 45 C40 40 34 48 34 48" stroke="currentColor" stroke-width="1" class="text-secondary" opacity="0.4"/>
+      <path d="M50 60 C60 55 66 63 66 63" stroke="currentColor" stroke-width="1" class="text-secondary" opacity="0.4"/>
+    </svg>
+  </div>
+
+  <!-- Hero Section -->
+  <section class="text-center max-w-3xl mx-auto px-4" aria-labelledby="hero-heading">
+    <!-- Leaf icon -->
+    <div class="mb-8 flex justify-center" aria-hidden="true">
+      <svg class="w-20 h-20 text-primary animate-gentle-pulse" viewBox="0 0 120 120" fill="none">
+        <path d="M60 10 C60 10 30 40 30 70 C30 90 44 105 60 105 C76 105 90 90 90 70 C90 40 60 10 60 10Z" fill="currentColor" class="text-primary" opacity="0.2"/>
+        <path d="M60 10 C60 10 30 40 30 70 C30 90 44 105 60 105 C76 105 90 90 90 70 C90 40 60 10 60 10Z" fill="currentColor" class="text-primary"/>
+        <path d="M60 30 L60 95" stroke="currentColor" stroke-width="2" class="text-primary" opacity="0.6"/>
+        <path d="M60 50 C50 45 42 55 42 55" stroke="currentColor" stroke-width="1.5" class="text-primary" opacity="0.4"/>
+        <path d="M60 65 C70 60 78 70 78 70" stroke="currentColor" stroke-width="1.5" class="text-primary" opacity="0.4"/>
+        <path d="M60 80 C52 76 44 84 44 84" stroke="currentColor" stroke-width="1.5" class="text-primary" opacity="0.3"/>
+      </svg>
+    </div>
+
+    <!-- Site name and tagline -->
+    <h1 id="hero-heading" class="text-5xl md:text-6xl font-heading text-primary mb-4 leading-tight">
+      {{.SiteName}}
+    </h1>
+    <p class="text-xl md:text-2xl font-accent text-accent mb-2">
+      {{.SiteTagline}}
+    </p>
+
+    <!-- Vine divider -->
+    <div class="vine-divider max-w-xs mx-auto" aria-hidden="true">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="text-secondary opacity-60">
+        <path d="M12 2C12 2 6 8 6 14C6 17.3 8.7 20 12 20C15.3 20 18 17.3 18 14C18 8 12 2 12 2Z"/>
+        <path d="M12 20V22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+
+    <!-- Description -->
+    <p class="text-text-light/80 text-lg leading-relaxed max-w-xl mx-auto mb-10">
+      A cozy corner of the forest where stories take root and imagination runs wild.
+      Explore our curated collection of woodland tales, fairy stories, and enchanted
+      reads — all organized just for you.
+    </p>
+
+    <!-- Login buttons -->
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-4" role="group" aria-label="Access options">
+      <!-- Admin Login -->
+      <a
+        href="/login"
+        class="group w-full sm:w-auto px-8 py-3.5 rounded-xl font-medium text-white text-base shadow-md transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
+        style="background-color: var(--color-primary);"
+        onmouseenter="this.style.backgroundColor='var(--color-text-light)'"
+        onmouseleave="this.style.backgroundColor='var(--color-primary)'"
+        aria-label="Admin login — sign in to manage your library"
+      >
+        <span class="flex items-center justify-center gap-2">
+          <svg class="w-5 h-5 transition-transform duration-200 group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/>
+            <polyline points="10 17 15 12 10 7"/>
+            <line x1="15" y1="12" x2="3" y2="12"/>
+          </svg>
+          Admin Login
+        </span>
+      </a>
+
+      <!-- Guest Login -->
+      <a
+        href="/guest-login"
+        class="group w-full sm:w-auto px-8 py-3.5 rounded-xl font-medium text-text-light text-base border-2 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:text-primary hover:border-primary/30"
+        style="border-color: var(--color-secondary);"
+        onmouseenter="this.style.borderColor='var(--color-primary)'"
+        onmouseleave="this.style.borderColor='var(--color-secondary)'"
+        aria-label="Guest login — browse the collection"
+      >
+        <span class="flex items-center justify-center gap-2">
+          <svg class="w-5 h-5 transition-transform duration-200 group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          Guest Login
+        </span>
+      </a>
+    </div>
+
+    <!-- Quick features -->
+    <div class="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-2xl mx-auto stagger-children">
+      <!-- Feature 1 -->
+      <div class="text-center p-6 rounded-xl bg-surface/60 border" style="border-color: rgba(139, 69, 19, 0.08);">
+        <div class="w-12 h-12 mx-auto mb-3 rounded-lg flex items-center justify-center" style="background-color: rgba(45, 80, 22, 0.08);">
+          <svg class="w-6 h-6 text-primary" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z"/>
+          </svg>
+        </div>
+        <h2 class="font-heading text-lg text-primary mb-1">Curated Collection</h2>
+        <p class="text-text-light/70 text-sm">Hand-picked woodland tales and fairy stories</p>
+      </div>
+
+      <!-- Feature 2 -->
+      <div class="text-center p-6 rounded-xl bg-surface/60 border" style="border-color: rgba(139, 69, 19, 0.08);">
+        <div class="w-12 h-12 mx-auto mb-3 rounded-lg flex items-center justify-center" style="background-color: rgba(139, 69, 19, 0.08);">
+          <svg class="w-6 h-6 text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+          </svg>
+        </div>
+        <h2 class="font-heading text-lg text-primary mb-1">Personal Wishlist</h2>
+        <p class="text-text-light/70 text-sm">Save and track your favorite reads</p>
+      </div>
+
+      <!-- Feature 3 -->
+      <div class="text-center p-6 rounded-xl bg-surface/60 border" style="border-color: rgba(139, 69, 19, 0.08);">
+        <div class="w-12 h-12 mx-auto mb-3 rounded-lg flex items-center justify-center" style="background-color: rgba(212, 165, 116, 0.15);">
+          <svg class="w-6 h-6 text-accent" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2C12 2 6 8 6 14C6 17.3 8.7 20 12 20C15.3 20 18 17.3 18 14C18 8 12 2 12 2Z"/>
+            <path d="M12 20V22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h2 class="font-heading text-lg text-primary mb-1">Fairy Tale Magic</h2>
+        <p class="text-text-light/70 text-sm">Where every book is a portal to another world</p>
+      </div>
+    </div>
+  </section>
+</div>
+{{end}}
