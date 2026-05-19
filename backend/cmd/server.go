@@ -207,19 +207,26 @@ func loadTemplates(dir string) (*template.Template, error) {
 		},
 	}
 
-	// Parse all .html files in the directory
-	pattern := filepath.Join(dir, "*.html")
-	files, err := filepath.Glob(pattern)
-	if err != nil {
-		return nil, fmt.Errorf("glob templates: %w", err)
+	// Parse all .html files in the directory and subdirectories
+	patterns := []string{
+		filepath.Join(dir, "*.html"),
+		filepath.Join(dir, "partials", "*.html"),
+	}
+	var allFiles []string
+	for _, pattern := range patterns {
+		files, err := filepath.Glob(pattern)
+		if err != nil {
+			return nil, fmt.Errorf("glob templates: %w", err)
+		}
+		allFiles = append(allFiles, files...)
 	}
 
-	if len(files) == 0 {
+	if len(allFiles) == 0 {
 		return nil, fmt.Errorf("no template files found in %s", dir)
 	}
 
 	tmpl := template.New("").Funcs(funcMap)
-	tmpl, err = tmpl.ParseFiles(files...)
+	tmpl, err = tmpl.ParseFiles(allFiles...)
 	if err != nil {
 		return nil, fmt.Errorf("parse templates: %w", err)
 	}
