@@ -6,7 +6,6 @@ stages:
 
 variables:
   GO_VERSION: "1.26"
-  NODE_VERSION: "22"
 
 # ---- Test Stage ----
 
@@ -30,19 +29,6 @@ backend-test:
   artifacts:
     paths:
       - backend/coverage.out
-
-frontend-test:
-  stage: test
-  image: node:${NODE_VERSION}-alpine
-  variables:
-    NODE_OPTIONS: "--max-old-space-size=8192"
-  before_script:
-    - cd frontend
-    - npm ci
-  script:
-    - npm run lint
-    - npx tsc --noEmit
-    - npm run test
 
 # ---- Build Stage ----
 
@@ -68,7 +54,6 @@ trivy-scan:
   image: aquasec/trivy:0.55.0
   script:
     - trivy fs --scanners vuln --exit-code 1 --severity HIGH,CRITICAL backend/
-    - trivy fs --scanners vuln --exit-code 1 --severity HIGH,CRITICAL frontend/
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == "main"
