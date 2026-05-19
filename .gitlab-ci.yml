@@ -63,7 +63,7 @@ gosec:
   image: golang:${GO_VERSION}-alpine
   before_script:
     - apk add --no-cache git
-    - go install github.com/securego/gosec/v2/cmd/gosec@v2.21.4
+    - go install github.com/securego/gosec/v2/cmd/gosec@v2.26.1
   script:
     - cd backend
     - go mod download
