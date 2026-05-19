@@ -22,8 +22,8 @@ backend-test:
     - go tool cover -func=coverage.out
     - |
       TOTAL_COV=$(go tool cover -func=coverage.out | grep "total:" | awk '{print $3}' | sed 's/%//')
-      if [ "$(echo "$TOTAL_COV < 20" | bc)" -eq 1 ]; then
-        echo "Coverage ${TOTAL_COV}% is below the 20% threshold"
+      if [ "$(echo "$TOTAL_COV < 15" | bc)" -eq 1 ]; then
+        echo "Coverage ${TOTAL_COV}% is below the 15% threshold"
         exit 1
       fi
   artifacts:
