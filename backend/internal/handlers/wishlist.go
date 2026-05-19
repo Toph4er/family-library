@@ -244,6 +244,7 @@ func UpdateWishlistItemHandler(db *sql.DB) http.HandlerFunc {
 		}
 
 		args = append(args, id)
+		// #nosec G202 -- Column names are validated against allowlist before use
 		query := "UPDATE wishlist SET " + strings.Join(sets, ", ") + " WHERE id = ?"
 
 		result, err := db.Exec(query, args...)

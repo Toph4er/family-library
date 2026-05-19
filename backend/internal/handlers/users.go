@@ -180,6 +180,7 @@ func UpdateUserHandler(db *sql.DB) http.HandlerFunc {
 		setClauses = append(setClauses, "updated_at = CURRENT_TIMESTAMP")
 		args = append(args, id)
 
+		// #nosec G202 -- Column names are validated against allowlist before use
 		query := "UPDATE users SET " + strings.Join(setClauses, ", ") + " WHERE id = ?"
 		result, err := db.Exec(query, args...)
 		if err != nil {

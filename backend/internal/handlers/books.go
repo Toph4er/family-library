@@ -561,6 +561,7 @@ func UpdateBookHandler(db *sql.DB) http.HandlerFunc {
 		}
 
 		args = append(args, id)
+		// #nosec G202 -- Column names are validated against allowlist before use
 		query := "UPDATE books SET " + strings.Join(sets, ", ") + " WHERE id = ?"
 
 		result, err := db.Exec(query, args...)
@@ -903,6 +904,8 @@ var yearRe = regexp.MustCompile(`^(\d{4})`)
 // If no results are found, returns (nil, "", nil).
 func fetchFromOpenLibrary(isbn string) (*models.Book, string, error) {
 	u := fmt.Sprintf("https://openlibrary.org/isbn/%s.json", url.PathEscape(isbn))
+	// #nosec G704 -- URL domain is hardcoded to openlibrary.org (trusted external API);
+	// isbn is sanitized with url.PathEscape. This is a client-side lookup, not a redirect.
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		return nil, "", fmt.Errorf("building Open Library request: %w", err)
