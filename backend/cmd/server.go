@@ -205,6 +205,21 @@ func loadTemplates(dir string) (*template.Template, error) {
 		"le": func(a, b int) bool {
 			return a <= b
 		},
+		// --- Map helpers ---
+		"dict": func(args ...interface{}) (map[string]interface{}, error) {
+			if len(args)%2 != 0 {
+				return nil, fmt.Errorf("dict expects an even number of arguments, got %d", len(args))
+			}
+			result := make(map[string]interface{}, len(args)/2)
+			for i := 0; i < len(args); i += 2 {
+				key, ok := args[i].(string)
+				if !ok {
+					return nil, fmt.Errorf("dict keys must be strings, got %T", args[i])
+				}
+				result[key] = args[i+1]
+			}
+			return result, nil
+		},
 	}
 
 	// Parse all .html files in the directory and subdirectories
