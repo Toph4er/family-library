@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"git.rcsmaine.com/chris/library/backend/internal/auth"
 	"git.rcsmaine.com/chris/library/backend/internal/handlers"
 )
 
