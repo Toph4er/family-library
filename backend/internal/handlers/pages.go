@@ -116,7 +116,7 @@ func RenderBookDetailPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := buildPageContext(r, store, sessionName)
 
-		id := chi.URLParam(r)
+		id := chi.URLParam(r, "id")
 
 		var book models.Book
 		var title, author, isbn, coverImage, notes, createdAt string
