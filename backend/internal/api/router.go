@@ -94,87 +94,89 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 
 	// -- API routes --
 	r.Route("/api/v1", func(r chi.Router) {
-		// Public endpoints (before CSRF middleware)
+		// Public endpoints (no CSRF middleware)
 		r.Get("/csrf", handlers.CSRFTokenHandler(authSvc))
 		r.Post("/auth/login", handlers.LoginHandler(authSvc))
 		r.Post("/auth/guest-login", handlers.GuestLoginHandler(authSvc))
 
-		// CSRF protection for all subsequent routes
-		r.Use(middleware.CSRFProtection(authSvc.Store(), auth.SessionID))
+		// CSRF-protected routes (middleware applied before any routes on this sub-mux)
+		r.Route("/", func(r chi.Router) {
+			r.Use(middleware.CSRFProtection(authSvc.Store(), auth.SessionID))
 
-		// Authentication (protected endpoints)
-		r.Post("/auth/logout", func(w http.ResponseWriter, r *http.Request) {
-			authSvc.RequireAuth(http.HandlerFunc(handlers.LogoutHandler(authSvc))).ServeHTTP(w, r)
-		})
-		r.Get("/auth/me", func(w http.ResponseWriter, r *http.Request) {
-			authSvc.RequireAuth(http.HandlerFunc(handlers.MeHandler(authSvc))).ServeHTTP(w, r)
-		})
-
-		// Books (all require auth)
-		r.Route("/books", func(r chi.Router) {
-			r.Use(authSvc.RequireAuth)
-
-			// Static GET routes must be registered before parameterized ones
-			r.Get("/", handlers.ListBooksHandler(database))
-			r.Get("/search", handlers.SearchBooksHandler(database))
-			r.Get("/tags", func(w http.ResponseWriter, r *http.Request) {
-				authSvc.RequireAdmin(http.HandlerFunc(handlers.GetTagsHandler(database))).ServeHTTP(w, r)
+			// Authentication (protected endpoints)
+			r.Post("/auth/logout", func(w http.ResponseWriter, r *http.Request) {
+				authSvc.RequireAuth(http.HandlerFunc(handlers.LogoutHandler(authSvc))).ServeHTTP(w, r)
 			})
-			r.Get("/lookup-isbn", func(w http.ResponseWriter, r *http.Request) {
-				authSvc.RequireAdmin(http.HandlerFunc(handlers.LookupISBNHandler(database))).ServeHTTP(w, r)
-			})
-			r.Get("/{id}", handlers.GetBookHandler(database))
-
-			// POST routes
-			r.Post("/", func(w http.ResponseWriter, r *http.Request) {
-				authSvc.RequireAdmin(http.HandlerFunc(handlers.CreateBookHandler(database))).ServeHTTP(w, r)
-			})
-			r.Post("/import-isbn", func(w http.ResponseWriter, r *http.Request) {
-				authSvc.RequireAdmin(http.HandlerFunc(handlers.ImportISBNHandler(database))).ServeHTTP(w, r)
+			r.Get("/auth/me", func(w http.ResponseWriter, r *http.Request) {
+				authSvc.RequireAuth(http.HandlerFunc(handlers.MeHandler(authSvc))).ServeHTTP(w, r)
 			})
 
-			// Parameterized PUT/DELETE
-			r.Put("/{id}", func(w http.ResponseWriter, r *http.Request) {
-				authSvc.RequireAdmin(http.HandlerFunc(handlers.UpdateBookHandler(database))).ServeHTTP(w, r)
-			})
-			r.Delete("/{id}", func(w http.ResponseWriter, r *http.Request) {
-				authSvc.RequireAdmin(http.HandlerFunc(handlers.DeleteBookHandler(database))).ServeHTTP(w, r)
-			})
-		})
+			// Books (all require auth)
+			r.Route("/books", func(r chi.Router) {
+				r.Use(authSvc.RequireAuth)
 
-		// Wishlist (all require auth)
-		r.Route("/wishlist", func(r chi.Router) {
-			r.Use(authSvc.RequireAuth)
-			r.Get("/", handlers.ListWishlistHandler(database))
-			r.Post("/", func(w http.ResponseWriter, r *http.Request) {
-				authSvc.RequireAdmin(http.HandlerFunc(handlers.CreateWishlistItemHandler(database))).ServeHTTP(w, r)
-			})
-			r.Put("/{id}", func(w http.ResponseWriter, r *http.Request) {
-				authSvc.RequireAdmin(http.HandlerFunc(handlers.UpdateWishlistItemHandler(database))).ServeHTTP(w, r)
-			})
-			r.Delete("/{id}", func(w http.ResponseWriter, r *http.Request) {
-				authSvc.RequireAdmin(http.HandlerFunc(handlers.DeleteWishlistItemHandler(database))).ServeHTTP(w, r)
-			})
-			r.Patch("/{id}/fulfill", func(w http.ResponseWriter, r *http.Request) {
-				authSvc.RequireAdmin(http.HandlerFunc(handlers.FulfillWishlistItemHandler(database))).ServeHTTP(w, r)
-			})
-		})
+				// Static GET routes must be registered before parameterized ones
+				r.Get("/", handlers.ListBooksHandler(database))
+				r.Get("/search", handlers.SearchBooksHandler(database))
+				r.Get("/tags", func(w http.ResponseWriter, r *http.Request) {
+					authSvc.RequireAdmin(http.HandlerFunc(handlers.GetTagsHandler(database))).ServeHTTP(w, r)
+				})
+				r.Get("/lookup-isbn", func(w http.ResponseWriter, r *http.Request) {
+					authSvc.RequireAdmin(http.HandlerFunc(handlers.LookupISBNHandler(database))).ServeHTTP(w, r)
+				})
+				r.Get("/{id}", handlers.GetBookHandler(database))
 
-		// Settings (admin only)
-		r.Route("/settings", func(r chi.Router) {
-			r.Use(authSvc.RequireAdmin)
-			r.Get("/", handlers.ListSettingsHandler(database))
-			r.Put("/{key}", handlers.UpdateSettingHandler(database))
-		})
+				// POST routes
+				r.Post("/", func(w http.ResponseWriter, r *http.Request) {
+					authSvc.RequireAdmin(http.HandlerFunc(handlers.CreateBookHandler(database))).ServeHTTP(w, r)
+				})
+				r.Post("/import-isbn", func(w http.ResponseWriter, r *http.Request) {
+					authSvc.RequireAdmin(http.HandlerFunc(handlers.ImportISBNHandler(database))).ServeHTTP(w, r)
+				})
 
-		// Admin (admin only)
-		r.Route("/admin", func(r chi.Router) {
-			r.Use(authSvc.RequireAdmin)
-			r.Route("/users", func(r chi.Router) {
-				r.Get("/", handlers.ListUsersHandler(database))
-				r.Post("/", handlers.CreateUserHandler(database))
-				r.Put("/{id}", handlers.UpdateUserHandler(database))
-				r.Delete("/{id}", handlers.DeleteUserHandler(database))
+				// Parameterized PUT/DELETE
+				r.Put("/{id}", func(w http.ResponseWriter, r *http.Request) {
+					authSvc.RequireAdmin(http.HandlerFunc(handlers.UpdateBookHandler(database))).ServeHTTP(w, r)
+				})
+				r.Delete("/{id}", func(w http.ResponseWriter, r *http.Request) {
+					authSvc.RequireAdmin(http.HandlerFunc(handlers.DeleteBookHandler(database))).ServeHTTP(w, r)
+				})
+			})
+
+			// Wishlist (all require auth)
+			r.Route("/wishlist", func(r chi.Router) {
+				r.Use(authSvc.RequireAuth)
+				r.Get("/", handlers.ListWishlistHandler(database))
+				r.Post("/", func(w http.ResponseWriter, r *http.Request) {
+					authSvc.RequireAdmin(http.HandlerFunc(handlers.CreateWishlistItemHandler(database))).ServeHTTP(w, r)
+				})
+				r.Put("/{id}", func(w http.ResponseWriter, r *http.Request) {
+					authSvc.RequireAdmin(http.HandlerFunc(handlers.UpdateWishlistItemHandler(database))).ServeHTTP(w, r)
+				})
+				r.Delete("/{id}", func(w http.ResponseWriter, r *http.Request) {
+					authSvc.RequireAdmin(http.HandlerFunc(handlers.DeleteWishlistItemHandler(database))).ServeHTTP(w, r)
+				})
+				r.Patch("/{id}/fulfill", func(w http.ResponseWriter, r *http.Request) {
+					authSvc.RequireAdmin(http.HandlerFunc(handlers.FulfillWishlistItemHandler(database))).ServeHTTP(w, r)
+				})
+			})
+
+			// Settings (admin only)
+			r.Route("/settings", func(r chi.Router) {
+				r.Use(authSvc.RequireAdmin)
+				r.Get("/", handlers.ListSettingsHandler(database))
+				r.Put("/{key}", handlers.UpdateSettingHandler(database))
+			})
+
+			// Admin (admin only)
+			r.Route("/admin", func(r chi.Router) {
+				r.Use(authSvc.RequireAdmin)
+				r.Route("/users", func(r chi.Router) {
+					r.Get("/", handlers.ListUsersHandler(database))
+					r.Post("/", handlers.CreateUserHandler(database))
+					r.Put("/{id}", handlers.UpdateUserHandler(database))
+					r.Delete("/{id}", handlers.DeleteUserHandler(database))
+				})
 			})
 		})
 	})

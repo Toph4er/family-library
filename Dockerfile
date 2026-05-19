@@ -12,6 +12,7 @@ RUN apk --no-cache add ca-certificates wget
 WORKDIR /app
 COPY --from=go-builder /app/server ./server
 COPY --from=go-builder /app/migrations ./migrations
+COPY --from=go-builder /app/internal/templates ./internal/templates
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup && \
     mkdir -p /app/data && chown -R appuser:appgroup /app
 USER appuser
