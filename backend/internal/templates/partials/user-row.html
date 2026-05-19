@@ -1,30 +1,30 @@
 {{define "partials/user-row"}}
 <tr class="border-b" style="border-color: rgba(139, 69, 19, 0.1);">
   <td class="py-3 px-4">
-    <span class="font-medium text-primary">{{.Username}}</span>
+    <span class="font-medium text-primary">{{.username}}</span>
   </td>
-  <td class="py-3 px-4 text-text-light">{{.DisplayName}}</td>
+  <td class="py-3 px-4 text-text-light">{{.display_name}}</td>
   <td class="py-3 px-4">
-    <span class="mushroom-tag {{if eq .Role "admin"}}bg-primary/20 text-primary{{else}}bg-accent/20 text-text-light{{end}}">{{.Role}}</span>
+    <span class="mushroom-tag {{if eq .role "admin"}}bg-primary/20 text-primary{{else}}bg-accent/20 text-text-light{{end}}">{{.role}}</span>
   </td>
-  <td class="py-3 px-4 text-text-light/60 text-sm">{{.CreatedAt}}</td>
+  <td class="py-3 px-4 text-text-light/60 text-sm">{{.created_at}}</td>
   <td class="py-3 px-4">
     <div class="flex gap-1">
       <button type="button"
-        hx-get="/admin/users/{{.ID}}/edit"
+        hx-get="/admin/users/{{.id}}/edit"
         hx-target="#modal-target"
         hx-swap="innerHTML"
         class="text-primary hover:text-text-light text-sm no-underline p-1"
-        aria-label="Edit user {{.Username}}"
+        aria-label="Edit user {{.username}}"
       >✏️</button>
-      {{if ne .Username "current"}}
+      {{if ne .username "current"}}
       <button type="button"
-        hx-delete="/api/v1/admin/users/{{.ID}}"
-        hx-confirm="Delete user {{.Username}}?"
+        hx-delete="/api/v1/admin/users/{{.id}}"
+        hx-confirm="Delete user {{.username}}?"
         hx-target="closest tr"
         hx-swap="outerHTML"
         class="text-error hover:text-error/80 text-sm no-underline p-1"
-        aria-label="Delete user {{.Username}}"
+        aria-label="Delete user {{.username}}"
       >🗑️</button>
       {{end}}
     </div>

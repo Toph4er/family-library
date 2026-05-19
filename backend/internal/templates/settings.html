@@ -27,8 +27,8 @@
           <!-- JSON settings displayed as code block -->
           <div class="px-4 py-3">
             <div class="flex items-center gap-4">
-              <span class="font-medium text-text w-40">{{.Key}}</span>
-              <pre class="flex-1 px-3 py-2 rounded-lg border bg-surface text-sm overflow-x-auto" style="border-color: var(--color-secondary);"><code>{{.Value}}</code></pre>
+              <span class="font-medium text-text w-40">{{$key}}</span>
+              <pre class="flex-1 px-3 py-2 rounded-lg border bg-surface text-sm overflow-x-auto" style="border-color: var(--color-secondary);"><code>{{$value}}</code></pre>
             </div>
           </div>
         {{else}}

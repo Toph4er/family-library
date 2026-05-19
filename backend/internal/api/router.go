@@ -6,7 +6,6 @@ import (
 	"html/template"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
@@ -56,41 +55,27 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 	healthHandler := handlers.NewHealthHandler(database)
 	r.Get("/health", healthHandler.Check)
 
-	// -- Login pages (public, template-rendered) --
-	if cfg != nil && cfg.Templates != nil {
-		r.Get("/login", handlers.RenderLoginPage(cfg.Templates, authSvc.Store(), auth.SessionID))
-		r.Get("/guest-login", handlers.RenderGuestLoginPage(cfg.Templates, authSvc.Store(), auth.SessionID))
-		r.Get("/logout", handlers.RenderLogoutSuccess(cfg.Templates, authSvc))
+	// -- Page routes (template-rendered) --
+	r.Get("/login", handlers.RenderLoginPage(cfg.Templates, authSvc.Store(), auth.SessionID))
+	r.Get("/guest-login", handlers.RenderGuestLoginPage(cfg.Templates, authSvc.Store(), auth.SessionID))
+	r.Get("/logout", handlers.RenderLogoutSuccess(cfg.Templates, authSvc))
 
-		// -- HTML render pages --
-		r.Get("/", handlers.RenderLandingPage(cfg.Templates, database, authSvc.Store(), auth.SessionID))
-		r.Get("/books", func(w http.ResponseWriter, r *http.Request) {
-			authSvc.RequireAuth(http.HandlerFunc(handlers.RenderBooksPage(cfg.Templates, database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
-		})
-		r.Get("/books/{id}", func(w http.ResponseWriter, r *http.Request) {
-			authSvc.RequireAuth(http.HandlerFunc(handlers.RenderBookDetailPage(cfg.Templates, database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
-		})
-		r.Get("/wishlist", func(w http.ResponseWriter, r *http.Request) {
-			authSvc.RequireAuth(http.HandlerFunc(handlers.RenderWishlistPage(cfg.Templates, database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
-		})
-		r.Get("/admin", func(w http.ResponseWriter, r *http.Request) {
-			authSvc.RequireAdmin(http.HandlerFunc(handlers.RenderAdminPage(cfg.Templates, database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
-		})
-		r.Get("/settings", func(w http.ResponseWriter, r *http.Request) {
-			authSvc.RequireAdmin(http.HandlerFunc(handlers.RenderSettingsPage(cfg.Templates, database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
-		})
-	} else {
-		// Fallback: redirect to SPA if templates aren't loaded
-		r.Get("/login", func(w http.ResponseWriter, r *http.Request) {
-			http.Redirect(w, r, "/", http.StatusFound)
-		})
-		r.Get("/guest-login", func(w http.ResponseWriter, r *http.Request) {
-			http.Redirect(w, r, "/", http.StatusFound)
-		})
-		r.Get("/logout", func(w http.ResponseWriter, r *http.Request) {
-			http.Redirect(w, r, "/", http.StatusFound)
-		})
-	}
+	r.Get("/", handlers.RenderLandingPage(cfg.Templates, database, authSvc.Store(), auth.SessionID))
+	r.Get("/books", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAuth(http.HandlerFunc(handlers.RenderBooksPage(cfg.Templates, database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
+	})
+	r.Get("/books/{id}", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAuth(http.HandlerFunc(handlers.RenderBookDetailPage(cfg.Templates, database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
+	})
+	r.Get("/wishlist", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAuth(http.HandlerFunc(handlers.RenderWishlistPage(cfg.Templates, database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
+	})
+	r.Get("/admin", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAdmin(http.HandlerFunc(handlers.RenderAdminPage(cfg.Templates, database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
+	})
+	r.Get("/settings", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAdmin(http.HandlerFunc(handlers.RenderSettingsPage(cfg.Templates, database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
+	})
 
 	// -- API routes --
 	r.Route("/api/v1", func(r chi.Router) {
@@ -179,20 +164,6 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 				})
 			})
 		})
-	})
-
-	// -- Static files and SPA fallback --
-	// Serve static files from ./static directory (populated by Docker build)
-	staticFS := http.FS(os.DirFS("./static"))
-	r.Handle("/static/*", http.StripPrefix("/static", http.FileServer(staticFS)))
-
-	// SPA fallback: any non-API, non-static route serves index.html
-	r.HandleFunc("/*", func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.URL.Path, "/api") {
-			http.NotFound(w, r)
-			return
-		}
-		http.ServeFile(w, r, "./static/index.html")
 	})
 
 	return r

@@ -20,7 +20,7 @@
 
   <!-- Search Bar -->
   <section aria-label="Search books">
-    {{template "partials/search-bar" (dict "SearchURL" "/api/v1/books/search" "CurrentQuery" .CurrentQuery)}}
+    {{template "partials/search-bar" (dict "SearchURL" "/api/v1/books/search" "CurrentQuery" "")}}
   </section>
 
   <!-- Admin Actions -->
@@ -61,11 +61,7 @@
           </svg>
           <h2 class="text-xl font-heading text-primary mb-2">No books found</h2>
           <p class="text-text-light/70 max-w-sm">
-            {{if .CurrentQuery}}
-              No results for "<strong>{{.CurrentQuery}}</strong>". Try a different search term.
-            {{else}}
-              The collection is empty. Add your first book to get started.
-            {{end}}
+            The collection is empty. Add your first book to get started.
           </p>
         </div>
       {{end}}
@@ -73,7 +69,7 @@
   </section>
 
   <!-- Pagination -->
-  {{template "partials/pagination" .Pagination}}
+  <!-- Pagination not yet implemented for the books page -->
 
   <!-- Modal Container (for book form modal) -->
   <div id="modal-target"></div>

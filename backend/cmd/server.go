@@ -97,8 +97,8 @@ func main() {
 	// -- Load HTML templates --
 	tmpl, err := loadTemplates("./internal/templates")
 	if err != nil {
-		slog.Warn("Failed to load templates, SPA mode only", "error", err)
-		tmpl = nil
+		slog.Error("Failed to load templates", "error", err)
+		os.Exit(1)
 	}
 
 	// -- Setup router --
