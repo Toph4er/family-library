@@ -3,6 +3,7 @@ package api
 
 import (
 	"database/sql"
+	"html/template"
 	"net/http"
 	"os"
 	"strings"
@@ -16,9 +17,14 @@ import (
 	"git.rcsmaine.com/chris/library/backend/internal/middleware"
 )
 
+// RouterConfig holds optional dependencies for the router.
+type RouterConfig struct {
+	Templates *template.Template
+}
+
 // NewRouter constructs and returns the application router with all routes
 // and middleware configured.
-func NewRouter(database *sql.DB, authSvc *auth.Auth) http.Handler {
+func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Handler {
 	r := chi.NewRouter()
 
 	// -- Standard chi middleware --
@@ -49,6 +55,42 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth) http.Handler {
 	// -- Health check (public) --
 	healthHandler := handlers.NewHealthHandler(database)
 	r.Get("/health", healthHandler.Check)
+
+	// -- Login pages (public, template-rendered) --
+	if cfg != nil && cfg.Templates != nil {
+		r.Get("/login", handlers.RenderLoginPage(cfg.Templates, authSvc.Store(), auth.SessionID))
+		r.Get("/guest-login", handlers.RenderGuestLoginPage(cfg.Templates, authSvc.Store(), auth.SessionID))
+		r.Get("/logout", handlers.RenderLogoutSuccess(cfg.Templates, authSvc))
+
+		// -- HTML render pages --
+		r.Get("/", handlers.RenderLandingPage(cfg.Templates, database, authSvc.Store(), auth.SessionID))
+		r.Get("/books", func(w http.ResponseWriter, r *http.Request) {
+			authSvc.RequireAuth(http.HandlerFunc(handlers.RenderBooksPage(cfg.Templates, database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
+		})
+		r.Get("/books/{id}", func(w http.ResponseWriter, r *http.Request) {
+			authSvc.RequireAuth(http.HandlerFunc(handlers.RenderBookDetailPage(cfg.Templates, database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
+		})
+		r.Get("/wishlist", func(w http.ResponseWriter, r *http.Request) {
+			authSvc.RequireAuth(http.HandlerFunc(handlers.RenderWishlistPage(cfg.Templates, database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
+		})
+		r.Get("/admin", func(w http.ResponseWriter, r *http.Request) {
+			authSvc.RequireAdmin(http.HandlerFunc(handlers.RenderAdminPage(cfg.Templates, database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
+		})
+		r.Get("/settings", func(w http.ResponseWriter, r *http.Request) {
+			authSvc.RequireAdmin(http.HandlerFunc(handlers.RenderSettingsPage(cfg.Templates, database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
+		})
+	} else {
+		// Fallback: redirect to SPA if templates aren't loaded
+		r.Get("/login", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/", http.StatusFound)
+		})
+		r.Get("/guest-login", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/", http.StatusFound)
+		})
+		r.Get("/logout", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/", http.StatusFound)
+		})
+	}
 
 	// -- API routes --
 	r.Route("/api/v1", func(r chi.Router) {

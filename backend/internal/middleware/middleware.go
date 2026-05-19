@@ -32,11 +32,11 @@ func SecurityHeaders(next http.Handler) http.Handler {
 		w.Header().Set("Cross-Origin-Opener-Policy", "same-origin")
 		w.Header().Set("Content-Security-Policy",
 			"default-src 'self'; "+
-				"script-src 'self'; "+
+				"script-src 'self' https://cdn.jsdelivr.net; "+
 				"style-src 'self' 'unsafe-inline' fonts.googleapis.com; "+
 				"img-src 'self' data: https:; "+
 				"font-src 'self' fonts.gstatic.com; "+
-				"connect-src 'self'; "+
+				"connect-src 'self' https://cdn.jsdelivr.net; "+
 				"frame-ancestors 'none'; "+
 				"base-uri 'self'; "+
 				"form-action 'self'",

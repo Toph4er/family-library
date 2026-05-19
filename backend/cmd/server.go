@@ -4,12 +4,16 @@ package main
 import (
 	"context"
 	"flag"
+	"encoding/json"
 	"fmt"
+	"html/template"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -91,8 +95,17 @@ func main() {
 		slog.Info("Guest password seeded")
 	}
 
+	// -- Load HTML templates --
+	tmpl, err := loadTemplates("./internal/templates")
+	if err != nil {
+		slog.Warn("Failed to load templates, SPA mode only", "error", err)
+		tmpl = nil
+	}
+
 	// -- Setup router --
-	router := api.NewRouter(database, authSvc)
+	router := api.NewRouter(database, authSvc, &api.RouterConfig{
+		Templates: tmpl,
+	})
 
 	// -- Create HTTP server --
 	server := &http.Server{
@@ -129,6 +142,90 @@ func main() {
 	}
 
 	slog.Info("Server stopped")
+}
+
+// loadTemplates parses all .html files in the given directory and returns
+// a compiled *template.Template with a FuncMap of common helpers.
+func loadTemplates(dir string) (*template.Template, error) {
+	funcMap := template.FuncMap{
+		"formatTime": func(t time.Time) string {
+			return t.Format("Jan 2, 2006 at 3:04 PM")
+		},
+		"formatISBN": func(isbn string) string {
+			// Format ISBN-13 with dashes: XXX-X-XX-XXXXX-X-X
+			if len(isbn) == 13 {
+				return fmt.Sprintf("%s-%s-%s-%s-%s-%s",
+					isbn[0:3], isbn[3:4], isbn[4:6], isbn[6:11], isbn[11:12], isbn[12:13])
+			}
+			return isbn
+		},
+		"year": func() int {
+			return time.Now().Year()
+		},
+		// --- Sequence helpers ---
+		"seq": func(start, end int) []int {
+			var s []int
+			for i := start; i <= end; i++ {
+				s = append(s, i)
+			}
+			return s
+		},
+		"sub": func(a, b int) int {
+			return a - b
+		},
+		"add": func(a, b int) int {
+			return a + b
+		},
+		// --- String helpers ---
+		"split": func(s string) []string {
+			if s == "" {
+				return []string{}
+			}
+			// Try JSON array first
+			var result []string
+			if err := json.Unmarshal([]byte(s), &result); err == nil {
+				return result
+			}
+			// Fall back to comma-separated
+			parts := strings.Split(s, ",")
+			for i := range parts {
+				parts[i] = strings.TrimSpace(parts[i])
+			}
+			return parts
+		},
+		// --- Comparison helpers ---
+		"eq": func(a, b interface{}) bool {
+			return fmt.Sprintf("%v", a) == fmt.Sprintf("%v", b)
+		},
+		"gt": func(a, b int) bool {
+			return a > b
+		},
+		"lt": func(a, b int) bool {
+			return a < b
+		},
+		"le": func(a, b int) bool {
+			return a <= b
+		},
+	}
+
+	// Parse all .html files in the directory
+	pattern := filepath.Join(dir, "*.html")
+	files, err := filepath.Glob(pattern)
+	if err != nil {
+		return nil, fmt.Errorf("glob templates: %w", err)
+	}
+
+	if len(files) == 0 {
+		return nil, fmt.Errorf("no template files found in %s", dir)
+	}
+
+	tmpl := template.New("").Funcs(funcMap)
+	tmpl, err = tmpl.ParseFiles(files...)
+	if err != nil {
+		return nil, fmt.Errorf("parse templates: %w", err)
+	}
+
+	return tmpl, nil
 }
 
 func runMigrations(database *sql.DB) error {
