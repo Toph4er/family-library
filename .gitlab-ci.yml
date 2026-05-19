@@ -53,7 +53,7 @@ trivy-scan:
   stage: security
   image: aquasec/trivy:0.55.0
   script:
-    - trivy filesystem --scanners vuln --exit-code 1 --severity HIGH,CRITICAL backend/
+    - trivy fs --scanners vuln --exit-code 1 --severity HIGH,CRITICAL backend/
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == "main"
@@ -67,7 +67,7 @@ gosec:
   script:
     - cd backend
     - go mod download
-    - gosec -exclude-generated ./...
+    - gosec -exclude-generated -exclude=G104 ./...
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == "main"

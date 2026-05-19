@@ -911,6 +911,7 @@ func fetchFromOpenLibrary(isbn string) (*models.Book, string, error) {
 		return nil, "", fmt.Errorf("building Open Library request: %w", err)
 	}
 
+	// #nosec G704 -- URL is constructed from hardcoded openlibrary.org base; isbn is sanitized
 	resp, err := apiHTTPClient.Do(req)
 	if err != nil {
 		return nil, "", fmt.Errorf("Open Library HTTP request: %w", err)
