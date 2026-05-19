@@ -52,6 +52,7 @@ docker-build:
 trivy-scan:
   stage: security
   image: aquasec/trivy:0.55.0
+  entrypoint: [""]
   script:
     - trivy fs --scanners vuln --exit-code 1 --severity HIGH,CRITICAL backend/
   rules:
