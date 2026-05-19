@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -336,7 +337,7 @@ func GetBookHandler(db *sql.DB) http.HandlerFunc {
 		row := db.QueryRow(query, id)
 
 		b, err := scanBook(row)
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			JSONError(w, http.StatusNotFound, "book not found")
 			return
 		}
@@ -547,7 +548,7 @@ func UpdateBookHandler(db *sql.DB) http.HandlerFunc {
 			// Only updated_at was set — nothing to do
 			row := db.QueryRow(`SELECT `+bookColumns+` FROM books WHERE id = ?`, id)
 			b, err := scanBook(row)
-			if err == sql.ErrNoRows {
+			if errors.Is(err, sql.ErrNoRows) {
 				JSONError(w, http.StatusNotFound, "book not found")
 				return
 			}
