@@ -225,8 +225,7 @@ func loadTemplates(dir string) (*template.Template, error) {
 		return nil, fmt.Errorf("no template files found in %s", dir)
 	}
 
-	tmpl := template.New("").Funcs(funcMap)
-	tmpl, err = tmpl.ParseFiles(allFiles...)
+	tmpl, err := template.New("").Funcs(funcMap).ParseFiles(allFiles...)
 	if err != nil {
 		return nil, fmt.Errorf("parse templates: %w", err)
 	}
