@@ -165,9 +165,9 @@ func TestMeHandler_Success(t *testing.T) {
 	var resp map[string]interface{}
 	json.NewDecoder(rec.Body).Decode(&resp)
 	data := resp["data"].(map[string]interface{})
-	user := data["user"].(*auth.SessionUser)
-	if user.Username != "admin" {
-		t.Fatalf("expected username=admin, got %v", user.Username)
+	user := data["user"].(map[string]interface{})
+	if user["username"] != "admin" {
+		t.Fatalf("expected username=admin, got %v", user["username"])
 	}
 }
 
