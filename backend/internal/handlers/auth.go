@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"html/template"
 	"net/http"
 	"time"
@@ -133,13 +134,17 @@ func RenderLogoutSuccess(tmpl *template.Template, authSvc *auth.Auth) http.Handl
 // LoginHandler handles admin login
 func LoginHandler(authSvc *auth.Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if err := r.ParseForm(); err != nil {
+		var body struct {
+			Username string `json:"username"`
+			Password string `json:"password"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			JSONError(w, http.StatusBadRequest, "Invalid request body")
 			return
 		}
 
-		username := r.FormValue("username")
-		password := r.FormValue("password")
+		username := body.Username
+		password := body.Password
 		if username == "" || password == "" {
 			JSONError(w, http.StatusBadRequest, "Username and password are required")
 			return
@@ -172,12 +177,15 @@ func LoginHandler(authSvc *auth.Auth) http.HandlerFunc {
 // GuestLoginHandler handles guest login
 func GuestLoginHandler(authSvc *auth.Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if err := r.ParseForm(); err != nil {
+		var body struct {
+			Password string `json:"password"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			JSONError(w, http.StatusBadRequest, "Invalid request body")
 			return
 		}
 
-		password := r.FormValue("password")
+		password := body.Password
 		if password == "" {
 			JSONError(w, http.StatusBadRequest, "Password is required")
 			return
