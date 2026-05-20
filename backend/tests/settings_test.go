@@ -85,6 +85,15 @@ func TestListSettingsHandler_EmptyDB(t *testing.T) {
 func TestUpdateSettingHandler_Success(t *testing.T) {
 	env := setupTestEnv(t)
 
+	// Seed the settings row that the migration should have created
+	_, err := env.db.Exec(
+		"INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
+		"cover_image_provider", "google_books",
+	)
+	if err != nil {
+		t.Fatalf("failed to seed cover_image_provider setting: %v", err)
+	}
+
 	body := `{"value":"amazon"}`
 	handler := handlers.UpdateSettingHandler(env.db)
 	req := httptest.NewRequest("PUT", "/api/v1/settings/cover_image_provider", strings.NewReader(body))
@@ -142,6 +151,15 @@ func TestUpdateSettingHandler_NotFound(t *testing.T) {
 func TestUpdateSettingHandler_SensitiveKey(t *testing.T) {
 	env := setupTestEnv(t)
 
+	// Seed the sensitive key row so the handler can check it exists
+	_, err := env.db.Exec(
+		"INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
+		"guest_password_hash", "hashed_secret",
+	)
+	if err != nil {
+		t.Fatalf("failed to seed guest_password_hash setting: %v", err)
+	}
+
 	body := `{"value":"hacked_password"}`
 	handler := handlers.UpdateSettingHandler(env.db)
 	req := httptest.NewRequest("PUT", "/api/v1/settings/guest_password_hash", strings.NewReader(body))
@@ -172,6 +190,15 @@ func TestUpdateSettingHandler_InvalidJSON(t *testing.T) {
 
 func TestUpdateSettingHandler_SiteNameUpdate(t *testing.T) {
 	env := setupTestEnv(t)
+
+	// Seed the site_name row that the migration should have created
+	_, err := env.db.Exec(
+		"INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
+		"site_name", "Our Library",
+	)
+	if err != nil {
+		t.Fatalf("failed to seed site_name setting: %v", err)
+	}
 
 	newName := "New Library Name"
 	body := fmt.Sprintf(`{"value":"%s"}`, newName)

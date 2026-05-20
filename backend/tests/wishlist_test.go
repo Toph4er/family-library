@@ -184,7 +184,7 @@ func TestCreateWishlistItemHandler_AllOptionalFields(t *testing.T) {
 		"priority":10,
 		"amazon_url":"%s",
 		"thriftbooks_url":"%s",
-		"other_urls":%s,
+		"other_urls":"%s",
 		"notes":"Gift idea"
 	}`, amazonURL, thriftbooksURL, otherURLs)
 
