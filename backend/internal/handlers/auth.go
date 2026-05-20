@@ -131,20 +131,61 @@ func RenderLogoutSuccess(tmpl *template.Template, authSvc *auth.Auth) http.Handl
 	}
 }
 
-// LoginHandler handles admin login
-func LoginHandler(authSvc *auth.Auth) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+// parseBody extracts credentials from either a JSON body or a form-encoded body.
+// It inspects Content-Type to decide the parsing strategy:
+//   - "application/json" → JSON decode
+//   - "application/x-www-form-urlencoded" → form parse
+//   - missing or other → try form parse as fallback (HTML forms often omit CT)
+func parseBody(r *http.Request) (username, password string, err *auth.APIError) {
+	// Try JSON first if Content-Type indicates it
+	ct := r.Header.Get("Content-Type")
+	if ct != "" && (ct == "application/json" || len(ct) > 16 && ct[:16] == "application/json") {
 		var body struct {
 			Username string `json:"username"`
 			Password string `json:"password"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			JSONError(w, http.StatusBadRequest, "Invalid request body")
+			return "", "", &auth.APIError{Code: http.StatusBadRequest, Message: "Invalid request body"}
+		}
+		return body.Username, body.Password, nil
+	}
+
+	// Form-encoded or unknown Content-Type — parse as form data
+	if err := r.ParseForm(); err != nil {
+		return "", "", &auth.APIError{Code: http.StatusBadRequest, Message: "Invalid request body"}
+	}
+	return r.FormValue("username"), r.FormValue("password"), nil
+}
+
+// parseGuestBody extracts a guest password from either a JSON body or a form-encoded body.
+func parseGuestBody(r *http.Request) (password string, err *auth.APIError) {
+	ct := r.Header.Get("Content-Type")
+	if ct != "" && (ct == "application/json" || len(ct) > 16 && ct[:16] == "application/json") {
+		var body struct {
+			Password string `json:"password"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			return "", &auth.APIError{Code: http.StatusBadRequest, Message: "Invalid request body"}
+		}
+		return body.Password, nil
+	}
+
+	if err := r.ParseForm(); err != nil {
+		return "", &auth.APIError{Code: http.StatusBadRequest, Message: "Invalid request body"}
+	}
+	return r.FormValue("password"), nil
+}
+
+// LoginHandler handles admin login.
+// Accepts both JSON and application/x-www-form-urlencoded bodies.
+func LoginHandler(authSvc *auth.Auth) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		username, password, err := parseBody(r)
+		if err != nil {
+			JSONError(w, err.Code, err.Message)
 			return
 		}
 
-		username := body.Username
-		password := body.Password
 		if username == "" || password == "" {
 			JSONError(w, http.StatusBadRequest, "Username and password are required")
 			return
@@ -174,18 +215,16 @@ func LoginHandler(authSvc *auth.Auth) http.HandlerFunc {
 	}
 }
 
-// GuestLoginHandler handles guest login
+// GuestLoginHandler handles guest login.
+// Accepts both JSON and application/x-www-form-urlencoded bodies.
 func GuestLoginHandler(authSvc *auth.Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var body struct {
-			Password string `json:"password"`
-		}
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			JSONError(w, http.StatusBadRequest, "Invalid request body")
+		password, err := parseGuestBody(r)
+		if err != nil {
+			JSONError(w, err.Code, err.Message)
 			return
 		}
 
-		password := body.Password
 		if password == "" {
 			JSONError(w, http.StatusBadRequest, "Password is required")
 			return
