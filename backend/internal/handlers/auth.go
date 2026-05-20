@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"html/template"
 	"net/http"
 	"time"
@@ -10,7 +9,6 @@ import (
 
 	"git.rcsmaine.com/chris/library/backend/internal/auth"
 	"git.rcsmaine.com/chris/library/backend/internal/middleware"
-	"git.rcsmaine.com/chris/library/backend/internal/models"
 )
 
 // pageData holds template context for login-related pages.
@@ -136,13 +134,19 @@ func RenderLogoutSuccess(tmpl *template.Template, authSvc *auth.Auth) http.Handl
 // LoginHandler handles admin login
 func LoginHandler(authSvc *auth.Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req models.LoginRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		if err := r.ParseForm(); err != nil {
 			JSONError(w, http.StatusBadRequest, "Invalid request body")
 			return
 		}
 
-		user, err := authSvc.Login(w, r, req.Username, req.Password)
+		username := r.FormValue("username")
+		password := r.FormValue("password")
+		if username == "" || password == "" {
+			JSONError(w, http.StatusBadRequest, "Username and password are required")
+			return
+		}
+
+		user, err := authSvc.Login(w, r, username, password)
 		if err != nil {
 			if apiErr, ok := err.(*auth.APIError); ok {
 				JSONError(w, apiErr.Code, apiErr.Message)
@@ -169,13 +173,18 @@ func LoginHandler(authSvc *auth.Auth) http.HandlerFunc {
 // GuestLoginHandler handles guest login
 func GuestLoginHandler(authSvc *auth.Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req models.GuestLoginRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		if err := r.ParseForm(); err != nil {
 			JSONError(w, http.StatusBadRequest, "Invalid request body")
 			return
 		}
 
-		if err := authSvc.GuestLogin(w, r, req.Password); err != nil {
+		password := r.FormValue("password")
+		if password == "" {
+			JSONError(w, http.StatusBadRequest, "Password is required")
+			return
+		}
+
+		if err := authSvc.GuestLogin(w, r, password); err != nil {
 			if apiErr, ok := err.(*auth.APIError); ok {
 				JSONError(w, apiErr.Code, apiErr.Message)
 				return
