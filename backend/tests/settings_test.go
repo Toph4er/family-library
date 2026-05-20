@@ -195,7 +195,7 @@ func TestUpdateSettingHandler_SiteNameUpdate(t *testing.T) {
 
 	// Verify it persisted
 	var value string
-	err = env.db.QueryRow("SELECT value FROM settings WHERE key = ?", "site_name").Scan(&value)
+	err := env.db.QueryRow("SELECT value FROM settings WHERE key = ?", "site_name").Scan(&value)
 	if err != nil {
 		t.Fatalf("failed to query updated setting: %v", err)
 	}
