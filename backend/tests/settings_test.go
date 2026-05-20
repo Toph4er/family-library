@@ -85,7 +85,11 @@ func TestListSettingsHandler_EmptyDB(t *testing.T) {
 func TestUpdateSettingHandler_Success(t *testing.T) {
 	env := setupTestEnv(t)
 
-	// cover_image_provider is already seeded by migration 00004
+	// Ensure required settings exist before running update tests
+			_, err := env.db.Exec("INSERT INTO settings (key, value) VALUES (?, ?, ?) ON CONFLICT (key) DO NOTHING", "cover_image_provider", "initial_value")
+			if err != nil {
+				t.Fatalf("failed to pre-seed cover_image_provider: %v", err)
+			}
 
 	body := `{"value":"amazon"}`
 	handler := handlers.UpdateSettingHandler(env.db)
@@ -178,7 +182,11 @@ func TestUpdateSettingHandler_InvalidJSON(t *testing.T) {
 func TestUpdateSettingHandler_SiteNameUpdate(t *testing.T) {
 	env := setupTestEnv(t)
 
-	// site_name is already seeded by migration 00004
+	// Ensure required settings exist before running update tests
+			_, err := env.db.Exec("INSERT INTO settings (key, value) VALUES (?, ?, ?) ON CONFLICT (key) DO NOTHING", "site_name", "initial_value")
+			if err != nil {
+				t.Fatalf("failed to pre-seed site_name: %v", err)
+			}
 
 	newName := "New Library Name"
 	body := fmt.Sprintf(`{"value":"%s"}`, newName)

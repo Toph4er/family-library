@@ -74,7 +74,7 @@ func UpdateSettingHandler(db *sql.DB) http.HandlerFunc {
 		}
 
 		result, err := db.Exec(
-			"UPDATE settings SET value = ?, updated_at = CURRENT_TIMESTAMP WHERE key = ?",
+			"INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = CURRENT_TIMESTAMP RETURNING key, value",
 			req.Value, key,
 		)
 		if err != nil {
