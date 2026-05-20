@@ -95,7 +95,7 @@ func main() {
 	}
 
 	// -- Load HTML templates --
-	tmpl, err := loadTemplates("./internal/templates")
+	tmpls, err := loadTemplates("./internal/templates")
 	if err != nil {
 		slog.Error("Failed to load templates", "error", err)
 		os.Exit(1)
@@ -103,7 +103,7 @@ func main() {
 
 	// -- Setup router --
 	router := api.NewRouter(database, authSvc, &api.RouterConfig{
-		Templates: tmpl,
+		Templates: tmpls,
 	})
 
 	// -- Create HTTP server --
@@ -143,9 +143,12 @@ func main() {
 	slog.Info("Server stopped")
 }
 
-// loadTemplates parses all .html files in the given directory and returns
-// a compiled *template.Template with a FuncMap of common helpers.
-func loadTemplates(dir string) (*template.Template, error) {
+// loadTemplates parses each page template in isolation so that {{define}}
+// blocks (e.g. "content", "title") do not leak across pages.
+// It returns a map keyed by page name (e.g. "login", "wishlist") where each
+// value is an independently parsed *template.Template that includes base.html,
+// the page's own HTML file, and all shared partials.
+func loadTemplates(dir string) (map[string]*template.Template, error) {
 	funcMap := template.FuncMap{
 		"formatTime": func(t time.Time) string {
 			return t.Format("Jan 2, 2006 at 3:04 PM")
@@ -222,30 +225,48 @@ func loadTemplates(dir string) (*template.Template, error) {
 		},
 	}
 
-	// Parse all .html files in the directory and subdirectories
-	patterns := []string{
-		filepath.Join(dir, "*.html"),
-		filepath.Join(dir, "partials", "*.html"),
-	}
-	var allFiles []string
-	for _, pattern := range patterns {
-		files, err := filepath.Glob(pattern)
-		if err != nil {
-			return nil, fmt.Errorf("glob templates: %w", err)
-		}
-		allFiles = append(allFiles, files...)
-	}
-
-	if len(allFiles) == 0 {
-		return nil, fmt.Errorf("no template files found in %s", dir)
-	}
-
-	tmpl, err := template.New("").Funcs(funcMap).ParseFiles(allFiles...)
+	// Collect all page templates (exclude base.html which is shared)
+	pageFiles, err := filepath.Glob(filepath.Join(dir, "*.html"))
 	if err != nil {
-		return nil, fmt.Errorf("parse templates: %w", err)
+		return nil, fmt.Errorf("glob page templates: %w", err)
 	}
 
-	return tmpl, nil
+	// Collect all partial templates
+	partialFiles, err := filepath.Glob(filepath.Join(dir, "partials", "*.html"))
+	if err != nil {
+		return nil, fmt.Errorf("glob partial templates: %w", err)
+	}
+
+	// base.html is the shared layout — every page needs it
+	baseFile := filepath.Join(dir, "base.html")
+
+	templates := make(map[string]*template.Template)
+
+	for _, pageFile := range pageFiles {
+		// Skip base.html — it's the shared layout, not a page
+		if pageFile == baseFile {
+			continue
+		}
+
+		// Derive the page key from the filename (e.g. "login.html" → "login")
+		pageName := strings.TrimSuffix(filepath.Base(pageFile), ".html")
+
+		// Build the file list for this page: base + page + partials
+		files := append([]string{baseFile, pageFile}, partialFiles...)
+
+		tmpl, err := template.New("").Funcs(funcMap).ParseFiles(files...)
+		if err != nil {
+			return nil, fmt.Errorf("parse template %s: %w", pageName, err)
+		}
+
+		templates[pageName] = tmpl
+	}
+
+	if len(templates) == 0 {
+		return nil, fmt.Errorf("no page templates found in %s", dir)
+	}
+
+	return templates, nil
 }
 
 func runMigrations(database *sql.DB) error {

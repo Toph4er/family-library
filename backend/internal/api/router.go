@@ -18,7 +18,7 @@ import (
 
 // RouterConfig holds optional dependencies for the router.
 type RouterConfig struct {
-	Templates *template.Template
+	Templates map[string]*template.Template
 }
 
 // NewRouter constructs and returns the application router with all routes
@@ -56,25 +56,25 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 	r.Get("/health", healthHandler.Check)
 
 	// -- Page routes (template-rendered) --
-	r.Get("/login", handlers.RenderLoginPage(cfg.Templates, authSvc.Store(), auth.SessionID))
-	r.Get("/guest-login", handlers.RenderGuestLoginPage(cfg.Templates, authSvc.Store(), auth.SessionID))
-	r.Get("/logout", handlers.RenderLogoutSuccess(cfg.Templates, authSvc))
+	r.Get("/login", handlers.RenderLoginPage(cfg.Templates["login"], authSvc.Store(), auth.SessionID))
+	r.Get("/guest-login", handlers.RenderGuestLoginPage(cfg.Templates["guest-login"], authSvc.Store(), auth.SessionID))
+	r.Get("/logout", handlers.RenderLogoutSuccess(cfg.Templates["logout"], authSvc))
 
-	r.Get("/", handlers.RenderLandingPage(cfg.Templates, database, authSvc.Store(), auth.SessionID))
+	r.Get("/", handlers.RenderLandingPage(cfg.Templates["landing"], database, authSvc.Store(), auth.SessionID))
 	r.Get("/books", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAuth(http.HandlerFunc(handlers.RenderBooksPage(cfg.Templates, database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
+		authSvc.RequireAuth(http.HandlerFunc(handlers.RenderBooksPage(cfg.Templates["books"], database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
 	})
 	r.Get("/books/{id}", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAuth(http.HandlerFunc(handlers.RenderBookDetailPage(cfg.Templates, database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
+		authSvc.RequireAuth(http.HandlerFunc(handlers.RenderBookDetailPage(cfg.Templates["book-detail"], database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
 	})
 	r.Get("/wishlist", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAuth(http.HandlerFunc(handlers.RenderWishlistPage(cfg.Templates, database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
+		authSvc.RequireAuth(http.HandlerFunc(handlers.RenderWishlistPage(cfg.Templates["wishlist"], database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
 	})
 	r.Get("/admin", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdmin(http.HandlerFunc(handlers.RenderAdminPage(cfg.Templates, database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
+		authSvc.RequireAdmin(http.HandlerFunc(handlers.RenderAdminPage(cfg.Templates["admin"], database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
 	})
 	r.Get("/settings", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdmin(http.HandlerFunc(handlers.RenderSettingsPage(cfg.Templates, database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
+		authSvc.RequireAdmin(http.HandlerFunc(handlers.RenderSettingsPage(cfg.Templates["settings"], database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
 	})
 
 	// -- API routes --
