@@ -174,7 +174,7 @@ func TestCreateWishlistItemHandler_AllOptionalFields(t *testing.T) {
 
 	amazonURL := "https://www.amazon.com/dp/ABC123"
 	thriftbooksURL := "https://www.thriftbooks.com/w/xyz"
-	otherURLs := `["https://example.com/book"]`
+	otherURLs := "https://example.com/book"
 
 	body := fmt.Sprintf(`{
 		"title":"War and Peace",
