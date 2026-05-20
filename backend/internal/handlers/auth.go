@@ -4,7 +4,6 @@ import (
 	"html/template"
 	"net/http"
 	"time"
-
 	"github.com/gorilla/sessions"
 
 	"git.rcsmaine.com/chris/library/backend/internal/auth"

@@ -107,7 +107,7 @@ func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 			book.Authors, _ = stringPtr(author)
 			book.ISBN, _ = stringPtr(isbn)
 			book.CoverImageURL, _ = stringPtr(coverImage)
-			book.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", createdAt)
+			book.CreatedAt = createdAt
 			books = append(books, book)
 		}
 		if err = rows.Err(); err != nil {
