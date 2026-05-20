@@ -180,9 +180,9 @@ func parseGuestBody(r *http.Request) (password string, err *auth.APIError) {
 // Accepts both JSON and application/x-www-form-urlencoded bodies.
 func LoginHandler(authSvc *auth.Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		username, password, err := parseBody(r)
-		if err != nil {
-			JSONError(w, err.Code, err.Message)
+		username, password, parseErr := parseBody(r)
+		if parseErr != nil {
+			JSONError(w, parseErr.Code, parseErr.Message)
 			return
 		}
 
