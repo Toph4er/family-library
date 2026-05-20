@@ -8,8 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/go-chi/chi/v5"
-
 	"git.rcsmaine.com/chris/library/backend/internal/handlers"
 )
 
