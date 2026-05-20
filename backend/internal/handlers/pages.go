@@ -46,9 +46,16 @@ func buildPageContext(r *http.Request, store *sessions.CookieStore, sessionName 
 }
 
 // RenderLandingPage renders the public landing page.
+// Authenticated users are redirected to /books.
 func RenderLandingPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := buildPageContext(r, store, sessionName)
+
+		// Authenticated users should not see the landing page — send them to books.
+		if ctx.IsAuthenticated {
+			http.Redirect(w, r, "/books", http.StatusFound)
+			return
+		}
 
 		siteName := "Our Library"
 		siteTagline := "A woodland fairy tale collection"

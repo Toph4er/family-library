@@ -57,8 +57,24 @@ func getCSRFToken(w http.ResponseWriter, store *sessions.CookieStore, sessionNam
 }
 
 // RenderLoginPage renders the admin login page template.
+// Already-authenticated users are redirected to /books.
 func RenderLoginPage(tmpl *template.Template, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// If already authenticated, redirect to books
+		if user := auth.GetUserFromContext(r); user != nil {
+			http.Redirect(w, r, "/books", http.StatusFound)
+			return
+		}
+
+		// Also check session directly (context may not be populated for unauthenticated requests)
+		session, err := store.Get(r, sessionName)
+		if err == nil {
+			if _, ok := session.Values[auth.UserIDKey]; ok {
+				http.Redirect(w, r, "/books", http.StatusFound)
+				return
+			}
+		}
+
 		token := getCSRFToken(w, store, sessionName, r)
 		data := pageData{
 			Year:      time.Now().Year(),
@@ -72,8 +88,24 @@ func RenderLoginPage(tmpl *template.Template, store *sessions.CookieStore, sessi
 }
 
 // RenderGuestLoginPage renders the guest login page template.
+// Already-authenticated users are redirected to /books.
 func RenderGuestLoginPage(tmpl *template.Template, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// If already authenticated, redirect to books
+		if user := auth.GetUserFromContext(r); user != nil {
+			http.Redirect(w, r, "/books", http.StatusFound)
+			return
+		}
+
+		// Also check session directly (context may not be populated for unauthenticated requests)
+		session, err := store.Get(r, sessionName)
+		if err == nil {
+			if _, ok := session.Values[auth.UserIDKey]; ok {
+				http.Redirect(w, r, "/books", http.StatusFound)
+				return
+			}
+		}
+
 		token := getCSRFToken(w, store, sessionName, r)
 		data := pageData{
 			Year:      time.Now().Year(),

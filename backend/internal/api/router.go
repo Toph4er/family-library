@@ -60,21 +60,24 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 	r.Get("/guest-login", handlers.RenderGuestLoginPage(cfg.Templates["guest-login"], authSvc.Store(), auth.SessionID))
 	r.Get("/logout", handlers.RenderLogoutSuccess(cfg.Templates["logout"], authSvc))
 
+	// / — public landing page; authenticated users are redirected to /books
 	r.Get("/", handlers.RenderLandingPage(cfg.Templates["landing"], database, authSvc.Store(), auth.SessionID))
+
+	// Protected page routes use HTML-aware middleware (redirects instead of JSON)
 	r.Get("/books", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAuth(http.HandlerFunc(handlers.RenderBooksPage(cfg.Templates["books"], database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
+		authSvc.RequireAuthHTML(http.HandlerFunc(handlers.RenderBooksPage(cfg.Templates["books"], database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
 	})
 	r.Get("/books/{id}", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAuth(http.HandlerFunc(handlers.RenderBookDetailPage(cfg.Templates["book-detail"], database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
+		authSvc.RequireAuthHTML(http.HandlerFunc(handlers.RenderBookDetailPage(cfg.Templates["book-detail"], database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
 	})
 	r.Get("/wishlist", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAuth(http.HandlerFunc(handlers.RenderWishlistPage(cfg.Templates["wishlist"], database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
+		authSvc.RequireAuthHTML(http.HandlerFunc(handlers.RenderWishlistPage(cfg.Templates["wishlist"], database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
 	})
 	r.Get("/admin", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdmin(http.HandlerFunc(handlers.RenderAdminPage(cfg.Templates["admin"], database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.RenderAdminPage(cfg.Templates["admin"], database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
 	})
 	r.Get("/settings", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdmin(http.HandlerFunc(handlers.RenderSettingsPage(cfg.Templates["settings"], database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.RenderSettingsPage(cfg.Templates["settings"], database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
 	})
 
 	// -- API routes --

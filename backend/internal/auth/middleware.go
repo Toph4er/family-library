@@ -57,6 +57,45 @@ func (a *Auth) RequireAdmin(next http.Handler) http.Handler {
 	})
 }
 
+// RequireAuthHTML is an HTML-aware variant of RequireAuth that redirects
+// unauthenticated users to /login instead of returning a JSON error.
+// Use this for page routes (template-rendered endpoints).
+func (a *Auth) RequireAuthHTML(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, ok := a.GetUserFromSession(r)
+		if !ok {
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
+
+		// Attach user to request context
+		ctx := context.WithValue(r.Context(), userContextKey, user)
+		r = r.WithContext(ctx)
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+// RequireAdminHTML is an HTML-aware variant of RequireAdmin that redirects
+// non-admin users to / instead of returning a JSON error.
+// Guests and unauthenticated users are both redirected.
+// Use this for admin-only page routes.
+func (a *Auth) RequireAdminHTML(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, ok := a.GetUserFromSession(r)
+		if !ok || user.IsGuest {
+			http.Redirect(w, r, "/", http.StatusFound)
+			return
+		}
+
+		// Attach user to request context
+		ctx := context.WithValue(r.Context(), userContextKey, user)
+		r = r.WithContext(ctx)
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 // GetUserFromContext retrieves the session user from request context
 //
 func GetUserFromContext(r *http.Request) *SessionUser {
