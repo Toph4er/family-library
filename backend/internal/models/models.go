@@ -43,8 +43,8 @@ type Book struct {
 	CoverImageURL       *string   `json:"cover_image_url,omitempty"`
 	CoverSource         *string   `json:"cover_source,omitempty"`
 	GuestVisibleFields  string    `json:"-"`
-	CreatedAt           time.Time `json:"created_at"`
-	UpdatedAt           time.Time `json:"updated_at"`
+	CreatedAt           string `json:"created_at"`
+	UpdatedAt           string `json:"updated_at"`
 }
 
 // WishlistItem represents a book on the wishlist
@@ -61,9 +61,9 @@ type WishlistItem struct {
 	OtherURLs      *string    `json:"other_urls,omitempty"`  // JSON array
 	CoverImageURL  *string    `json:"cover_image_url,omitempty"`
 	RequestedBy    *string    `json:"requested_by,omitempty"`
-	RequestedAt    time.Time  `json:"requested_at"`
-	Fulfilled      bool       `json:"fulfilled"`
-	FulfilledAt    *time.Time `json:"fulfilled_at,omitempty"`
+	RequestedAt    string   `json:"requested_at"`
+	Fulfilled      bool     `json:"fulfilled"`
+	FulfilledAt    *string  `json:"fulfilled_at,omitempty"`
 	Notes          *string    `json:"notes,omitempty"`
 }
 

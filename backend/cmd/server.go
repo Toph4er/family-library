@@ -150,7 +150,11 @@ func main() {
 // the page's own HTML file, and all shared partials.
 func loadTemplates(dir string) (map[string]*template.Template, error) {
 	funcMap := template.FuncMap{
-		"formatTime": func(t time.Time) string {
+		"formatTime": func(s string) string {
+			t, err := time.Parse("2006-01-02 15:04:05", s)
+			if err != nil {
+				return s
+			}
 			return t.Format("Jan 2, 2006 at 3:04 PM")
 		},
 		"formatISBN": func(isbn string) string {

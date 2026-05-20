@@ -70,9 +70,10 @@ func scanWishlistItem(s scanner) (*models.WishlistItem, error) {
 	return &item, nil
 }
 
-func nullTimePtr(nt sql.NullTime) *time.Time {
+func nullTimePtr(nt sql.NullTime) *string {
 	if nt.Valid {
-		return &nt.Time
+		s := nt.Time.Format(time.RFC3339)
+		return &s
 	}
 	return nil
 }

@@ -156,7 +156,7 @@ func RenderBookDetailPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 		book.ISBN, _ = stringPtr(isbn)
 		book.CoverImageURL, _ = stringPtr(coverImage)
 		book.Notes, _ = stringPtr(notes)
-		book.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", createdAt)
+		book.CreatedAt = createdAt
 
 		ctx.Book = &book
 
@@ -201,12 +201,10 @@ func RenderWishlistPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 			item.Notes, _ = stringPtr(notes)
 			item.Fulfilled = fulfilled
 			item.RequestedBy, _ = stringPtr(requestedBy)
-			item.RequestedAt, _ = time.Parse("2006-01-02 15:04:05", requestedAtStr)
+			item.RequestedAt = requestedAtStr
 			if fulfilledAtStr != "" {
-				if t, err := time.Parse("2006-01-02 15:04:05", fulfilledAtStr); err == nil {
-					item.FulfilledAt = &t
-					item.Fulfilled = true
-				}
+				item.FulfilledAt = &fulfilledAtStr
+				item.Fulfilled = true
 			}
 			items = append(items, item)
 		}
