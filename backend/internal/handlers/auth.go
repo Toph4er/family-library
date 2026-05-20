@@ -15,8 +15,10 @@ import (
 
 // pageData holds template context for login-related pages.
 type pageData struct {
-	Year      int
-	CSRFToken string
+	Year            int
+	CSRFToken       string
+	IsAdmin         bool
+	IsAuthenticated bool
 }
 
 // getCSRFToken retrieves or generates a CSRF token for the given request.
