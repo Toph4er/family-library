@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 
 INSERT INTO settings (key, value, description) VALUES
-('cover_image_provider', 'google_books', 'Primary API for fetching book covers'),
+('cover_image_provider', 'open_library', 'Primary API for fetching book covers'),
 ('cover_image_fallback', 'open_library', 'Fallback API if primary fails'),
 ('guest_password_hash', '', 'Hash of the shared guest password'),
 ('site_name', 'Our Library', 'Display name for the site'),

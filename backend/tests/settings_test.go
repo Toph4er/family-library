@@ -37,8 +37,8 @@ func TestListSettingsHandler_Success(t *testing.T) {
 	if _, ok := data["cover_image_provider"]; !ok {
 		t.Fatal("expected cover_image_provider in settings")
 	}
-	if data["cover_image_provider"] != "google_books" {
-		t.Fatalf("expected cover_image_provider='google_books', got %v", data["cover_image_provider"])
+	if data["cover_image_provider"] != "open_library" {
+		t.Fatalf("expected cover_image_provider='open_library', got %v", data["cover_image_provider"])
 	}
 
 	if _, ok := data["site_name"]; !ok {
