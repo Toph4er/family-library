@@ -86,7 +86,8 @@ func TestUpdateSettingHandler_Success(t *testing.T) {
 	env := setupTestEnv(t)
 
 	// Ensure required settings exist before running update tests
-							_, err := env.db.Exec("INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", "cover_image_provider", "initial_value")
+								env.db.Exec("DELETE FROM settings WHERE key = ?", "cover_image_provider")
+								_, err := env.db.Exec("INSERT INTO settings (key, value) VALUES (?, ?)", "cover_image_provider", "initial_value")
 			if err != nil {
 				t.Fatalf("failed to pre-seed cover_image_provider: %v", err)
 			}
@@ -183,7 +184,8 @@ func TestUpdateSettingHandler_SiteNameUpdate(t *testing.T) {
 	env := setupTestEnv(t)
 
 	// Ensure required settings exist before running update tests
-							_, err := env.db.Exec("INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", "site_name", "initial_value")
+								env.db.Exec("DELETE FROM settings WHERE key = ?", "site_name")
+								_, err := env.db.Exec("INSERT INTO settings (key, value) VALUES (?, ?)", "site_name", "initial_value")
 			if err != nil {
 				t.Fatalf("failed to pre-seed site_name: %v", err)
 			}
