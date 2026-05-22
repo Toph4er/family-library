@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"html/template"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -99,5 +100,64 @@ func UpdateSettingHandler(db *sql.DB) http.HandlerFunc {
 				"value": req.Value,
 			},
 		})
+	}
+}
+
+// HTMLUpdateSettingHandler updates a single setting by key via HTMX (form-encoded, returns HTML).
+// On success: returns an HTML fragment with a "✓ Saved" toast trigger.
+// On failure: returns an HTML error fragment.
+//
+// PUT /settings/update/:key
+func HTMLUpdateSettingHandler(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		key := chi.URLParam(r, "key")
+
+		// Block updates to sensitive keys
+		if _, sensitive := sensitiveKeys[key]; sensitive {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusForbidden)
+			_, _ = w.Write([]byte(htmlErrorFragment("Cannot update this setting via this endpoint")))
+			return
+		}
+
+		if err := r.ParseForm(); err != nil {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(htmlErrorFragment("Invalid request")))
+			return
+		}
+
+		val := r.FormValue("value")
+
+		result, err := db.Exec(
+			"UPDATE settings SET value = ?, updated_at = CURRENT_TIMESTAMP WHERE key = ?",
+			val, key,
+		)
+		if err != nil {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(htmlErrorFragment("Failed to update setting")))
+			return
+		}
+
+		rowsAffected, err := result.RowsAffected()
+		if err != nil {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(htmlErrorFragment("Failed to verify update")))
+			return
+		}
+		if rowsAffected == 0 {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write([]byte(htmlErrorFragment("Setting not found")))
+			return
+		}
+
+		// Success — trigger a toast via HTMX header
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("HX-Trigger", `{"settingsUpdated": true}`)
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("<span class=\"text-success text-sm ml-2\">✓ Saved</span>"))
 	}
 }

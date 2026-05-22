@@ -79,8 +79,14 @@ func RenderLoginPage(tmpl *template.Template, store *sessions.CookieStore, sessi
 			CSRFToken: token,
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := tmpl.ExecuteTemplate(w, "login.html", data); err != nil {
-			http.Error(w, "template error", http.StatusInternalServerError)
+		if isHTMXRequest(r) {
+			if err := tmpl.ExecuteTemplate(w, "content", data); err != nil {
+				http.Error(w, "template error", http.StatusInternalServerError)
+			}
+		} else {
+			if err := tmpl.ExecuteTemplate(w, "login.html", data); err != nil {
+				http.Error(w, "template error", http.StatusInternalServerError)
+			}
 		}
 	}
 }
@@ -110,8 +116,14 @@ func RenderGuestLoginPage(tmpl *template.Template, store *sessions.CookieStore, 
 			CSRFToken: token,
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := tmpl.ExecuteTemplate(w, "guest-login.html", data); err != nil {
-			http.Error(w, "template error", http.StatusInternalServerError)
+		if isHTMXRequest(r) {
+			if err := tmpl.ExecuteTemplate(w, "content", data); err != nil {
+				http.Error(w, "template error", http.StatusInternalServerError)
+			}
+		} else {
+			if err := tmpl.ExecuteTemplate(w, "guest-login.html", data); err != nil {
+				http.Error(w, "template error", http.StatusInternalServerError)
+			}
 		}
 	}
 }
@@ -125,59 +137,134 @@ func RenderLogoutSuccess(tmpl *template.Template, authSvc *auth.Auth) http.Handl
 			Year: time.Now().Year(),
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := tmpl.ExecuteTemplate(w, "logout.html", data); err != nil {
-			http.Error(w, "template error", http.StatusInternalServerError)
+		if isHTMXRequest(r) {
+			if err := tmpl.ExecuteTemplate(w, "content", data); err != nil {
+				http.Error(w, "template error", http.StatusInternalServerError)
+			}
+		} else {
+			if err := tmpl.ExecuteTemplate(w, "logout.html", data); err != nil {
+				http.Error(w, "template error", http.StatusInternalServerError)
+			}
 		}
 	}
 }
 
-// parseBody extracts credentials from either a JSON body or a form-encoded body.
-// It inspects Content-Type to decide the parsing strategy:
-//   - "application/json" → JSON decode
-//   - "application/x-www-form-urlencoded" → form parse
-//   - missing or other → try form parse as fallback (HTML forms often omit CT)
-func parseBody(r *http.Request) (username, password string, err *auth.APIError) {
-	// Try JSON first if Content-Type indicates it
-	ct := r.Header.Get("Content-Type")
-	if ct != "" && (ct == "application/json" || len(ct) > 16 && ct[:16] == "application/json") {
-		var body struct {
-			Username string `json:"username"`
-			Password string `json:"password"`
-		}
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			return "", "", &auth.APIError{Code: http.StatusBadRequest, Message: "Invalid request body"}
-		}
-		return body.Username, body.Password, nil
-	}
+// htmlErrorFragment returns a styled HTML error div for HTMX swapping.
+func htmlErrorFragment(message string) string {
+	return "<div class=\"p-3 rounded-lg bg-error/10 border border-error/20 text-error text-sm\" role=\"alert\">" + template.HTMLEscapeString(message) + "</div>"
+}
 
-	// Form-encoded or unknown Content-Type — parse as form data
-	if err := r.ParseForm(); err != nil {
+// HTMLLoginHandler handles admin login via HTMX (form-encoded, returns HTML).
+// On success: sets HX-Redirect header to /books.
+// On failure: returns an HTML error fragment for HTMX to swap into the DOM.
+func HTMLLoginHandler(authSvc *auth.Auth) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := r.ParseForm(); err != nil {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(htmlErrorFragment("Invalid request")))
+			return
+		}
+
+		username := r.FormValue("username")
+		password := r.FormValue("password")
+
+		if username == "" || password == "" {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(htmlErrorFragment("Username and password are required")))
+			return
+		}
+
+		user, err := authSvc.Login(w, r, username, password)
+		if err != nil {
+			if apiErr, ok := err.(*auth.APIError); ok {
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				w.WriteHeader(apiErr.Code)
+				_, _ = w.Write([]byte(htmlErrorFragment(apiErr.Message)))
+				return
+			}
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(htmlErrorFragment("Internal server error")))
+			return
+		}
+
+		// Success — tell HTMX to redirect to /books
+		_ = user
+		w.Header().Set("HX-Redirect", "/books")
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+// HTMLGuestLoginHandler handles guest login via HTMX (form-encoded, returns HTML).
+// On success: sets HX-Redirect header to /books.
+// On failure: returns an HTML error fragment for HTMX to swap into the DOM.
+func HTMLGuestLoginHandler(authSvc *auth.Auth) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := r.ParseForm(); err != nil {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(htmlErrorFragment("Invalid request")))
+			return
+		}
+
+		password := r.FormValue("password")
+
+		if password == "" {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(htmlErrorFragment("Password is required")))
+			return
+		}
+
+		if err := authSvc.GuestLogin(w, r, password); err != nil {
+			if apiErr, ok := err.(*auth.APIError); ok {
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				w.WriteHeader(apiErr.Code)
+				_, _ = w.Write([]byte(htmlErrorFragment(apiErr.Message)))
+				return
+			}
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(htmlErrorFragment("Internal server error")))
+			return
+		}
+
+		// Success — tell HTMX to redirect to /books
+		w.Header().Set("HX-Redirect", "/books")
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+// parseBody extracts credentials from a JSON body.
+// Used by the deprecated /api/v1/auth/login endpoint.
+func parseBody(r *http.Request) (username, password string, err *auth.APIError) {
+	var body struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		return "", "", &auth.APIError{Code: http.StatusBadRequest, Message: "Invalid request body"}
 	}
-	return r.FormValue("username"), r.FormValue("password"), nil
+	return body.Username, body.Password, nil
 }
 
-// parseGuestBody extracts a guest password from either a JSON body or a form-encoded body.
+// parseGuestBody extracts a guest password from a JSON body.
+// Used by the deprecated /api/v1/auth/guest-login endpoint.
 func parseGuestBody(r *http.Request) (password string, err *auth.APIError) {
-	ct := r.Header.Get("Content-Type")
-	if ct != "" && (ct == "application/json" || len(ct) > 16 && ct[:16] == "application/json") {
-		var body struct {
-			Password string `json:"password"`
-		}
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			return "", &auth.APIError{Code: http.StatusBadRequest, Message: "Invalid request body"}
-		}
-		return body.Password, nil
+	var body struct {
+		Password string `json:"password"`
 	}
-
-	if err := r.ParseForm(); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		return "", &auth.APIError{Code: http.StatusBadRequest, Message: "Invalid request body"}
 	}
-	return r.FormValue("password"), nil
+	return body.Password, nil
 }
 
 // LoginHandler handles admin login.
 // Accepts both JSON and application/x-www-form-urlencoded bodies.
+// Deprecated: Use HTMLLoginHandler for HTMX-driven UI endpoints.
 func LoginHandler(authSvc *auth.Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username, password, parseErr := parseBody(r)
@@ -217,6 +304,7 @@ func LoginHandler(authSvc *auth.Auth) http.HandlerFunc {
 
 // GuestLoginHandler handles guest login.
 // Accepts both JSON and application/x-www-form-urlencoded bodies.
+// Deprecated: Use HTMLGuestLoginHandler for HTMX-driven UI endpoints.
 func GuestLoginHandler(authSvc *auth.Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		password, err := parseGuestBody(r)

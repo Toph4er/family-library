@@ -371,10 +371,11 @@
   <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js"></script>
 
   <script>
-    // HTMX configuration
+    // HTMX configuration: inject CSRF token into all requests.
+    // Do NOT override Content-Type — let HTMX use the default
+    // (application/x-www-form-urlencoded for <form> submissions).
     document.body.addEventListener('htmx:configRequest', (event) => {
       event.detail.headers['X-CSRF-Token'] = '{{.CSRFToken}}';
-      event.detail.headers['Content-Type'] = 'application/json';
     });
 
     // Toast notification helper
@@ -396,16 +397,22 @@
     }
 
     // HTMX response handling for toasts
+    // Only show toast for JSON API errors (Content-Type: application/json).
+    // HTML fragment errors are rendered inline by HTMX's swap — no toast needed.
     document.body.addEventListener('htmx:afterRequest', function(event) {
       var path = event.detail.requestPath;
       if (event.detail.failed) {
-        var resp = event.detail.xhr?.response;
-        var msg = 'An error occurred';
-        try {
-          var data = JSON.parse(resp);
-          msg = data.error || msg;
-        } catch(e) {}
-        showToast(msg, 'error');
+        var ct = event.detail.xhr?.getResponseHeader('Content-Type') || '';
+        if (ct.indexOf('application/json') !== -1) {
+          var resp = event.detail.xhr?.response;
+          var msg = 'An error occurred';
+          try {
+            var data = JSON.parse(resp);
+            msg = data.error || msg;
+          } catch(e) {}
+          showToast(msg, 'error');
+        }
+        // HTML responses: error fragment is already swapped into the DOM by HTMX.
       } else if (event.detail.elt && event.detail.elt.getAttribute('hx-confirm-toast')) {
         showToast('Success', 'success');
       }

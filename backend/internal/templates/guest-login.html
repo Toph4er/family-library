@@ -17,8 +17,8 @@
 
     <!-- Login card -->
     <div class="bg-surface rounded-2xl shadow-lg p-8 border" style="border-color: rgba(139, 69, 19, 0.1);">
-      <form hx-post="/api/v1/auth/guest-login" hx-swap="innerHTML" hx-target="#guest-error">
-        
+      <form hx-post="/auth/guest-login" hx-swap="innerHTML" hx-target="#guest-error">
+
         <div>
           <label for="guest-password" class="block text-sm font-medium text-text mb-1">Guest Password</label>
           <input type="password" id="guest-password" name="password" required
@@ -27,9 +27,9 @@
             aria-required="true"
             autocomplete="current-password">
         </div>
-        
+
         <div id="guest-error" class="mt-4"></div>
-        
+
         <button type="submit" id="guest-form"
           class="w-full mt-6 px-4 py-2.5 rounded-lg font-medium text-white transition-colors"
           style="background-color: var(--color-accent);"
@@ -51,22 +51,4 @@
     </div>
   </div>
 </div>
-
-<script>
-  document.querySelector('form[hx-post="/api/v1/auth/guest-login"]').addEventListener('htmx:afterRequest', function(event) {
-    if (event.detail.failed) {
-      var resp = event.detail.xhr?.response;
-      var msg = 'Invalid guest password';
-      try {
-        var data = JSON.parse(resp);
-        msg = data.error || msg;
-      } catch(e) {}
-      document.getElementById('guest-error').innerHTML = 
-        '<div class="p-3 rounded-lg bg-error/10 border border-error/20 text-error text-sm" role="alert">' + msg + '</div>';
-    } else {
-      // Success - redirect to books page
-      window.location.href = '/books';
-    }
-  });
-</script>
 {{end}}

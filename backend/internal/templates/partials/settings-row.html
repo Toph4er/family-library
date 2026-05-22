@@ -3,15 +3,15 @@
   <label for="setting-{{.Key}}" class="font-medium text-text w-40">{{.Key}}</label>
   <input type="{{.InputType}}"
     id="setting-{{.Key}}"
-    name="{{.Key}}"
+    name="value"
     value="{{.Value}}"
     class="flex-1 px-3 py-2 rounded-lg border bg-surface text-right"
     style="border-color: var(--color-secondary);"
-    hx-put="/api/v1/settings/{{.Key}}"
-    hx-target="#settings-result"
-    hx-indicator="#settings-result .htmx-indicator"
+    hx-put="/settings/update/{{.Key}}"
+    hx-target="#settings-result-{{.Key}}"
+    hx-indicator="#settings-result-{{.Key}} .htmx-indicator"
+    hx-swap="afterend"
     aria-label="Update {{.Key}}">
-  <span class="htmx-indicator ml-2">⟳</span>
+  <span id="settings-result-{{.Key}}" class="htmx-indicator text-sm text-text-light ml-2"></span>
 </div>
-<div id="settings-result" class="htmx-indicator text-sm text-text-light mt-1"></div>
 {{end}}

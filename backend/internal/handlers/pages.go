@@ -45,6 +45,28 @@ func buildPageContext(r *http.Request, store *sessions.CookieStore, sessionName 
 	return ctx
 }
 
+// isHTMXRequest checks if the request originated from HTMX.
+func isHTMXRequest(r *http.Request) bool {
+	return r.Header.Get("HX-Request") == "true"
+}
+
+// renderPage renders a template, returning only the content fragment for HTMX
+// requests (HX-Request header present) or the full page layout otherwise.
+func renderPage(w http.ResponseWriter, r *http.Request, tmpl *template.Template, pageName string, data interface{}) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if isHTMXRequest(r) {
+		// HTMX request — render only the content block, not the base layout.
+		if err := tmpl.ExecuteTemplate(w, "content", data); err != nil {
+			http.Error(w, "template error", http.StatusInternalServerError)
+		}
+	} else {
+		// Full page request — render the page template (which includes base).
+		if err := tmpl.ExecuteTemplate(w, pageName, data); err != nil {
+			http.Error(w, "template error", http.StatusInternalServerError)
+		}
+	}
+}
+
 // RenderLandingPage renders the public landing page.
 // Authenticated users are redirected to /books.
 func RenderLandingPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
@@ -71,10 +93,7 @@ func RenderLandingPage(tmpl *template.Template, db *sql.DB, store *sessions.Cook
 		ctx.SiteName = siteName
 		ctx.SiteTagline = siteTagline
 
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := tmpl.ExecuteTemplate(w, "landing.html", ctx); err != nil {
-			http.Error(w, "template error", http.StatusInternalServerError)
-		}
+		renderPage(w, r, tmpl, "landing.html", ctx)
 	}
 }
 
@@ -117,10 +136,7 @@ func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 
 		ctx.Books = books
 
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := tmpl.ExecuteTemplate(w, "books.html", ctx); err != nil {
-			http.Error(w, "template error", http.StatusInternalServerError)
-		}
+		renderPage(w, r, tmpl, "books.html", ctx)
 	}
 }
 
@@ -160,10 +176,7 @@ func RenderBookDetailPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 
 		ctx.Book = &book
 
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := tmpl.ExecuteTemplate(w, "book-detail.html", ctx); err != nil {
-			http.Error(w, "template error", http.StatusInternalServerError)
-		}
+		renderPage(w, r, tmpl, "book-detail.html", ctx)
 	}
 }
 
@@ -215,10 +228,7 @@ func RenderWishlistPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 
 		ctx.Items = items
 
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := tmpl.ExecuteTemplate(w, "wishlist.html", ctx); err != nil {
-			http.Error(w, "template error", http.StatusInternalServerError)
-		}
+		renderPage(w, r, tmpl, "wishlist.html", ctx)
 	}
 }
 
@@ -267,10 +277,7 @@ func RenderAdminPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 
 		ctx.Users = users
 
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := tmpl.ExecuteTemplate(w, "admin.html", ctx); err != nil {
-			http.Error(w, "template error", http.StatusInternalServerError)
-		}
+		renderPage(w, r, tmpl, "admin.html", ctx)
 	}
 }
 
@@ -316,10 +323,7 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 
 		ctx.Settings = settings
 
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := tmpl.ExecuteTemplate(w, "settings.html", ctx); err != nil {
-			http.Error(w, "template error", http.StatusInternalServerError)
-		}
+		renderPage(w, r, tmpl, "settings.html", ctx)
 	}
 }
 

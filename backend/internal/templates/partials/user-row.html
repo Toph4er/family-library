@@ -19,7 +19,7 @@
       >✏️</button>
       {{if ne .username "current"}}
       <button type="button"
-        hx-delete="/api/v1/admin/users/{{.id}}"
+        hx-delete="/admin/users/{{.id}}"
         hx-confirm="Delete user {{.username}}?"
         hx-target="closest tr"
         hx-swap="outerHTML"

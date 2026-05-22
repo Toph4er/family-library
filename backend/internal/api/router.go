@@ -60,6 +60,30 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 	r.Get("/guest-login", handlers.RenderGuestLoginPage(cfg.Templates["guest-login"], authSvc.Store(), auth.SessionID))
 	r.Get("/logout", handlers.RenderLogoutSuccess(cfg.Templates["logout"], authSvc))
 
+	// -- HTMX UI routes (form-encoded, return HTML fragments or HX-Redirect) --
+	r.Post("/auth/login", handlers.HTMLLoginHandler(authSvc))
+	r.Post("/auth/guest-login", handlers.HTMLGuestLoginHandler(authSvc))
+	r.Put("/settings/update/{key}", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLUpdateSettingHandler(database))).ServeHTTP(w, r)
+	})
+
+	// Admin user management (HTMX)
+	r.Get("/admin/users/new-form", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLUserFormHandler(database))).ServeHTTP(w, r)
+	})
+	r.Get("/admin/users/{id}/edit", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLUserFormHandler(database))).ServeHTTP(w, r)
+	})
+	r.Post("/admin/users", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLCreateUserHandler(database))).ServeHTTP(w, r)
+	})
+	r.Put("/admin/users/{id}", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLUpdateUserHandler(database))).ServeHTTP(w, r)
+	})
+	r.Delete("/admin/users/{id}", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLDeleteUserHandler(database))).ServeHTTP(w, r)
+	})
+
 	// / — public landing page; authenticated users are redirected to /books
 	r.Get("/", handlers.RenderLandingPage(cfg.Templates["landing"], database, authSvc.Store(), auth.SessionID))
 
