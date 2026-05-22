@@ -404,7 +404,7 @@ func HTMLCreateUserHandler(db *sql.DB) http.HandlerFunc {
 			displayNamePtr = &displayName
 		}
 
-		_, err := db.Exec(
+		_, err = db.Exec(
 			"INSERT INTO users (username, password_hash, role, display_name) VALUES (?, ?, 'admin', ?)",
 			username, hash, displayNamePtr,
 		)
