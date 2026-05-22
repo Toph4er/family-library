@@ -61,7 +61,79 @@
       reads — all organized just for you.
     </p>
 
-    <!-- Login buttons -->
+    <!-- Login buttons (unauthenticated) or nav links (authenticated) -->
+    {{if .IsAuthenticated}}
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-4" role="group" aria-label="Quick navigation">
+      <a
+        href="/books"
+        class="group w-full sm:w-auto px-8 py-3.5 rounded-xl font-medium text-white text-base shadow-md transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
+        style="background-color: var(--color-primary);"
+        onmouseenter="this.style.backgroundColor='var(--color-text-light)'"
+        onmouseleave="this.style.backgroundColor='var(--color-primary)'"
+        aria-label="Browse the book collection"
+      >
+        <span class="flex items-center justify-center gap-2">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z"/>
+          </svg>
+          Books
+        </span>
+      </a>
+
+      <a
+        href="/wishlist"
+        class="group w-full sm:w-auto px-8 py-3.5 rounded-xl font-medium text-text-light text-base border-2 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:text-primary hover:border-primary/30"
+        style="border-color: var(--color-secondary);"
+        onmouseenter="this.style.borderColor='var(--color-primary)'"
+        onmouseleave="this.style.borderColor='var(--color-secondary)'"
+        aria-label="View your wishlist"
+      >
+        <span class="flex items-center justify-center gap-2">
+          <svg class="w-5 h-5 transition-transform duration-200 group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+          </svg>
+          Wishlist
+        </span>
+      </a>
+
+      {{if .IsAdmin}}
+      <a
+        href="/settings"
+        class="group w-full sm:w-auto px-8 py-3.5 rounded-xl font-medium text-text-light text-base border-2 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:text-primary hover:border-primary/30"
+        style="border-color: var(--color-secondary);"
+        onmouseenter="this.style.borderColor='var(--color-primary)'"
+        onmouseleave="this.style.borderColor='var(--color-secondary)'"
+        aria-label="Manage settings"
+      >
+        <span class="flex items-center justify-center gap-2">
+          <svg class="w-5 h-5 transition-transform duration-200 group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+          </svg>
+          Settings
+        </span>
+      </a>
+
+      <a
+        href="/admin"
+        class="group w-full sm:w-auto px-8 py-3.5 rounded-xl font-medium text-text-light text-base border-2 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:text-primary hover:border-primary/30"
+        style="border-color: var(--color-secondary);"
+        onmouseenter="this.style.borderColor='var(--color-primary)'"
+        onmouseleave="this.style.borderColor='var(--color-secondary)'"
+        aria-label="Admin panel"
+      >
+        <span class="flex items-center justify-center gap-2">
+          <svg class="w-5 h-5 transition-transform duration-200 group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          Admin
+        </span>
+      </a>
+      {{end}}
+    </div>
+    {{else}}
+    <!-- Login buttons (unauthenticated) -->
     <div class="flex flex-col sm:flex-row items-center justify-center gap-4" role="group" aria-label="Access options">
       <!-- Admin Login -->
       <a
@@ -100,6 +172,7 @@
         </span>
       </a>
     </div>
+    {{end}}
 
     <!-- Quick features -->
     <div class="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-2xl mx-auto stagger-children">

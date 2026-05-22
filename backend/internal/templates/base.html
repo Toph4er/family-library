@@ -275,6 +275,7 @@
             <a href="/settings" class="text-primary hover:text-text-light transition-colors font-medium text-sm no-underline">Settings</a>
             {{end}}
             {{if .IsAuthenticated}}
+            <span class="text-text-light/70 font-medium text-sm">{{if .IsAdmin}}Welcome, {{.Username}}{{else}}Welcome, friend{{end}}</span>
             <a href="/logout" class="text-error hover:text-error/80 transition-colors font-medium text-sm no-underline">Logout</a>
             {{else}}
             <a href="/login" class="text-primary hover:text-text-light transition-colors font-medium text-sm no-underline">Login</a>
@@ -322,6 +323,7 @@
             <a href="/settings" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Settings</a>
             {{end}}
             {{if .IsAuthenticated}}
+            <span role="menuitem" class="text-text-light/70 font-medium text-sm py-2 px-3">{{if .IsAdmin}}Welcome, {{.Username}}{{else}}Welcome, friend{{end}}</span>
             <a href="/logout" role="menuitem" class="text-error hover:text-error/80 transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Logout</a>
             {{else}}
             <a href="/login" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Login</a>

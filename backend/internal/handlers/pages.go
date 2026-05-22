@@ -20,6 +20,7 @@ type pageContext struct {
 	CSRFToken       string
 	IsAdmin         bool
 	IsAuthenticated bool
+	Username        string
 	SiteName        string
 	SiteTagline     string
 	Books           []models.Book
@@ -30,18 +31,45 @@ type pageContext struct {
 }
 
 // buildPageContext creates a pageContext for the given request.
+// It first checks the request context (set by auth middleware), then falls
+// back to reading the session directly for routes without that middleware.
 func buildPageContext(r *http.Request, store *sessions.CookieStore, sessionName string) pageContext {
-	user := auth.GetUserFromContext(r)
 	ctx := pageContext{Year: time.Now().Year()}
-	if user != nil {
+
+	// Check context first (set by auth middleware on protected routes).
+	if user := auth.GetUserFromContext(r); user != nil {
 		ctx.IsAuthenticated = true
 		ctx.IsAdmin = !user.IsGuest
+		ctx.Username = user.Username
 		if s := middleware.GetSessionFromContext(r); s != nil {
 			if token, ok := s.Values[middleware.CSRFTokenKey].(string); ok && token != "" {
 				ctx.CSRFToken = token
 			}
 		}
+		return ctx
 	}
+
+	// Fall back to reading the session directly (public routes without auth middleware).
+	session, err := store.Get(r, sessionName)
+	if err != nil {
+		return ctx
+	}
+	if _, ok := session.Values[auth.UserIDKey].(int64); ok {
+		ctx.IsAuthenticated = true
+		ctx.IsAdmin = true
+		if username, ok := session.Values[auth.UsernameKey].(string); ok {
+			ctx.Username = username
+		}
+	} else if isGuest, ok := session.Values[auth.IsGuestKey].(bool); ok && isGuest {
+		ctx.IsAuthenticated = true
+		ctx.IsAdmin = false
+	}
+
+	// Extract CSRF token from session if available.
+	if token, ok := session.Values[middleware.CSRFTokenKey].(string); ok && token != "" {
+		ctx.CSRFToken = token
+	}
+
 	return ctx
 }
 
