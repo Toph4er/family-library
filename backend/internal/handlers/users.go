@@ -295,7 +295,6 @@ func HTMLUserFormHandler(db *sql.DB) http.HandlerFunc {
 			}
 			return `post="/admin/users"`
 		})() + ` hx-target="#modal-target" hx-swap="outerHTML">
-      <input type="hidden" name="csrf_token" value="` + template.HTMLEscapeString(csrfToken) + `">
       <div class="space-y-4">
         <div>
           <label for="user-username" class="block text-sm font-medium text-text mb-1">Username <span class="text-error">*</span></label>
@@ -322,7 +321,12 @@ func HTMLUserFormHandler(db *sql.DB) http.HandlerFunc {
         </div>
         <div>
           <label for="user-display-name" class="block text-sm font-medium text-text mb-1">Display Name</label>
-          <input type="text" id="user-display-name" name="display_name" value="` + template.HTMLEscapeString(user.DisplayName) + `" class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">
+          <input type="text" id="user-display-name" name="display_name" value="` + template.HTMLEscapeString(func() string {
+				if user.DisplayName != nil {
+					return *user.DisplayName
+				}
+				return ""
+			}()) + `" class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">
         </div>
         <div>
           <label for="user-role" class="block text-sm font-medium text-text mb-1">Role</label>
@@ -400,7 +404,7 @@ func HTMLCreateUserHandler(db *sql.DB) http.HandlerFunc {
 			displayNamePtr = &displayName
 		}
 
-		result, err := db.Exec(
+		_, err := db.Exec(
 			"INSERT INTO users (username, password_hash, role, display_name) VALUES (?, ?, 'admin', ?)",
 			username, hash, displayNamePtr,
 		)

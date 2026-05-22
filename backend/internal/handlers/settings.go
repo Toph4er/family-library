@@ -3,7 +3,6 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
-	"html/template"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
