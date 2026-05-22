@@ -94,7 +94,7 @@ func TestUpdateSettingHandler_Success(t *testing.T) {
 
 	body := `{"value":"amazon"}`
 	handler := handlers.UpdateSettingHandler(env.db)
-	req := httptest.NewRequest("PUT", "/api/v1/settings/cover_image_provider", strings.NewReader(body))
+	req := setURLParam(httptest.NewRequest("PUT", "/api/v1/settings/cover_image_provider", strings.NewReader(body)), "key", "cover_image_provider")
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 
@@ -135,7 +135,7 @@ func TestUpdateSettingHandler_NotFound(t *testing.T) {
 
 	body := `{"value":"new_value"}`
 	handler := handlers.UpdateSettingHandler(env.db)
-	req := httptest.NewRequest("PUT", "/api/v1/settings/nonexistent_key", strings.NewReader(body))
+	req := setURLParam(httptest.NewRequest("PUT", "/api/v1/settings/nonexistent_key", strings.NewReader(body)), "key", "nonexistent_key")
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 
@@ -154,7 +154,7 @@ func TestUpdateSettingHandler_SensitiveKey(t *testing.T) {
 
 	body := `{"value":"hacked_password"}`
 	handler := handlers.UpdateSettingHandler(env.db)
-	req := httptest.NewRequest("PUT", "/api/v1/settings/guest_password_hash", strings.NewReader(body))
+	req := setURLParam(httptest.NewRequest("PUT", "/api/v1/settings/guest_password_hash", strings.NewReader(body)), "key", "guest_password_hash")
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 
@@ -169,7 +169,7 @@ func TestUpdateSettingHandler_InvalidJSON(t *testing.T) {
 	env := setupTestEnv(t)
 
 	handler := handlers.UpdateSettingHandler(env.db)
-	req := httptest.NewRequest("PUT", "/api/v1/settings/site_name", strings.NewReader("not-json"))
+	req := setURLParam(httptest.NewRequest("PUT", "/api/v1/settings/site_name", strings.NewReader("not-json")), "key", "site_name")
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 
@@ -193,7 +193,7 @@ func TestUpdateSettingHandler_SiteNameUpdate(t *testing.T) {
 	newName := "New Library Name"
 	body := fmt.Sprintf(`{"value":"%s"}`, newName)
 	handler := handlers.UpdateSettingHandler(env.db)
-	req := httptest.NewRequest("PUT", "/api/v1/settings/site_name", strings.NewReader(body))
+	req := setURLParam(httptest.NewRequest("PUT", "/api/v1/settings/site_name", strings.NewReader(body)), "key", "site_name")
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 
