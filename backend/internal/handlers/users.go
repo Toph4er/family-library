@@ -473,6 +473,7 @@ func HTMLUpdateUserHandler(db *sql.DB) http.HandlerFunc {
 		setClauses = append(setClauses, "updated_at = CURRENT_TIMESTAMP")
 		args = append(args, id)
 
+		// #nosec G202 -- SET clauses are hardcoded column names, not from user input
 		query := "UPDATE users SET " + strings.Join(setClauses, ", ") + " WHERE id = ?"
 		result, err := db.Exec(query, args...)
 		if err != nil {
