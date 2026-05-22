@@ -157,13 +157,25 @@ func loadTemplates(dir string) (map[string]*template.Template, error) {
 			}
 			return t.Format("Jan 2, 2006 at 3:04 PM")
 		},
-		"formatISBN": func(isbn string) string {
-			// Format ISBN-13 with dashes: XXX-X-XX-XXXXX-X-X
-			if len(isbn) == 13 {
-				return fmt.Sprintf("%s-%s-%s-%s-%s-%s",
-					isbn[0:3], isbn[3:4], isbn[4:6], isbn[6:11], isbn[11:12], isbn[12:13])
+		"formatISBN": func(isbn interface{}) string {
+			var s string
+			switch v := isbn.(type) {
+			case string:
+				s = v
+			case *string:
+				if v == nil {
+					return ""
+				}
+				s = *v
+			default:
+				return fmt.Sprintf("%v", isbn)
 			}
-			return isbn
+			// Format ISBN-13 with dashes: XXX-X-XX-XXXXX-X-X
+			if len(s) == 13 {
+				return fmt.Sprintf("%s-%s-%s-%s-%s-%s",
+					s[0:3], s[3:4], s[4:6], s[6:11], s[11:12], s[12:13])
+			}
+			return s
 		},
 		"year": func() int {
 			return time.Now().Year()
@@ -183,17 +195,29 @@ func loadTemplates(dir string) (map[string]*template.Template, error) {
 			return a + b
 		},
 		// --- String helpers ---
-		"split": func(s string) []string {
-			if s == "" {
+		"split": func(s interface{}) []string {
+			var str string
+			switch v := s.(type) {
+			case string:
+				str = v
+			case *string:
+				if v == nil {
+					return []string{}
+				}
+				str = *v
+			default:
+				return []string{}
+			}
+			if str == "" {
 				return []string{}
 			}
 			// Try JSON array first
 			var result []string
-			if err := json.Unmarshal([]byte(s), &result); err == nil {
+			if err := json.Unmarshal([]byte(str), &result); err == nil {
 				return result
 			}
 			// Fall back to comma-separated
-			parts := strings.Split(s, ",")
+			parts := strings.Split(str, ",")
 			for i := range parts {
 				parts[i] = strings.TrimSpace(parts[i])
 			}
