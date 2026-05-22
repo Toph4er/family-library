@@ -275,12 +275,7 @@
             <a href="/settings" class="text-primary hover:text-text-light transition-colors font-medium text-sm no-underline">Settings</a>
             {{end}}
             {{if .IsAuthenticated}}
-            <form action="/api/v1/auth/logout" method="post" class="inline">
-              <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-              <button type="submit" class="text-error hover:text-error/80 transition-colors font-medium text-sm bg-transparent border-none cursor-pointer p-0">
-                Logout
-              </button>
-            </form>
+            <a href="/logout" class="text-error hover:text-error/80 transition-colors font-medium text-sm no-underline">Logout</a>
             {{else}}
             <a href="/login" class="text-primary hover:text-text-light transition-colors font-medium text-sm no-underline">Login</a>
             {{end}}
@@ -327,12 +322,7 @@
             <a href="/settings" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Settings</a>
             {{end}}
             {{if .IsAuthenticated}}
-            <form action="/api/v1/auth/logout" method="post" class="py-2 px-3">
-              <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-              <button type="submit" role="menuitem" class="text-error hover:text-error/80 transition-colors font-medium text-sm bg-transparent border-none cursor-pointer p-0">
-                Logout
-              </button>
-            </form>
+            <a href="/logout" role="menuitem" class="text-error hover:text-error/80 transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Logout</a>
             {{else}}
             <a href="/login" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Login</a>
             {{end}}
