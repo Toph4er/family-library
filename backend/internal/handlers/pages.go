@@ -118,14 +118,21 @@ func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 		books := make([]models.Book, 0)
 		for rows.Next() {
 			var book models.Book
-			var author, isbn, coverImage, createdAt string
+			var author, isbn, coverImage sql.NullString
+			var createdAt string
 			if err := rows.Scan(&book.ID, &book.Title, &author, &isbn, &coverImage, &createdAt); err != nil {
 				http.Error(w, "database error", http.StatusInternalServerError)
 				return
 			}
-			book.Authors, _ = stringPtr(author)
-			book.ISBN, _ = stringPtr(isbn)
-			book.CoverImageURL, _ = stringPtr(coverImage)
+			if author.Valid {
+				book.Authors = &author.String
+			}
+			if isbn.Valid {
+				book.ISBN = &isbn.String
+			}
+			if coverImage.Valid {
+				book.CoverImageURL = &coverImage.String
+			}
 			book.CreatedAt = createdAt
 			books = append(books, book)
 		}
@@ -154,7 +161,8 @@ func RenderBookDetailPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 		id := chi.URLParam(r, "id")
 
 		var book models.Book
-		var title, author, isbn, coverImage, notes, createdAt string
+		var title, createdAt string
+		var author, isbn, coverImage, notes sql.NullString
 		err := db.QueryRow("SELECT id, title, authors, isbn, cover_image_url, notes, created_at FROM books WHERE id = ?", id).Scan(
 			&book.ID, &title, &author, &isbn, &coverImage, &notes, &createdAt,
 		)
@@ -168,10 +176,18 @@ func RenderBookDetailPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 		}
 
 		book.Title = title
-		book.Authors, _ = stringPtr(author)
-		book.ISBN, _ = stringPtr(isbn)
-		book.CoverImageURL, _ = stringPtr(coverImage)
-		book.Notes, _ = stringPtr(notes)
+		if author.Valid {
+			book.Authors = &author.String
+		}
+		if isbn.Valid {
+			book.ISBN = &isbn.String
+		}
+		if coverImage.Valid {
+			book.CoverImageURL = &coverImage.String
+		}
+		if notes.Valid {
+			book.Notes = &notes.String
+		}
 		book.CreatedAt = createdAt
 
 		ctx.Book = &book
@@ -201,22 +217,32 @@ func RenderWishlistPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 		items := make([]models.WishlistItem, 0)
 		for rows.Next() {
 			var item models.WishlistItem
-			var isbn, author, notes string
+			var isbn, author, notes sql.NullString
 			var fulfilled bool
-			var requestedBy string
-			var requestedAtStr, fulfilledAtStr string
+			var requestedBy sql.NullString
+			var requestedAtStr, fulfilledAtStr sql.NullString
 			if err := rows.Scan(&item.ID, &isbn, &item.Title, &author, &item.Priority, &notes, &fulfilled, &requestedBy, &requestedAtStr, &fulfilledAtStr); err != nil {
 				http.Error(w, "database error", http.StatusInternalServerError)
 				return
 			}
-			item.ISBN, _ = stringPtr(isbn)
-			item.Author, _ = stringPtr(author)
-			item.Notes, _ = stringPtr(notes)
+			if isbn.Valid {
+				item.ISBN = &isbn.String
+			}
+			if author.Valid {
+				item.Author = &author.String
+			}
+			if notes.Valid {
+				item.Notes = &notes.String
+			}
+			if requestedBy.Valid {
+				item.RequestedBy = &requestedBy.String
+			}
+			if requestedAtStr.Valid {
+				item.RequestedAt = requestedAtStr.String
+			}
 			item.Fulfilled = fulfilled
-			item.RequestedBy, _ = stringPtr(requestedBy)
-			item.RequestedAt = requestedAtStr
-			if fulfilledAtStr != "" {
-				item.FulfilledAt = &fulfilledAtStr
+			if fulfilledAtStr.Valid {
+				item.FulfilledAt = &fulfilledAtStr.String
 				item.Fulfilled = true
 			}
 			items = append(items, item)
@@ -327,9 +353,3 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 	}
 }
 
-func stringPtr(s string) (*string, error) {
-	if s == "" {
-		return nil, nil
-	}
-	return &s, nil
-}
