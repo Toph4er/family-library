@@ -182,6 +182,11 @@ func HTMLLoginHandler(authSvc *auth.Auth) http.HandlerFunc {
 				w.Header().Set("Content-Type", "text/html; charset=utf-8")
 				w.WriteHeader(apiErr.Code)
 				_, _ = w.Write([]byte(htmlErrorFragment(apiErr.Message))) // #nosec G705 -- apiErr.Message is from internal auth service, not user input; htmlErrorFragment escapes output
+				return
+			}
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(htmlErrorFragment("Internal server error")))
 			return
 		}
 
