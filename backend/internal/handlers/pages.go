@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"html/template"
+	"log/slog"
 	"net/http"
 	"time"
 
