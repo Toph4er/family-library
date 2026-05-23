@@ -86,11 +86,13 @@ func renderPage(w http.ResponseWriter, r *http.Request, tmpl *template.Template,
 	if isHTMXRequest(r) {
 		// HTMX request — render only the content block, not the base layout.
 		if err := tmpl.ExecuteTemplate(w, "content", data); err != nil {
+			slog.Error("template error", "page", pageName, "error", err)
 			http.Error(w, "template error", http.StatusInternalServerError)
 		}
 	} else {
 		// Full page request — render the page template (which includes base).
 		if err := tmpl.ExecuteTemplate(w, pageName, data); err != nil {
+			slog.Error("template error", "page", pageName, "error", err)
 			http.Error(w, "template error", http.StatusInternalServerError)
 		}
 	}
