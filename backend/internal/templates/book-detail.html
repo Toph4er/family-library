@@ -55,7 +55,7 @@
       <div>
         <span class="text-sm font-medium text-text-light/60">By</span>
         <p class="text-lg text-text mt-1">
-          {{range (split .Book.Authors)}}{{.}}{{if ne . (index (split .Book.Authors) (sub (len (split .Book.Authors)) 1))}}, {{end}}{{end}}
+          {{join ", " (split .Book.Authors)}}
         </p>
       </div>
       {{end}}
@@ -65,7 +65,7 @@
       <div>
         <span class="text-sm font-medium text-text-light/60">Illustrated by</span>
         <p class="text-lg text-text mt-1">
-          {{range (split .Book.Illustrators)}}{{.}}{{if ne . (index (split .Book.Illustrators) (sub (len (split .Book.Illustrators)) 1))}}, {{end}}{{end}}
+          {{join ", " (split .Book.Illustrators)}}
         </p>
       </div>
       {{end}}

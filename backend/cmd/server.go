@@ -195,6 +195,9 @@ func loadTemplates(dir string) (map[string]*template.Template, error) {
 			return a + b
 		},
 		// --- String helpers ---
+		"join": func(sep string, parts []string) string {
+			return strings.Join(parts, sep)
+		},
 		"split": func(s interface{}) []string {
 			var str string
 			switch v := s.(type) {
