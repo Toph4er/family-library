@@ -1158,14 +1158,14 @@ func HTMLBookFormHandler(tmpl *template.Template, db *sql.DB) http.HandlerFunc {
 				return
 			}
 			row := db.QueryRow(`SELECT ` + bookColumns + ` FROM books WHERE id = ?`, id)
-			var err error
-			book, err = scanBook(row)
+			b, err := scanBook(row)
 			if err != nil {
 				w.Header().Set("Content-Type", "text/html; charset=utf-8")
 				w.WriteHeader(http.StatusNotFound)
 				_, _ = w.Write([]byte(htmlErrorFragment("Book not found")))
 				return
 			}
+			book = *b
 		}
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
