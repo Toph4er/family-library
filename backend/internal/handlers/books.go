@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html/template"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -1137,3 +1139,102 @@ func defaultGuestVisibleFields() string {
 	b, _ := json.Marshal(fields)
 	return string(b)
 }
+
+// HTMLBookFormHandler returns a modal HTML fragment for creating or editing a book.
+// For new books: GET /books/new-form
+// For editing: GET /books/{id}/edit-form
+func HTMLBookFormHandler(tmpl *template.Template, db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		idStr := chi.URLParam(r, "id")
+		isEdit := idStr != ""
+
+		var book models.Book
+		if isEdit {
+			id, err := strconv.ParseInt(idStr, 10, 64)
+			if err != nil {
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				w.WriteHeader(http.StatusBadRequest)
+				_, _ = w.Write([]byte(htmlErrorFragment("Invalid book ID")))
+				return
+			}
+			row := db.QueryRow(`SELECT ` + bookColumns + ` FROM books WHERE id = ?`, id)
+			var err error
+			book, err = scanBook(row)
+			if err != nil {
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				w.WriteHeader(http.StatusNotFound)
+				_, _ = w.Write([]byte(htmlErrorFragment("Book not found")))
+				return
+			}
+		}
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+		// Build form data
+		data := map[string]interface{}{
+			"ActionURL":       "/api/v1/books",
+			"IsEdit":          isEdit,
+			"Title":           derefString(&book.Title),
+			"Subtitle":        derefString(book.Subtitle),
+			"Authors":         derefString(book.Authors),
+			"Illustrators":    derefString(book.Illustrators),
+			"ISBN":            derefString(book.ISBN),
+			"Publisher":       derefString(book.Publisher),
+			"PublicationYear": derefInt(book.PublicationYear),
+			"PageCount":       derefInt(book.PageCount),
+			"BookType":        derefString(book.BookType),
+			"Condition":       derefString(book.Condition),
+			"Genres":          derefString(book.Genres),
+			"Themes":          derefString(book.Themes),
+			"Awards":          derefString(book.Awards),
+			"ReadingLevels":   derefString(book.ReadingLevels),
+			"GiftFrom":        derefString(book.GiftFrom),
+			"GiftRelationship": derefString(book.GiftRelationship),
+			"DateReceived":    derefString(book.DateReceived),
+			"Location":        derefString(book.Location),
+			"CoverImageURL":   derefString(book.CoverImageURL),
+			"Notes":           derefString(book.Notes),
+			"ChildRating":     derefInt(book.ChildRating),
+			"CancelURL":       "/books/" + idStr,
+		}
+
+		// Render modal wrapper
+		fmt.Fprint(w, `<div id="modal-backdrop" class="modal-backdrop" hx-on::click="if(event.target===this)document.getElementById('modal-backdrop').remove()">
+  <div class="modal-content modal-lg p-6" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-between mb-4 pb-3 border-t border-b" style="border-color: rgba(139, 69, 19, 0.1);">
+      <h2 class="text-xl font-heading font-semibold text-primary">` + (func() string {
+			if isEdit {
+				return "Edit Book"
+			}
+			return "Add Book"
+		})() + `</h2>
+      <button type="button" hx-on::click="document.getElementById('modal-backdrop').remove()" class="text-text-light hover:text-text transition-colors text-2xl no-underline" aria-label="Close modal">×</button>
+    </div>
+    <div class="overflow-y-auto max-h-[70vh] pr-2">`)
+
+		if err := tmpl.ExecuteTemplate(w, "partials/book-form", data); err != nil {
+			slog.Error("template error", "page", "book-form", "error", err)
+		}
+
+		fmt.Fprint(w, `
+    </div>
+  </div>
+</div>`)
+	}
+}
+
+func derefString(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+func derefInt(i *int) int {
+	if i == nil {
+		return 0
+	}
+	return *i
+}
+
+

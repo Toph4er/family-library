@@ -94,6 +94,12 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 	r.Get("/books/{id}", func(w http.ResponseWriter, r *http.Request) {
 		authSvc.RequireAuthHTML(http.HandlerFunc(handlers.RenderBookDetailPage(cfg.Templates["book-detail"], database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
 	})
+	r.Get("/books/new-form", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLBookFormHandler(cfg.Templates["book-form"], database))).ServeHTTP(w, r)
+	})
+	r.Get("/books/{id}/edit-form", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLBookFormHandler(cfg.Templates["book-form"], database))).ServeHTTP(w, r)
+	})
 	r.Get("/wishlist", func(w http.ResponseWriter, r *http.Request) {
 		authSvc.RequireAuthHTML(http.HandlerFunc(handlers.RenderWishlistPage(cfg.Templates["wishlist"], database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
 	})
