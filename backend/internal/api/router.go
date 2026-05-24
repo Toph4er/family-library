@@ -66,6 +66,9 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 	r.Put("/settings/update/{key}", func(w http.ResponseWriter, r *http.Request) {
 		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLUpdateSettingHandler(database))).ServeHTTP(w, r)
 	})
+	r.Post("/settings/guest-visibility/update", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLUpdateGuestVisibilityHandler(database))).ServeHTTP(w, r)
+	})
 
 	// Admin user management (HTMX)
 	r.Get("/admin/users/new-form", func(w http.ResponseWriter, r *http.Request) {
@@ -104,7 +107,7 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 		authSvc.RequireAuthHTML(http.HandlerFunc(handlers.RenderWishlistPage(cfg.Templates["wishlist"], database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
 	})
 	r.Get("/admin", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.RenderAdminPage(cfg.Templates["admin"], database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
+		http.Redirect(w, r, "/settings", http.StatusMovedPermanently)
 	})
 	r.Get("/settings", func(w http.ResponseWriter, r *http.Request) {
 		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.RenderSettingsPage(cfg.Templates["settings"], database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)

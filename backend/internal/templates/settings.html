@@ -3,7 +3,7 @@
 {{define "title"}}Settings — Woodland Library{{end}}
 
 {{define "content"}}
-<div class="flex flex-col gap-6 animate-fade-in-up">
+<div class="flex flex-col gap-8 animate-fade-in-up">
 
   <!-- Page Header -->
   <header class="text-center py-6">
@@ -11,51 +11,138 @@
       Settings
     </h1>
     <p class="text-text-light/80 text-lg max-w-2xl mx-auto font-accent text-xl">
-      Configure your woodland library's preferences and behavior.
+      Manage your library's preferences, users, and guest visibility.
     </p>
   </header>
 
   <!-- Vine divider -->
   <div class="vine-divider max-w-md mx-auto" aria-hidden="true"></div>
 
-  <!-- Settings List -->
+  <!-- Site Settings -->
   <section aria-label="Site settings">
-    {{if .Settings}}
-    <div class="overflow-x-auto rounded-xl shadow-sm" style="background-color: var(--color-surface); border: 1px solid rgba(139, 69, 19, 0.1);">
+    <h2 class="text-2xl font-heading text-primary mb-4">Site Settings</h2>
+    <div class="rounded-xl shadow-sm overflow-hidden" style="background-color: var(--color-surface); border: 1px solid rgba(139, 69, 19, 0.1);">
       {{range $key, $value := .Settings}}
-        {{if or (eq $key "theme_colors") (eq $key "default_guest_visibility")}}
-          <!-- JSON settings displayed as code block -->
-          <div class="px-4 py-3">
-            <div class="flex items-center gap-4">
-              <span class="font-medium text-text w-40">{{$key}}</span>
-              <pre class="flex-1 px-3 py-2 rounded-lg border bg-surface text-sm overflow-x-auto" style="border-color: var(--color-secondary);"><code>{{$value}}</code></pre>
-            </div>
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 py-3 px-4 border-b last:border-b-0" style="border-color: rgba(139, 69, 19, 0.1);">
+          <label for="setting-{{$key}}" class="font-medium text-text text-sm sm:w-48 sm:shrink-0">{{humanizeKey $key}}</label>
+          <div class="flex-1 flex items-center gap-2">
+            <input type="text"
+              id="setting-{{$key}}"
+              name="value"
+              value="{{$value}}"
+              class="flex-1 px-3 py-2 rounded-lg border bg-surface text-sm"
+              style="border-color: var(--color-secondary);"
+              hx-put="/settings/update/{{$key}}"
+              hx-target="#settings-result-{{$key}}"
+              hx-swap="outerHTML"
+              aria-label="Update {{humanizeKey $key}}">
+            <span id="settings-result-{{$key}}" class="shrink-0"></span>
           </div>
-        {{else}}
-          {{template "partials/settings-row" (dict "Key" $key "Value" $value "InputType" "text")}}
-        {{end}}
+        </div>
       {{end}}
     </div>
-    {{else}}
-    <!-- Empty state -->
-    <div class="flex flex-col items-center justify-center py-16 text-center rounded-xl" style="background-color: var(--color-surface); border: 1px solid rgba(139, 69, 19, 0.1);">
-      <svg class="w-20 h-20 text-text-light/20 mb-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-      </svg>
-      <h2 class="text-xl font-heading text-primary mb-2">No settings configured</h2>
-      <p class="text-text-light/70 max-w-sm">
-        No settings are configured yet. Contact your system administrator.
-      </p>
-    </div>
-    {{end}}
   </section>
 
-  <!-- Note about guest password -->
-  <div class="p-4 rounded-xl" style="background-color: rgba(212, 165, 116, 0.15); border: 1px solid rgba(212, 165, 116, 0.3);">
-    <p class="text-sm text-text-light">
-      <strong>Note:</strong> The guest password is managed separately via the admin panel. It is not stored as a plain setting for security reasons.
-    </p>
-  </div>
+  <!-- Vine divider -->
+  <div class="vine-divider max-w-md mx-auto" aria-hidden="true"></div>
+
+  <!-- Guest Visibility -->
+  <section aria-label="Guest visibility settings">
+    <h2 class="text-2xl font-heading text-primary mb-4">Guest Visibility</h2>
+    <p class="text-text-light/70 text-sm mb-4">Control which book fields are visible to guest users. Unchecked fields are hidden from guests.</p>
+    <div class="rounded-xl shadow-sm overflow-hidden" style="background-color: var(--color-surface); border: 1px solid rgba(139, 69, 19, 0.1);">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 p-4">
+        {{range $field := guestVisibilityFields}}
+        <label class="flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-background/50 cursor-pointer">
+          <input type="checkbox"
+            class="w-4 h-4 rounded border-secondary text-primary focus:ring-primary/20"
+            style="border-color: var(--color-secondary);"
+            {{if index $.DefaultGuestVisibility $field}}checked{{end}}
+            onchange="updateGuestVisibility('{{ $field }}', this.checked)">
+          <span class="text-sm text-text">{{humanizeKey $field}}</span>
+        </label>
+        {{end}}
+      </div>
+    </div>
+  </section>
+
+  <!-- Vine divider -->
+  <div class="vine-divider max-w-md mx-auto" aria-hidden="true"></div>
+
+  <!-- User Management -->
+  <section aria-label="User management">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-2xl font-heading text-primary">Users</h2>
+      <button
+        type="button"
+        hx-get="/admin/users/new-form"
+        hx-target="#modal-target"
+        hx-swap="innerHTML"
+        class="px-4 py-2 rounded-xl font-medium text-white shadow-sm text-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+        style="background-color: var(--color-primary);"
+        onmouseenter="this.style.backgroundColor='var(--color-text-light)'"
+        onmouseleave="this.style.backgroundColor='var(--color-primary)'"
+        aria-label="Add a new user"
+      >
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Add User
+        </span>
+      </button>
+    </div>
+    <div class="overflow-x-auto rounded-xl shadow-sm" style="background-color: var(--color-surface); border: 1px solid rgba(139, 69, 19, 0.1);">
+      <table class="w-full" role="table">
+        <caption class="sr-only">List of registered library users</caption>
+        <thead>
+          <tr class="border-b" style="border-color: rgba(139, 69, 19, 0.1);">
+            <th scope="col" class="text-left py-3 px-4 font-heading text-primary text-sm">Username</th>
+            <th scope="col" class="text-left py-3 px-4 font-heading text-primary text-sm">Display Name</th>
+            <th scope="col" class="text-left py-3 px-4 font-heading text-primary text-sm">Role</th>
+            <th scope="col" class="text-left py-3 px-4 font-heading text-primary text-sm">Created</th>
+            <th scope="col" class="text-left py-3 px-4 font-heading text-primary text-sm">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="users-list">
+          {{range .Users}}
+            {{template "partials/user-row" .}}
+          {{else}}
+            <tr>
+              <td colspan="5" class="py-12 text-center text-text-light/60">
+                No users found. Add your first user to get started.
+              </td>
+            </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Modal Container -->
+  <div id="modal-target"></div>
 
 </div>
+{{end}}
+
+{{define "scripts"}}
+<script>
+function updateGuestVisibility(field, visible) {
+  var csrf = '{{.CSRFToken}}';
+  fetch('/settings/guest-visibility/update', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': csrf,
+      'HX-Request': 'true'
+    },
+    body: JSON.stringify({ field: field, visible: visible })
+  }).catch(function() {
+    // On failure, the checkbox will be re-checked by the browser's onchange
+    // reverting behavior — but we leave it as-is for UX.
+    console.warn('Failed to update guest visibility for', field);
+  });
+}
+</script>
 {{end}}

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"encoding/json"
 	"html/template"
 	"log/slog"
 	"net/http"
@@ -17,18 +18,19 @@ import (
 
 // pageContext holds common template data for all page handlers.
 type pageContext struct {
-	Year            int
-	CSRFToken       string
-	IsAdmin         bool
-	IsAuthenticated bool
-	Username        string
-	SiteName        string
-	SiteTagline     string
-	Books           []models.Book
-	Book            *models.Book
-	Items           []models.WishlistItem
-	Users           []map[string]interface{}
-	Settings        map[string]string
+	Year                   int
+	CSRFToken              string
+	IsAdmin                bool
+	IsAuthenticated        bool
+	Username               string
+	SiteName               string
+	SiteTagline            string
+	Books                  []models.Book
+	Book                   *models.Book
+	Items                  []models.WishlistItem
+	Users                  []map[string]interface{}
+	Settings               map[string]string
+	DefaultGuestVisibility map[string]bool
 }
 
 // buildPageContext creates a pageContext for the given request.
@@ -415,6 +417,7 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 			return
 		}
 
+		// Load settings
 		rows, err := db.Query("SELECT key, value FROM settings ORDER BY key ASC")
 		if err != nil {
 			http.Error(w, "database error", http.StatusInternalServerError)
@@ -438,8 +441,44 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 			http.Error(w, "database error", http.StatusInternalServerError)
 			return
 		}
-
 		ctx.Settings = settings
+
+		// Load users
+		userRows, err := db.Query("SELECT id, username, role, display_name, created_at FROM users ORDER BY id")
+		if err != nil {
+			http.Error(w, "database error", http.StatusInternalServerError)
+			return
+		}
+		defer userRows.Close()
+
+		users := make([]map[string]interface{}, 0)
+		for userRows.Next() {
+			var id int64
+			var username, role, displayName, createdAt string
+			if err := userRows.Scan(&id, &username, &role, &displayName, &createdAt); err != nil {
+				http.Error(w, "database error", http.StatusInternalServerError)
+				return
+			}
+			users = append(users, map[string]interface{}{
+				"id":           id,
+				"username":     username,
+				"role":         role,
+				"display_name": displayName,
+				"created_at":   createdAt,
+			})
+		}
+		if err = userRows.Err(); err != nil {
+			http.Error(w, "database error", http.StatusInternalServerError)
+			return
+		}
+		ctx.Users = users
+
+		// Load default guest visibility
+		var defaultVisibility string
+		if err := db.QueryRow("SELECT value FROM settings WHERE key = ?", "default_guest_visibility").Scan(&defaultVisibility); err == nil {
+			ctx.DefaultGuestVisibility = make(map[string]bool)
+			_ = json.Unmarshal([]byte(defaultVisibility), &ctx.DefaultGuestVisibility)
+		}
 
 		renderPage(w, r, tmpl, "settings.html", ctx)
 	}

@@ -254,6 +254,28 @@ func loadTemplates(dir string) (map[string]*template.Template, error) {
 			}
 			return result, nil
 		},
+		// --- Humanize setting keys for display ---
+		"humanizeKey": func(key string) string {
+			parts := strings.Split(key, "_")
+			for i, p := range parts {
+				if len(p) > 0 {
+					parts[i] = strings.ToUpper(p[:1]) + p[1:]
+				}
+			}
+			return strings.Join(parts, " ")
+		},
+		// --- Guest visibility fields in a consistent order ---
+		"guestVisibilityFields": func() []string {
+			return []string{
+				"title", "subtitle", "authors", "illustrators",
+				"publisher", "publication_year", "page_count", "book_type",
+				"reading_levels", "genres", "themes", "awards",
+				"gift_from", "gift_relationship", "child_rating", "read_count",
+				"cover_image_url", "cover_source",
+				"isbn", "condition", "location", "notes",
+				"date_received", "last_read_date",
+			}
+		},
 	}
 
 	// Collect all page templates (exclude base.html which is shared)

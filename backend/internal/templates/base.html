@@ -267,14 +267,13 @@
           </a>
 
           <!-- Desktop nav (hamburger for all screen sizes) -->
-          <div x-data="{ open: false }" class="flex items-center gap-6">
+          <div x-data="{ open: false }" class="flex items-center gap-6 w-full">
             <!-- Desktop links (visible on md+) -->
             <nav class="hidden md:flex items-center gap-6" aria-label="Main navigation">
               <a href="/books" class="text-primary hover:text-text-light transition-colors font-medium text-sm no-underline">Books</a>
               <a href="/wishlist" class="text-primary hover:text-text-light transition-colors font-medium text-sm no-underline">Wishlist</a>
               {{if .IsAuthenticated}}
               {{if .IsAdmin}}
-              <a href="/admin" class="text-primary hover:text-text-light transition-colors font-medium text-sm no-underline">Admin</a>
               <a href="/settings" class="text-primary hover:text-text-light transition-colors font-medium text-sm no-underline">Settings</a>
               {{end}}
               <a href="/logout" class="text-error hover:text-error/80 transition-colors font-medium text-sm no-underline">Logout</a>
@@ -298,35 +297,33 @@
                 <path d="M18 6L6 18M6 6l12 12" />
               </svg>
             </button>
-          </div>
-
-          <!-- Mobile menu (only visible on small screens) -->
-          <div
-            id="mobile-menu"
-            x-show="open"
-            x-cloak
-            x-transition:enter="transition ease-out duration-200"
-            x-transition:enter-start="opacity-0 -translate-y-2"
-            x-transition:enter-end="opacity-100 translate-y-0"
-            x-transition:leave="transition ease-in duration-150"
-            x-transition:leave-start="opacity-100 translate-y-0"
-            x-transition:leave-end="opacity-0 -translate-y-2"
-            class="md:hidden mt-4 pb-2 border-t"
-            style="border-color: rgba(139, 69, 19, 0.1);"
-            role="menu"
-          >
+            <!-- Mobile menu (only visible on small screens) -->
+            <div
+              id="mobile-menu"
+              x-show="open"
+              x-cloak
+              x-transition:enter="transition ease-out duration-200"
+              x-transition:enter-start="opacity-0 -translate-y-2"
+              x-transition:enter-end="opacity-100 translate-y-0"
+              x-transition:leave="transition ease-in duration-150"
+              x-transition:leave-start="opacity-100 translate-y-0"
+              x-transition:leave-end="opacity-0 -translate-y-2"
+              class="md:hidden mt-4 pb-2 border-t w-full"
+              style="border-color: rgba(139, 69, 19, 0.1);"
+              role="menu"
+            >
             <div class="flex flex-col gap-2 pt-3">
               <a href="/books" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Books</a>
               <a href="/wishlist" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Wishlist</a>
               {{if .IsAuthenticated}}
               {{if .IsAdmin}}
-              <a href="/admin" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Admin</a>
               <a href="/settings" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Settings</a>
               {{end}}
               <a href="/logout" role="menuitem" class="text-error hover:text-error/80 transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Logout</a>
               {{else}}
               <a href="/login" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Login</a>
               {{end}}
+            </div>
             </div>
           </div>
         </div>

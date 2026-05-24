@@ -160,3 +160,64 @@ func HTMLUpdateSettingHandler(db *sql.DB) http.HandlerFunc {
 		_, _ = w.Write([]byte("<span class=\"text-success text-sm ml-2\">✓ Saved</span>"))
 	}
 }
+
+// HTMLUpdateGuestVisibilityHandler toggles a single field in the default_guest_visibility
+// setting.  Expects a JSON body {"field": "isbn", "visible": true}.
+//
+// POST /settings/guest-visibility/update
+func HTMLUpdateGuestVisibilityHandler(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Field   string `json:"field"`
+			Visible bool   `json:"visible"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(htmlErrorFragment("Invalid request")))
+			return
+		}
+
+		// Read current visibility blob
+		var blob string
+		if err := db.QueryRow("SELECT value FROM settings WHERE key = ?", "default_guest_visibility").Scan(&blob); err != nil {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(htmlErrorFragment("Failed to read settings")))
+			return
+		}
+
+		var visibility map[string]bool
+		if err := json.Unmarshal([]byte(blob), &visibility); err != nil {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(htmlErrorFragment("Failed to parse settings")))
+			return
+		}
+
+		visibility[req.Field] = req.Visible
+
+		newBlob, err := json.Marshal(visibility)
+		if err != nil {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(htmlErrorFragment("Failed to encode settings")))
+			return
+		}
+
+		_, err = db.Exec(
+			"UPDATE settings SET value = ?, updated_at = CURRENT_TIMESTAMP WHERE key = ?",
+			string(newBlob), "default_guest_visibility",
+		)
+		if err != nil {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(htmlErrorFragment("Failed to update settings")))
+			return
+		}
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("HX-Trigger", `{"visibilityUpdated": true}`)
+		w.WriteHeader(http.StatusOK)
+	}
+}
