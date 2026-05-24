@@ -427,8 +427,7 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 				http.Error(w, "database error", http.StatusInternalServerError)
 				return
 			}
-			switch key {
-			case "admin_password", "guest_password", "jwt_secret":
+			if _, sensitive := sensitiveKeys[key]; sensitive {
 				continue
 			}
 			settings[key] = value

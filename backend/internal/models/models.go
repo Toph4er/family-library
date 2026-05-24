@@ -1,19 +1,5 @@
 package models
 
-import "time"
-
-// User represents an admin user
-//
-type User struct {
-	ID           int64     `json:"id"`
-	Username     string    `json:"username"`
-	PasswordHash string    `json:"-"`
-	Role         string    `json:"role"`
-	DisplayName  string    `json:"display_name,omitempty"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
-}
-
 // Book represents a book in the collection
 //
 type Book struct {
@@ -43,50 +29,28 @@ type Book struct {
 	CoverImageURL       *string   `json:"cover_image_url,omitempty"`
 	CoverSource         *string   `json:"cover_source,omitempty"`
 	GuestVisibleFields  string    `json:"-"`
-	CreatedAt           string `json:"created_at"`
-	UpdatedAt           string `json:"updated_at"`
+	CreatedAt           string    `json:"created_at"`
+	UpdatedAt           string    `json:"updated_at"`
 }
 
 // WishlistItem represents a book on the wishlist
 //
 type WishlistItem struct {
-	ID             int64      `json:"id"`
-	Title          string     `json:"title"`
-	Author         *string    `json:"author,omitempty"`
-	ISBN           *string    `json:"isbn,omitempty"`
-	Reason         *string    `json:"reason,omitempty"`
-	Priority       int        `json:"priority"`
-	AmazonURL      *string    `json:"amazon_url,omitempty"`
-	ThriftbooksURL *string    `json:"thriftbooks_url,omitempty"`
-	OtherURLs      *string    `json:"other_urls,omitempty"`  // JSON array
-	CoverImageURL  *string    `json:"cover_image_url,omitempty"`
-	RequestedBy    *string    `json:"requested_by,omitempty"`
+	ID             int64    `json:"id"`
+	Title          string   `json:"title"`
+	Author         *string  `json:"author,omitempty"`
+	ISBN           *string  `json:"isbn,omitempty"`
+	Reason         *string  `json:"reason,omitempty"`
+	Priority       int      `json:"priority"`
+	AmazonURL      *string  `json:"amazon_url,omitempty"`
+	ThriftbooksURL *string  `json:"thriftbooks_url,omitempty"`
+	OtherURLs      *string  `json:"other_urls,omitempty"`  // JSON array
+	CoverImageURL  *string  `json:"cover_image_url,omitempty"`
+	RequestedBy    *string  `json:"requested_by,omitempty"`
 	RequestedAt    string   `json:"requested_at"`
 	Fulfilled      bool     `json:"fulfilled"`
 	FulfilledAt    *string  `json:"fulfilled_at,omitempty"`
-	Notes          *string    `json:"notes,omitempty"`
-}
-
-// Setting represents an app setting
-//
-type Setting struct {
-	Key         string    `json:"key"`
-	Value       string    `json:"value"`
-	Description *string   `json:"description,omitempty"`
-	UpdatedAt   time.Time `json:"updated_at"`
-}
-
-// LoginRequest represents a login request body
-//
-type LoginRequest struct {
-	Username string `json:"username" validate:"required"`
-	Password string `json:"password" validate:"required"`
-}
-
-// GuestLoginRequest represents a guest login request body
-//
-type GuestLoginRequest struct {
-	Password string `json:"password" validate:"required"`
+	Notes          *string  `json:"notes,omitempty"`
 }
 
 // CreateBookRequest represents a book creation request body
@@ -171,22 +135,4 @@ type UpdateWishlistItemRequest struct {
 	CoverImageURL  *string `json:"cover_image_url"`
 	RequestedBy    *string `json:"requested_by"`
 	Notes          *string `json:"notes"`
-}
-
-// APIResponse is a generic API response wrapper
-//
-type APIResponse struct {
-	Success bool        `json:"success"`
-	Data    interface{} `json:"data,omitempty"`
-	Error   string      `json:"error,omitempty"`
-}
-
-// PaginatedResponse wraps paginated data
-//
-type PaginatedResponse struct {
-	Items      interface{} `json:"items"`
-	Total      int         `json:"total"`
-	Page       int         `json:"page"`
-	PerPage    int         `json:"per_page"`
-	TotalPages int         `json:"total_pages"`
 }
