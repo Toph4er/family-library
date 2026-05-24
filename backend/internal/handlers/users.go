@@ -415,7 +415,7 @@ func HTMLCreateUserHandler(db *sql.DB) http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Header().Set("HX-Trigger", `{"userCreated": true}`)
-		w.Header().Set("HX-Redirect", "/admin")
+		w.Header().Set("HX-Redirect", "/settings")
 		w.WriteHeader(http.StatusOK)
 	}
 }
@@ -491,7 +491,7 @@ func HTMLUpdateUserHandler(db *sql.DB) http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Header().Set("HX-Trigger", `{"userUpdated": true}`)
-		w.Header().Set("HX-Redirect", "/admin")
+		w.Header().Set("HX-Redirect", "/settings")
 		w.WriteHeader(http.StatusOK)
 	}
 }

@@ -443,106 +443,107 @@ func UpdateBookHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// Build dynamic UPDATE from non-nil fields
+		// Build dynamic UPDATE from non-nil fields.
+		// Empty strings are treated as "set to NULL" so fields can be cleared.
 		sets := []string{}
 		args := []interface{}{}
 
 		if req.ISBN != nil {
-			normalizedISBN := strings.ReplaceAll(*req.ISBN, "-", "")
+			normalizedISBN := strings.ReplaceAll(strings.TrimSpace(*req.ISBN), "-", "")
 			sets = append(sets, "isbn = ?")
-			args = append(args, normalizedISBN)
+			args = append(args, ptrIfNonEmpty(normalizedISBN))
 		}
 		if req.Title != nil {
 			sets = append(sets, "title = ?")
-			args = append(args, *req.Title)
+			args = append(args, ptrIfNonEmpty(*req.Title))
 		}
 		if req.Subtitle != nil {
 			sets = append(sets, "subtitle = ?")
-			args = append(args, *req.Subtitle)
+			args = append(args, ptrIfNonEmpty(*req.Subtitle))
 		}
 		if req.Authors != nil {
 			sets = append(sets, "authors = ?")
-			args = append(args, *req.Authors)
+			args = append(args, ptrIfNonEmpty(*req.Authors))
 		}
 		if req.Illustrators != nil {
 			sets = append(sets, "illustrators = ?")
-			args = append(args, *req.Illustrators)
+			args = append(args, ptrIfNonEmpty(*req.Illustrators))
 		}
 		if req.Publisher != nil {
 			sets = append(sets, "publisher = ?")
-			args = append(args, *req.Publisher)
+			args = append(args, ptrIfNonEmpty(*req.Publisher))
 		}
 		if req.PublicationYear != nil {
 			sets = append(sets, "publication_year = ?")
-			args = append(args, *req.PublicationYear)
+			args = append(args, req.PublicationYear)
 		}
 		if req.PageCount != nil {
 			sets = append(sets, "page_count = ?")
-			args = append(args, *req.PageCount)
+			args = append(args, req.PageCount)
 		}
 		if req.BookType != nil {
 			sets = append(sets, "book_type = ?")
-			args = append(args, *req.BookType)
+			args = append(args, ptrIfNonEmpty(*req.BookType))
 		}
 		if req.ReadingLevels != nil {
 			sets = append(sets, "reading_levels = ?")
-			args = append(args, *req.ReadingLevels)
+			args = append(args, ptrIfNonEmpty(*req.ReadingLevels))
 		}
 		if req.Genres != nil {
 			sets = append(sets, "genres = ?")
-			args = append(args, *req.Genres)
+			args = append(args, ptrIfNonEmpty(*req.Genres))
 		}
 		if req.Themes != nil {
 			sets = append(sets, "themes = ?")
-			args = append(args, *req.Themes)
+			args = append(args, ptrIfNonEmpty(*req.Themes))
 		}
 		if req.Awards != nil {
 			sets = append(sets, "awards = ?")
-			args = append(args, *req.Awards)
+			args = append(args, ptrIfNonEmpty(*req.Awards))
 		}
 		if req.GiftFrom != nil {
 			sets = append(sets, "gift_from = ?")
-			args = append(args, *req.GiftFrom)
+			args = append(args, ptrIfNonEmpty(*req.GiftFrom))
 		}
 		if req.GiftRelationship != nil {
 			sets = append(sets, "gift_relationship = ?")
-			args = append(args, *req.GiftRelationship)
+			args = append(args, ptrIfNonEmpty(*req.GiftRelationship))
 		}
 		if req.DateReceived != nil {
 			sets = append(sets, "date_received = ?")
-			args = append(args, *req.DateReceived)
+			args = append(args, ptrIfNonEmpty(*req.DateReceived))
 		}
 		if req.Condition != nil {
 			sets = append(sets, "condition = ?")
-			args = append(args, *req.Condition)
+			args = append(args, ptrIfNonEmpty(*req.Condition))
 		}
 		if req.Location != nil {
 			sets = append(sets, "location = ?")
-			args = append(args, *req.Location)
+			args = append(args, ptrIfNonEmpty(*req.Location))
 		}
 		if req.Notes != nil {
 			sets = append(sets, "notes = ?")
-			args = append(args, *req.Notes)
+			args = append(args, ptrIfNonEmpty(*req.Notes))
 		}
 		if req.ChildRating != nil {
 			sets = append(sets, "child_rating = ?")
-			args = append(args, *req.ChildRating)
+			args = append(args, req.ChildRating)
 		}
 		if req.ReadCount != nil {
 			sets = append(sets, "read_count = ?")
-			args = append(args, *req.ReadCount)
+			args = append(args, req.ReadCount)
 		}
 		if req.LastReadDate != nil {
 			sets = append(sets, "last_read_date = ?")
-			args = append(args, *req.LastReadDate)
+			args = append(args, ptrIfNonEmpty(*req.LastReadDate))
 		}
 		if req.CoverImageURL != nil {
 			sets = append(sets, "cover_image_url = ?")
-			args = append(args, *req.CoverImageURL)
+			args = append(args, ptrIfNonEmpty(*req.CoverImageURL))
 		}
 		if req.CoverSource != nil {
 			sets = append(sets, "cover_source = ?")
-			args = append(args, *req.CoverSource)
+			args = append(args, ptrIfNonEmpty(*req.CoverSource))
 		}
 
 		// Always update the timestamp
@@ -1291,73 +1292,82 @@ func HTMLUpdateBookHandler(db *sql.DB) http.HandlerFunc {
 		sets := []string{}
 		args := []interface{}{}
 
-		formFields := []struct {
-			name string
-			ptr  *string
-		}{
-			{"isbn", nil},       // handled specially
-			{"subtitle", nil},
-			{"authors", nil},
-			{"illustrators", nil},
-			{"publisher", nil},
-			{"book_type", nil},
-			{"reading_levels", nil},
-			{"genres", nil},
-			{"themes", nil},
-			{"awards", nil},
-			{"gift_from", nil},
-			{"gift_relationship", nil},
-			{"date_received", nil},
-			{"condition", nil},
-			{"location", nil},
-			{"notes", nil},
-			{"cover_image_url", nil},
+		formFields := []string{
+			"isbn",            // handled specially above
+			"subtitle",
+			"authors",
+			"illustrators",
+			"publisher",
+			"book_type",
+			"reading_levels",
+			"genres",
+			"themes",
+			"awards",
+			"gift_from",
+			"gift_relationship",
+			"date_received",
+			"condition",
+			"location",
+			"notes",
+			"cover_image_url",
 		}
 
-		// ISBN - normalize
+		// ISBN - normalize; empty string means clear to NULL
 		isbn := strings.ReplaceAll(strings.TrimSpace(r.FormValue("isbn")), "-", "")
-		if isbn != "" {
-			sets = append(sets, "isbn = ?")
-			args = append(args, isbn)
-		}
+		sets = append(sets, "isbn = ?")
+		args = append(args, ptrIfNonEmpty(isbn))
 
-		// Title - always update
+		// Title - always update; empty string means clear to NULL
 		title := strings.TrimSpace(r.FormValue("title"))
-		if title != "" {
-			sets = append(sets, "title = ?")
-			args = append(args, title)
-		}
+		sets = append(sets, "title = ?")
+		args = append(args, ptrIfNonEmpty(title))
 
-		// String fields
-		for _, f := range formFields {
-			if f.name == "isbn" {
+		// String fields - always set; empty string means clear to NULL
+		for _, name := range formFields {
+			if name == "isbn" {
 				continue // already handled
 			}
-			val := strings.TrimSpace(r.FormValue(f.name))
-			if val != "" {
-				sets = append(sets, f.name+" = ?")
-				args = append(args, val)
-			}
+			val := strings.TrimSpace(r.FormValue(name))
+			sets = append(sets, name+" = ?")
+			args = append(args, ptrIfNonEmpty(val))
 		}
 
-		// Integer fields
+		// Integer fields - always set; empty string means clear to NULL
 		if v := strings.TrimSpace(r.FormValue("publication_year")); v != "" {
 			if n, err := strconv.Atoi(v); err == nil {
 				sets = append(sets, "publication_year = ?")
-				args = append(args, n)
+				args = append(args, &n)
+			} else {
+				sets = append(sets, "publication_year = ?")
+				args = append(args, nil)
 			}
+		} else {
+			sets = append(sets, "publication_year = ?")
+			args = append(args, nil)
 		}
 		if v := strings.TrimSpace(r.FormValue("page_count")); v != "" {
 			if n, err := strconv.Atoi(v); err == nil {
 				sets = append(sets, "page_count = ?")
-				args = append(args, n)
+				args = append(args, &n)
+			} else {
+				sets = append(sets, "page_count = ?")
+				args = append(args, nil)
 			}
+		} else {
+			sets = append(sets, "page_count = ?")
+			args = append(args, nil)
 		}
 		if v := strings.TrimSpace(r.FormValue("child_rating")); v != "" {
 			if n, err := strconv.Atoi(v); err == nil {
 				sets = append(sets, "child_rating = ?")
-				args = append(args, n)
+				args = append(args, &n)
+			} else {
+				sets = append(sets, "child_rating = ?")
+				args = append(args, nil)
 			}
+		} else {
+			sets = append(sets, "child_rating = ?")
+			args = append(args, nil)
 		}
 
 		// Always update timestamp
