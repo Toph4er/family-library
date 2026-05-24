@@ -173,6 +173,7 @@ func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 		}
 
 		ctx.Books = books
+		filterBooksForGuest(r, books)
 
 		renderPage(w, r, tmpl, "books.html", ctx)
 	}
@@ -282,6 +283,7 @@ func RenderBookDetailPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 		book.UpdatedAt = updatedAt
 
 		ctx.Book = &book
+		filterBookForGuest(r, &book)
 
 		renderPage(w, r, tmpl, "book-detail.html", ctx)
 	}

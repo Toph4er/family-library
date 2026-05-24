@@ -1,5 +1,7 @@
 package models
 
+import "encoding/json"
+
 // Book represents a book in the collection
 //
 type Book struct {
@@ -31,6 +33,87 @@ type Book struct {
 	GuestVisibleFields  string    `json:"-"`
 	CreatedAt           string    `json:"created_at"`
 	UpdatedAt           string    `json:"updated_at"`
+}
+
+// FilterForGuest nils out fields that are not visible to guests, based on the
+// GuestVisibleFields JSON blob stored per-book.  Only pointer fields are
+// affected — if a field is marked false, its pointer is set to nil so it
+// omits from JSON output (omitempty) or appears empty in templates.
+func (b *Book) FilterForGuest() {
+	if b.GuestVisibleFields == "" {
+		return
+	}
+	var visibility map[string]bool
+	if err := json.Unmarshal([]byte(b.GuestVisibleFields), &visibility); err != nil {
+		return // malformed JSON — leave as-is
+	}
+	// Default: fields not listed are visible.
+	if !visibility["isbn"] {
+		b.ISBN = nil
+	}
+	if !visibility["subtitle"] {
+		b.Subtitle = nil
+	}
+	if !visibility["authors"] {
+		b.Authors = nil
+	}
+	if !visibility["illustrators"] {
+		b.Illustrators = nil
+	}
+	if !visibility["publisher"] {
+		b.Publisher = nil
+	}
+	if !visibility["publication_year"] {
+		b.PublicationYear = nil
+	}
+	if !visibility["page_count"] {
+		b.PageCount = nil
+	}
+	if !visibility["book_type"] {
+		b.BookType = nil
+	}
+	if !visibility["reading_levels"] {
+		b.ReadingLevels = nil
+	}
+	if !visibility["genres"] {
+		b.Genres = nil
+	}
+	if !visibility["themes"] {
+		b.Themes = nil
+	}
+	if !visibility["awards"] {
+		b.Awards = nil
+	}
+	if !visibility["gift_from"] {
+		b.GiftFrom = nil
+	}
+	if !visibility["gift_relationship"] {
+		b.GiftRelationship = nil
+	}
+	if !visibility["date_received"] {
+		b.DateReceived = nil
+	}
+	if !visibility["condition"] {
+		b.Condition = nil
+	}
+	if !visibility["location"] {
+		b.Location = nil
+	}
+	if !visibility["notes"] {
+		b.Notes = nil
+	}
+	if !visibility["child_rating"] {
+		b.ChildRating = nil
+	}
+	if !visibility["last_read_date"] {
+		b.LastReadDate = nil
+	}
+	if !visibility["cover_image_url"] {
+		b.CoverImageURL = nil
+	}
+	if !visibility["cover_source"] {
+		b.CoverSource = nil
+	}
 }
 
 // WishlistItem represents a book on the wishlist

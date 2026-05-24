@@ -16,6 +16,7 @@ import (
 	"sync"
 	"time"
 
+	"git.rcsmaine.com/chris/library/backend/internal/auth"
 	"git.rcsmaine.com/chris/library/backend/internal/models"
 
 	"github.com/go-chi/chi/v5"
@@ -232,6 +233,7 @@ func ListBooksHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
+		filterBooksForGuest(r, books)
 		PaginatedResponse(w, books, total, page, perPage)
 	}
 }
@@ -321,6 +323,7 @@ func SearchBooksHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
+		filterBooksForGuest(r, books)
 		PaginatedResponse(w, books, total, page, perPage)
 	}
 }
@@ -348,6 +351,7 @@ func GetBookHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
+		filterBookForGuest(r, b)
 		JSONResponse(w, http.StatusOK, b)
 	}
 }
@@ -558,6 +562,7 @@ func UpdateBookHandler(db *sql.DB) http.HandlerFunc {
 				JSONError(w, http.StatusInternalServerError, "database error")
 				return
 			}
+			filterBookForGuest(r, b)
 			JSONResponse(w, http.StatusOK, b)
 			return
 		}
@@ -594,6 +599,7 @@ func UpdateBookHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
+		filterBookForGuest(r, b)
 		JSONResponse(w, http.StatusOK, b)
 	}
 }
@@ -1239,6 +1245,26 @@ func derefInt(i *int) int {
 		return 0
 	}
 	return *i
+}
+
+// filterBookForGuest filters a single book for guest visibility if the current
+// user is a guest.
+func filterBookForGuest(r *http.Request, b *models.Book) {
+	if user := auth.GetUserFromContext(r); user != nil && user.IsGuest {
+		b.FilterForGuest()
+	}
+}
+
+// filterBooksForGuest filters a slice of books for guest visibility if the
+// current user is a guest.
+func filterBooksForGuest(r *http.Request, books []models.Book) {
+	user := auth.GetUserFromContext(r)
+	if user == nil || !user.IsGuest {
+		return
+	}
+	for i := range books {
+		books[i].FilterForGuest()
+	}
 }
 
 
