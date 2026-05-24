@@ -213,20 +213,3 @@ func CORSConfig() cors.Options {
 	}
 }
 
-// Recovery is an alias for chi's Recoverer middleware, re-exported for
-// convenience in documentation. Use middleware.Recoverer directly.
-//
-// Deprecated: Use github.com/go-chi/chi/v5/middleware.Recoverer instead.
-var Recovery = func(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
-			if rec := recover(); rec != nil {
-				slog.Error("panic recovered", "recover", rec)
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte(`{"error":"internal server error"}`))
-			}
-		}()
-		next.ServeHTTP(w, r)
-	})
-}

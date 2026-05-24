@@ -10,12 +10,6 @@ backend/go.work.sum
 .env
 .env.local
 
-# Node / React
-frontend/node_modules/
-frontend/dist/
-frontend/build/
-frontend/.vite/
-
 # IDE
 .vscode/
 .idea/
