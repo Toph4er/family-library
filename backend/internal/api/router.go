@@ -103,7 +103,7 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.RenderBookFormPage(cfg.Templates["book-form"], database, authSvc.Store(), auth.SessionID, false, 0))).ServeHTTP(w, r)
 	})
 	r.Get("/books/{id}/edit-book", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAdminHTML(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			idStr := chi.URLParam(r, "id")
 			id, err := strconv.ParseInt(idStr, 10, 64)
 			if err != nil {
