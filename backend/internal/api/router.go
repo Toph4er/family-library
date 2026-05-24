@@ -111,7 +111,7 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 				return
 			}
 			handlers.RenderBookFormPage(cfg.Templates["book-form"], database, authSvc.Store(), auth.SessionID, true, id).ServeHTTP(w, r)
-		}).ServeHTTP(w, r)
+		})).ServeHTTP(w, r)
 	})
 
 	// Book form POST handlers (admin only)
