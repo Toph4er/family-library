@@ -169,6 +169,10 @@ func UpdateUserHandler(db *sql.DB) http.HandlerFunc {
 			args = append(args, *req.DisplayName)
 		}
 		if req.Role != nil {
+			if *req.Role != "admin" {
+				JSONError(w, http.StatusBadRequest, "only 'admin' role is supported")
+				return
+			}
 			setClauses = append(setClauses, "role = ?")
 			args = append(args, *req.Role)
 		}
@@ -330,20 +334,8 @@ func HTMLUserFormHandler(db *sql.DB) http.HandlerFunc {
         </div>
         <div>
           <label for="user-role" class="block text-sm font-medium text-text mb-1">Role</label>
-          <select id="user-role" name="role" class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">
-            <option value="admin" ` + (func() string {
-			if isEdit && user.Role == "admin" {
-				return `selected`
-			}
-			return ``
-		})() + `>Admin</option>
-            <option value="guest" ` + (func() string {
-			if isEdit && user.Role == "guest" {
-				return `selected`
-			}
-			return ``
-		})() + `>Guest</option>
-          </select>
+          <input type="hidden" id="user-role" name="role" value="admin">
+          <span class="w-full px-3 py-2.5 rounded-lg border bg-surface block text-sm" style="border-color: var(--color-secondary);">Admin</span>
         </div>
       </div>
       <div id="user-form-error" class="mt-4"></div>

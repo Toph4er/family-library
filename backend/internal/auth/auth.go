@@ -3,6 +3,7 @@ package auth
 import (
 	"database/sql"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/sessions"
 	"golang.org/x/crypto/bcrypt"
@@ -31,11 +32,14 @@ func New(db *sql.DB, sessionSecret []byte) *Auth {
 	key := make([]byte, 32)
 	copy(key, sessionSecret)
 	store := sessions.NewCookieStore(key)
+	// Secure=false in development so cookies work over plain HTTP.
+	// In production (ENV=production or unset), cookies are HTTPS-only.
+	secure := os.Getenv("ENV") != "development"
 	store.Options = &sessions.Options{
 		Path:     "/",
 		MaxAge:   30 * 60, // 30 minutes
 		HttpOnly: true,
-		Secure:   true,    // will be set to false in dev
+		Secure:   secure,
 		SameSite: http.SameSiteLaxMode,
 	}
 	return &Auth{db: db, store: store}

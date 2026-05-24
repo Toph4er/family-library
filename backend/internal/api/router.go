@@ -174,7 +174,7 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 				r.Delete("/{id}", func(w http.ResponseWriter, r *http.Request) {
 					authSvc.RequireAdmin(http.HandlerFunc(handlers.DeleteWishlistItemHandler(database))).ServeHTTP(w, r)
 				})
-				r.Patch("/{id}/fulfill", func(w http.ResponseWriter, r *http.Request) {
+				r.Post("/{id}/fulfill", func(w http.ResponseWriter, r *http.Request) {
 					authSvc.RequireAdmin(http.HandlerFunc(handlers.FulfillWishlistItemHandler(database))).ServeHTTP(w, r)
 				})
 			})
