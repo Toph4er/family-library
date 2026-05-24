@@ -781,6 +781,10 @@ func LookupISBNHandler(db *sql.DB) http.HandlerFunc {
 			`INSERT OR REPLACE INTO isbn_cache (isbn, data, fetched_at) VALUES (?, ?, ?)`,
 			isbn, string(dataJSON), time.Now().UTC().Format(time.RFC3339),
 		)
+		// Purge stale cache entries (older than 24h) to prevent unbounded growth.
+		_, _ = db.Exec(
+			`DELETE FROM isbn_cache WHERE fetched_at < datetime('now', '-24 hours')`,
+		)
 
 		JSONResponse(w, http.StatusOK, resp)
 	}
