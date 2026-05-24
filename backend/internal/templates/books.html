@@ -27,12 +27,8 @@
     <!-- Admin Actions -->
     {{if .IsAdmin}}
     <div class="flex justify-end">
-      <button
-        type="button"
-        hx-get="/books/new-form"
-        hx-target="#modal-target"
-        hx-swap="innerHTML"
-        class="px-5 py-2.5 rounded-xl font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+      <a href="/books/add-book"
+        class="px-5 py-2.5 rounded-xl font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 no-underline"
         style="background-color: var(--color-primary);"
         onmouseenter="this.style.backgroundColor='var(--color-text-light)'"
         onmouseleave="this.style.backgroundColor='var(--color-primary)'"
@@ -45,7 +41,7 @@
           </svg>
           Add Book
         </span>
-      </button>
+      </a>
     </div>
     {{end}}
 
@@ -72,8 +68,6 @@
     <!-- Pagination -->
     <!-- Pagination not yet implemented for the books page -->
 
-    <!-- Modal Container (for book form modal) -->
-    <div id="modal-target"></div>
   {{else}}
     <!-- Unauthenticated guard -->
     <div class="flex flex-col items-center justify-center py-16 text-center">

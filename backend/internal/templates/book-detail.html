@@ -126,12 +126,8 @@
       <!-- Admin actions -->
       {{if .IsAdmin}}
       <div class="flex gap-3 pt-2">
-        <button
-          type="button"
-          hx-get="/books/{{.Book.ID}}/edit-form"
-          hx-target="#modal-target"
-          hx-swap="innerHTML"
-          class="px-5 py-2.5 rounded-xl font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+        <a href="/books/{{.Book.ID}}/edit-book"
+          class="px-5 py-2.5 rounded-xl font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 no-underline"
           style="background-color: var(--color-primary);"
           onmouseenter="this.style.backgroundColor='var(--color-text-light)'"
           onmouseleave="this.style.backgroundColor='var(--color-primary)'"
@@ -144,7 +140,7 @@
             </svg>
             Edit
           </span>
-        </button>
+        </a>
         <button
           type="button"
           hx-delete="/api/v1/books/{{.Book.ID}}"
@@ -333,9 +329,6 @@
   </div>
   {{end}}
   {{end}}
-
-  <!-- Modal container for edit form -->
-  <div id="modal-target"></div>
 
 </div>
 {{end}}

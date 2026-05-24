@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -481,6 +482,82 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 		}
 
 		renderPage(w, r, tmpl, "settings.html", ctx)
+	}
+}
+
+// RenderBookFormPage renders the add/edit book form as a full page.
+func RenderBookFormPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string, isEdit bool, bookID int64) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := buildPageContext(r, store, sessionName)
+
+		if !ctx.IsAuthenticated {
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
+		if !ctx.IsAdmin {
+			http.Redirect(w, r, "/", http.StatusFound)
+			return
+		}
+
+		var book models.Book
+		bookTitle := ""
+		cancelURL := "/books"
+
+		if isEdit {
+			row := db.QueryRow(`SELECT `+bookColumns+` FROM books WHERE id = ?`, bookID)
+			b, err := scanBook(row)
+			if err != nil {
+				http.NotFound(w, r)
+				return
+			}
+			book = *b
+			bookTitle = book.Title
+			cancelURL = "/books/" + strconv.FormatInt(bookID, 10)
+		}
+
+		data := map[string]interface{}{
+			"Year":            ctx.Year,
+			"CSRFToken":       ctx.CSRFToken,
+			"IsAdmin":         ctx.IsAdmin,
+			"IsAuthenticated": ctx.IsAuthenticated,
+			"Username":        ctx.Username,
+			"IsEdit":          isEdit,
+			"BookTitle":       bookTitle,
+			"CancelURL":       cancelURL,
+			"ActionURL":       func() string {
+				if isEdit {
+					return "/books/" + strconv.FormatInt(bookID, 10) + "/update"
+				}
+				return "/books/create"
+			}(),
+			"Title":           derefString(&book.Title),
+			"Subtitle":        derefString(book.Subtitle),
+			"Authors":         derefString(book.Authors),
+			"Illustrators":    derefString(book.Illustrators),
+			"ISBN":            derefString(book.ISBN),
+			"Publisher":       derefString(book.Publisher),
+			"PublicationYear": derefInt(book.PublicationYear),
+			"PageCount":       derefInt(book.PageCount),
+			"BookType":        derefString(book.BookType),
+			"Condition":       derefString(book.Condition),
+			"Genres":          derefString(book.Genres),
+			"Themes":          derefString(book.Themes),
+			"Awards":          derefString(book.Awards),
+			"ReadingLevels":   derefString(book.ReadingLevels),
+			"GiftFrom":        derefString(book.GiftFrom),
+			"GiftRelationship": derefString(book.GiftRelationship),
+			"DateReceived":    derefString(book.DateReceived),
+			"Location":        derefString(book.Location),
+			"CoverImageURL":   derefString(book.CoverImageURL),
+			"Notes":           derefString(book.Notes),
+			"ChildRating":     derefInt(book.ChildRating),
+		}
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if err := tmpl.ExecuteTemplate(w, "book-form.html", data); err != nil {
+			slog.Error("template error", "page", "book-form", "error", err)
+			http.Error(w, "template error", http.StatusInternalServerError)
+		}
 	}
 }
 

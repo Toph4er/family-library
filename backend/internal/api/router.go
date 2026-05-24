@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
@@ -97,11 +98,28 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 	r.Get("/books/{id}", func(w http.ResponseWriter, r *http.Request) {
 		authSvc.RequireAuthHTML(http.HandlerFunc(handlers.RenderBookDetailPage(cfg.Templates["book-detail"], database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
 	})
-	r.Get("/books/new-form", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLBookFormHandler(cfg.Templates["books"], database))).ServeHTTP(w, r)
+	// Standalone book form pages (admin only)
+	r.Get("/books/add-book", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.RenderBookFormPage(cfg.Templates["book-form"], database, authSvc.Store(), auth.SessionID, false, 0))).ServeHTTP(w, r)
 	})
-	r.Get("/books/{id}/edit-form", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLBookFormHandler(cfg.Templates["books"], database))).ServeHTTP(w, r)
+	r.Get("/books/{id}/edit-book", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAdminHTML(func(w http.ResponseWriter, r *http.Request) {
+			idStr := chi.URLParam(r, "id")
+			id, err := strconv.ParseInt(idStr, 10, 64)
+			if err != nil {
+				http.NotFound(w, r)
+				return
+			}
+			handlers.RenderBookFormPage(cfg.Templates["book-form"], database, authSvc.Store(), auth.SessionID, true, id).ServeHTTP(w, r)
+		}).ServeHTTP(w, r)
+	})
+
+	// Book form POST handlers (admin only)
+	r.Post("/books/create", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLCreateBookHandler(database))).ServeHTTP(w, r)
+	})
+	r.Post("/books/{id}/update", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLUpdateBookHandler(database))).ServeHTTP(w, r)
 	})
 	r.Get("/wishlist", func(w http.ResponseWriter, r *http.Request) {
 		authSvc.RequireAuthHTML(http.HandlerFunc(handlers.RenderWishlistPage(cfg.Templates["wishlist"], database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)

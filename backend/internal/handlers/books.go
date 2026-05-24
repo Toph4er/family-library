@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"html/template"
 	"io"
 	"log/slog"
 	"net/http"
@@ -1150,89 +1149,6 @@ func defaultGuestVisibleFields() string {
 	return string(b)
 }
 
-// HTMLBookFormHandler returns a modal HTML fragment for creating or editing a book.
-// For new books: GET /books/new-form
-// For editing: GET /books/{id}/edit-form
-func HTMLBookFormHandler(tmpl *template.Template, db *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		idStr := chi.URLParam(r, "id")
-		isEdit := idStr != ""
-
-		var book models.Book
-		if isEdit {
-			id, err := strconv.ParseInt(idStr, 10, 64)
-			if err != nil {
-				w.Header().Set("Content-Type", "text/html; charset=utf-8")
-				w.WriteHeader(http.StatusBadRequest)
-				_, _ = w.Write([]byte(htmlErrorFragment("Invalid book ID")))
-				return
-			}
-			row := db.QueryRow(`SELECT ` + bookColumns + ` FROM books WHERE id = ?`, id)
-			b, err := scanBook(row)
-			if err != nil {
-				w.Header().Set("Content-Type", "text/html; charset=utf-8")
-				w.WriteHeader(http.StatusNotFound)
-				_, _ = w.Write([]byte(htmlErrorFragment("Book not found")))
-				return
-			}
-			book = *b
-		}
-
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-
-		// Build form data
-		data := map[string]interface{}{
-			"ActionURL":       "/api/v1/books",
-			"IsEdit":          isEdit,
-			"Title":           derefString(&book.Title),
-			"Subtitle":        derefString(book.Subtitle),
-			"Authors":         derefString(book.Authors),
-			"Illustrators":    derefString(book.Illustrators),
-			"ISBN":            derefString(book.ISBN),
-			"Publisher":       derefString(book.Publisher),
-			"PublicationYear": derefInt(book.PublicationYear),
-			"PageCount":       derefInt(book.PageCount),
-			"BookType":        derefString(book.BookType),
-			"Condition":       derefString(book.Condition),
-			"Genres":          derefString(book.Genres),
-			"Themes":          derefString(book.Themes),
-			"Awards":          derefString(book.Awards),
-			"ReadingLevels":   derefString(book.ReadingLevels),
-			"GiftFrom":        derefString(book.GiftFrom),
-			"GiftRelationship": derefString(book.GiftRelationship),
-			"DateReceived":    derefString(book.DateReceived),
-			"Location":        derefString(book.Location),
-			"CoverImageURL":   derefString(book.CoverImageURL),
-			"Notes":           derefString(book.Notes),
-			"ChildRating":     derefInt(book.ChildRating),
-			"CancelURL":       "/books/" + idStr,
-		}
-
-		// Render modal wrapper
-		fmt.Fprint(w, `<div id="modal-backdrop" class="modal-backdrop" hx-on::click="if(event.target===this)document.getElementById('modal-backdrop').remove()">
-  <div class="modal-content modal-lg p-6" role="dialog" aria-modal="true">
-    <div class="flex items-center justify-between mb-4 pb-3 border-t border-b" style="border-color: rgba(139, 69, 19, 0.1);">
-      <h2 class="text-xl font-heading font-semibold text-primary">` + (func() string {
-			if isEdit {
-				return "Edit Book"
-			}
-			return "Add Book"
-		})() + `</h2>
-      <button type="button" hx-on::click="document.getElementById('modal-backdrop').remove()" class="text-text-light hover:text-text transition-colors text-2xl no-underline" aria-label="Close modal">×</button>
-    </div>
-    <div class="overflow-y-auto max-h-[70vh] pr-2">`)
-
-		if err := tmpl.ExecuteTemplate(w, "partials/book-form", data); err != nil {
-			slog.Error("template error", "page", "book-form", "error", err)
-		}
-
-		fmt.Fprint(w, `
-    </div>
-  </div>
-</div>`)
-	}
-}
-
 func derefString(s *string) string {
 	if s == nil {
 		return ""
@@ -1268,3 +1184,213 @@ func filterBooksForGuest(r *http.Request, books []models.Book) {
 }
 
 
+
+// HTMLCreateBookHandler handles POST /books/create (form submission from the add-book page).
+func HTMLCreateBookHandler(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "Invalid request", http.StatusBadRequest)
+			return
+		}
+
+		title := strings.TrimSpace(r.FormValue("title"))
+		if title == "" {
+			http.Error(w, "Title is required", http.StatusBadRequest)
+			return
+		}
+
+		isbn := strings.ReplaceAll(strings.TrimSpace(r.FormValue("isbn")), "-", "")
+
+		coverSource := "none"
+		childRatingStr := r.FormValue("child_rating")
+		var childRating *int
+		if childRatingStr != "" {
+			if v, err := strconv.Atoi(childRatingStr); err == nil {
+				childRating = &v
+			}
+		}
+		pubYearStr := r.FormValue("publication_year")
+		var pubYear *int
+		if pubYearStr != "" {
+			if v, err := strconv.Atoi(pubYearStr); err == nil {
+				pubYear = &v
+			}
+		}
+		pageCountStr := r.FormValue("page_count")
+		var pageCount *int
+		if pageCountStr != "" {
+			if v, err := strconv.Atoi(pageCountStr); err == nil {
+				pageCount = &v
+			}
+		}
+
+		query := `
+			INSERT INTO books (
+				isbn, title, subtitle, authors, illustrators,
+				publisher, publication_year, page_count, book_type,
+				reading_levels, genres, themes, awards,
+				gift_from, gift_relationship, date_received,
+				condition, location, notes,
+				child_rating, read_count, last_read_date, cover_image_url, cover_source, guest_visible_fields
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)
+		`
+
+		result, err := db.Exec(query,
+			isbn, title,
+			ptrIfNonEmpty(r.FormValue("subtitle")),
+			ptrIfNonEmpty(r.FormValue("authors")),
+			ptrIfNonEmpty(r.FormValue("illustrators")),
+			ptrIfNonEmpty(r.FormValue("publisher")),
+			pubYear, pageCount,
+			ptrIfNonEmpty(r.FormValue("book_type")),
+			ptrIfNonEmpty(r.FormValue("reading_levels")),
+			ptrIfNonEmpty(r.FormValue("genres")),
+			ptrIfNonEmpty(r.FormValue("themes")),
+			ptrIfNonEmpty(r.FormValue("awards")),
+			ptrIfNonEmpty(r.FormValue("gift_from")),
+			ptrIfNonEmpty(r.FormValue("gift_relationship")),
+			ptrIfNonEmpty(r.FormValue("date_received")),
+			ptrIfNonEmpty(r.FormValue("condition")),
+			ptrIfNonEmpty(r.FormValue("location")),
+			ptrIfNonEmpty(r.FormValue("notes")),
+			childRating,
+			nil, // last_read_date
+			ptrIfNonEmpty(r.FormValue("cover_image_url")),
+			coverSource,
+			defaultGuestVisibleFields(),
+		)
+		if err != nil {
+			if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+				http.Error(w, "A book with this ISBN already exists", http.StatusConflict)
+				return
+			}
+			http.Error(w, "Failed to create book", http.StatusInternalServerError)
+			return
+		}
+
+		id, _ := result.LastInsertId()
+		http.Redirect(w, r, "/books/"+strconv.FormatInt(id, 10), http.StatusFound)
+	}
+}
+
+// HTMLUpdateBookHandler handles POST /books/{id}/update (form submission from the edit-book page).
+func HTMLUpdateBookHandler(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		idStr := chi.URLParam(r, "id")
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil {
+			http.Error(w, "Invalid book ID", http.StatusBadRequest)
+			return
+		}
+
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "Invalid request", http.StatusBadRequest)
+			return
+		}
+
+		// Build dynamic UPDATE from non-empty form fields
+		sets := []string{}
+		args := []interface{}{}
+
+		formFields := []struct {
+			name string
+			ptr  *string
+		}{
+			{"isbn", nil},       // handled specially
+			{"subtitle", nil},
+			{"authors", nil},
+			{"illustrators", nil},
+			{"publisher", nil},
+			{"book_type", nil},
+			{"reading_levels", nil},
+			{"genres", nil},
+			{"themes", nil},
+			{"awards", nil},
+			{"gift_from", nil},
+			{"gift_relationship", nil},
+			{"date_received", nil},
+			{"condition", nil},
+			{"location", nil},
+			{"notes", nil},
+			{"cover_image_url", nil},
+		}
+
+		// ISBN - normalize
+		isbn := strings.ReplaceAll(strings.TrimSpace(r.FormValue("isbn")), "-", "")
+		if isbn != "" {
+			sets = append(sets, "isbn = ?")
+			args = append(args, isbn)
+		}
+
+		// Title - always update
+		title := strings.TrimSpace(r.FormValue("title"))
+		if title != "" {
+			sets = append(sets, "title = ?")
+			args = append(args, title)
+		}
+
+		// String fields
+		for _, f := range formFields {
+			if f.name == "isbn" {
+				continue // already handled
+			}
+			val := strings.TrimSpace(r.FormValue(f.name))
+			if val != "" {
+				sets = append(sets, f.name+" = ?")
+				args = append(args, val)
+			}
+		}
+
+		// Integer fields
+		if v := strings.TrimSpace(r.FormValue("publication_year")); v != "" {
+			if n, err := strconv.Atoi(v); err == nil {
+				sets = append(sets, "publication_year = ?")
+				args = append(args, n)
+			}
+		}
+		if v := strings.TrimSpace(r.FormValue("page_count")); v != "" {
+			if n, err := strconv.Atoi(v); err == nil {
+				sets = append(sets, "page_count = ?")
+				args = append(args, n)
+			}
+		}
+		if v := strings.TrimSpace(r.FormValue("child_rating")); v != "" {
+			if n, err := strconv.Atoi(v); err == nil {
+				sets = append(sets, "child_rating = ?")
+				args = append(args, n)
+			}
+		}
+
+		// Always update timestamp
+		sets = append(sets, "updated_at = CURRENT_TIMESTAMP")
+		args = append(args, id)
+
+		// #nosec G202 -- Column names are hardcoded
+		query := "UPDATE books SET " + strings.Join(sets, ", ") + " WHERE id = ?"
+		result, err := db.Exec(query, args...)
+		if err != nil {
+			if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+				http.Error(w, "A book with this ISBN already exists", http.StatusConflict)
+				return
+			}
+			http.Error(w, "Failed to update book", http.StatusInternalServerError)
+			return
+		}
+
+		rowsAffected, _ := result.RowsAffected()
+		if rowsAffected == 0 {
+			http.NotFound(w, r)
+			return
+		}
+
+		http.Redirect(w, r, "/books/"+strconv.FormatInt(id, 10), http.StatusFound)
+	}
+}
+
+// ptrIfNonEmpty returns a pointer to s if s is non-empty, nil otherwise.
+func ptrIfNonEmpty(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
