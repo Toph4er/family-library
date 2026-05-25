@@ -295,18 +295,12 @@ func RenderBookDetailPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 	}
 }
 
-// RenderWishlistPage renders the wishlist page (auth required).
+// RenderWishlistPage renders the wishlist page (open to guests).
 func RenderWishlistPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := buildPageContext(r, store, sessionName)
 
-		// Defense-in-depth: reject unauthenticated requests before querying the DB.
-		if !ctx.IsAuthenticated {
-			http.Redirect(w, r, "/login", http.StatusFound)
-			return
-		}
-
-		rows, err := db.Query("SELECT id, isbn, title, author, priority, notes, fulfilled, requested_by, requested_at, fulfilled_at, cover_image_url FROM wishlist ORDER BY priority DESC, requested_at DESC")
+		rows, err := db.Query("SELECT id, isbn, title, author, reason, priority, amazon_url, thriftbooks_url, notes, fulfilled, requested_by, requested_at, fulfilled_at, cover_image_url FROM wishlist ORDER BY priority DESC, requested_at DESC")
 		if err != nil {
 			http.Error(w, "database error", http.StatusInternalServerError)
 			return
@@ -316,12 +310,12 @@ func RenderWishlistPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 		items := make([]models.WishlistItem, 0)
 		for rows.Next() {
 			var item models.WishlistItem
-			var isbn, author, notes sql.NullString
+			var isbn, author, reason, amazonURL, thriftbooksURL, notes sql.NullString
 			var fulfilled bool
 			var requestedBy sql.NullString
 			var requestedAtStr, fulfilledAtStr sql.NullString
 			var coverImageURL sql.NullString
-			if err := rows.Scan(&item.ID, &isbn, &item.Title, &author, &item.Priority, &notes, &fulfilled, &requestedBy, &requestedAtStr, &fulfilledAtStr, &coverImageURL); err != nil {
+			if err := rows.Scan(&item.ID, &isbn, &item.Title, &author, &reason, &item.Priority, &amazonURL, &thriftbooksURL, &notes, &fulfilled, &requestedBy, &requestedAtStr, &fulfilledAtStr, &coverImageURL); err != nil {
 				http.Error(w, "database error", http.StatusInternalServerError)
 				return
 			}
@@ -330,6 +324,15 @@ func RenderWishlistPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 			}
 			if author.Valid {
 				item.Author = &author.String
+			}
+			if reason.Valid {
+				item.Reason = &reason.String
+			}
+			if amazonURL.Valid {
+				item.AmazonURL = &amazonURL.String
+			}
+			if thriftbooksURL.Valid {
+				item.ThriftbooksURL = &thriftbooksURL.String
 			}
 			if notes.Valid {
 				item.Notes = &notes.String
@@ -359,6 +362,70 @@ func RenderWishlistPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 		ctx.Items = items
 
 		renderPage(w, r, tmpl, "wishlist.html", ctx)
+	}
+}
+
+// RenderWishlistFormPage renders the add/edit wishlist item form as a full page (admin only).
+func RenderWishlistFormPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string, isEdit bool, itemID int64) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := buildPageContext(r, store, sessionName)
+
+		if !ctx.IsAuthenticated {
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
+		if !ctx.IsAdmin {
+			http.Redirect(w, r, "/", http.StatusFound)
+			return
+		}
+
+		var item models.WishlistItem
+		itemTitle := ""
+		cancelURL := "/wishlist"
+
+		if isEdit {
+			row := db.QueryRow(`SELECT `+wishlistColumns+` FROM wishlist WHERE id = ?`, itemID)
+			itm, err := scanWishlistItem(row)
+			if err != nil {
+				http.NotFound(w, r)
+				return
+			}
+			item = *itm
+			itemTitle = item.Title
+			cancelURL = "/wishlist"
+		}
+
+		data := map[string]interface{}{
+			"Year":            ctx.Year,
+			"CSRFToken":       ctx.CSRFToken,
+			"IsAdmin":         ctx.IsAdmin,
+			"IsAuthenticated": ctx.IsAuthenticated,
+			"Username":        ctx.Username,
+			"IsEdit":          isEdit,
+			"ItemTitle":       itemTitle,
+			"CancelURL":       cancelURL,
+			"ActionURL": func() string {
+				if isEdit {
+					return "/wishlist/" + strconv.FormatInt(itemID, 10) + "/update"
+				}
+				return "/wishlist/create"
+			}(),
+			"Title":         item.Title,
+			"Author":        derefString(item.Author),
+			"ISBN":          derefString(item.ISBN),
+			"Reason":        derefString(item.Reason),
+			"Priority":      item.Priority,
+			"AmazonURL":     derefString(item.AmazonURL),
+			"ThriftbooksURL": derefString(item.ThriftbooksURL),
+			"CoverImageURL": derefString(item.CoverImageURL),
+			"Notes":         derefString(item.Notes),
+		}
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if err := tmpl.ExecuteTemplate(w, "wishlist-form.html", data); err != nil {
+			slog.Error("template error", "page", "wishlist-form", "error", err)
+			http.Error(w, "template error", http.StatusInternalServerError)
+		}
 	}
 }
 

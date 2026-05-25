@@ -16,7 +16,15 @@
 
     <!-- Info -->
     <div class="flex-1 min-w-0">
-      <h4 class="font-heading text-lg font-semibold text-primary truncate">{{.Title}}</h4>
+      <div class="flex items-center gap-2 flex-wrap">
+        <h4 class="font-heading text-lg font-semibold text-primary truncate">{{.Title}}</h4>
+        <!-- Priority badge -->
+        {{if .Priority}}
+        <span class="mushroom-tag bg-accent/20 text-accent text-xs whitespace-nowrap" title="Priority: {{.Priority}} out of 5">
+          {{range seq .Priority}}★{{end}}{{range seq (sub 5 .Priority)}}☆{{end}}
+        </span>
+        {{end}}
+      </div>
       {{if .Author}}
       <p class="text-text-light text-sm">{{.Author}}</p>
       {{end}}
@@ -43,7 +51,12 @@
 
     <!-- Admin actions -->
     {{if .IsAdmin}}
-    <div class="flex-shrink-0 flex gap-1">
+    <div class="flex-shrink-0 flex flex-col gap-1">
+      <a href="/wishlist/{{.ID}}/edit"
+        class="text-text-light hover:text-primary text-sm no-underline p-1"
+        aria-label="Edit"
+        title="Edit"
+      >✏️</a>
       {{if not .Fulfilled}}
       <button type="button"
         hx-post="/api/v1/wishlist/{{.ID}}/fulfill"

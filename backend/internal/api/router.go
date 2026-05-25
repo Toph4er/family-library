@@ -121,14 +121,27 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 	r.Post("/books/{id}/update", func(w http.ResponseWriter, r *http.Request) {
 		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLUpdateBookHandler(database))).ServeHTTP(w, r)
 	})
-	r.Get("/wishlist", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAuthHTML(http.HandlerFunc(handlers.RenderWishlistPage(cfg.Templates["wishlist"], database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
+	// Wishlist (open to guests for viewing; admin-only for management)
+	r.Get("/wishlist", handlers.RenderWishlistPage(cfg.Templates["wishlist"], database, authSvc.Store(), auth.SessionID))
+	r.Get("/wishlist/add", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.RenderWishlistFormPage(cfg.Templates["wishlist-form"], database, authSvc.Store(), auth.SessionID, false, 0))).ServeHTTP(w, r)
 	})
-	r.Get("/wishlist/new-form", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAuthHTML(http.HandlerFunc(handlers.HTMLWishlistFormHandler(database))).ServeHTTP(w, r)
+	r.Get("/wishlist/{id}/edit", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAdminHTML(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			idStr := chi.URLParam(r, "id")
+			id, err := strconv.ParseInt(idStr, 10, 64)
+			if err != nil {
+				http.NotFound(w, r)
+				return
+			}
+			handlers.RenderWishlistFormPage(cfg.Templates["wishlist-form"], database, authSvc.Store(), auth.SessionID, true, id).ServeHTTP(w, r)
+		})).ServeHTTP(w, r)
 	})
 	r.Post("/wishlist/create", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAuthHTML(http.HandlerFunc(handlers.HTMLCreateWishlistItemHandler(database))).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLCreateWishlistItemHandler(database))).ServeHTTP(w, r)
+	})
+	r.Post("/wishlist/{id}/update", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLUpdateWishlistItemHandler(database))).ServeHTTP(w, r)
 	})
 	r.Get("/settings", func(w http.ResponseWriter, r *http.Request) {
 		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.RenderSettingsPage(cfg.Templates["settings"], database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)

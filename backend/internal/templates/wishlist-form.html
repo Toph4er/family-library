@@ -1,0 +1,123 @@
+{{template "base" .}}
+
+{{define "title"}}{{if .IsEdit}}Edit Wishlist Item{{else}}Add Wishlist Item{{end}} — Woodland Library{{end}}
+
+{{define "content"}}
+<div class="flex flex-col gap-6 animate-fade-in-up max-w-3xl mx-auto">
+
+  <!-- Breadcrumb -->
+  <nav aria-label="Breadcrumb">
+    <ol class="flex items-center gap-2 text-sm">
+      <li>
+        <a href="/wishlist" class="text-primary hover:text-text-light transition-colors no-underline">Wishlist</a>
+      </li>
+      <li class="text-text-light/50" aria-hidden="true">→</li>
+      <li class="text-text-light font-medium" aria-current="page">{{if .IsEdit}}{{.ItemTitle}}{{else}}Add Item{{end}}</li>
+    </ol>
+  </nav>
+
+  <!-- Page Header -->
+  <header class="py-4">
+    <h1 class="text-4xl md:text-5xl font-heading text-primary leading-tight">
+      {{if .IsEdit}}Edit Wishlist Item{{else}}Add Wishlist Item{{end}}
+    </h1>
+    {{if .IsEdit}}
+    <p class="text-text-light/80 text-lg mt-1 font-accent text-xl">{{.ItemTitle}}</p>
+    {{end}}
+  </header>
+
+  <!-- Vine divider -->
+  <div class="vine-divider max-w-md mx-auto" aria-hidden="true"></div>
+
+  <!-- Form -->
+  <form method="POST" action="{{.ActionURL}}" class="space-y-5">
+    <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+
+    <!-- Basic fields -->
+    <div>
+      <label for="title" class="block text-sm font-medium text-text mb-1">Title <span class="text-error" aria-hidden="true">*</span></label>
+      <input type="text" id="title" name="title" value="{{.Title}}" required
+        class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);"
+        aria-required="true">
+    </div>
+
+    <div>
+      <label for="author" class="block text-sm font-medium text-text mb-1">Author</label>
+      <input type="text" id="author" name="author" value="{{.Author}}" placeholder="e.g., J.K. Rowling"
+        class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label for="isbn" class="block text-sm font-medium text-text mb-1">ISBN</label>
+        <input type="text" id="isbn" name="isbn" value="{{.ISBN}}" placeholder="978-0-12345-678-9"
+          class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">
+      </div>
+      <div>
+        <label for="priority" class="block text-sm font-medium text-text mb-1">Priority (1–5)</label>
+        <input type="number" id="priority" name="priority" value="{{.Priority}}" min="1" max="5"
+          class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">
+      </div>
+    </div>
+
+    <div>
+      <label for="reason" class="block text-sm font-medium text-text mb-1">Reason</label>
+      <input type="text" id="reason" name="reason" value="{{.Reason}}" placeholder="Why is this book wanted?"
+        class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">
+    </div>
+
+    <!-- Store links -->
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label for="amazon_url" class="block text-sm font-medium text-text mb-1">Amazon URL</label>
+        <input type="url" id="amazon_url" name="amazon_url" value="{{.AmazonURL}}" placeholder="https://www.amazon.com/dp/..."
+          class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">
+      </div>
+      <div>
+        <label for="thriftbooks_url" class="block text-sm font-medium text-text mb-1">ThriftBooks URL</label>
+        <input type="url" id="thriftbooks_url" name="thriftbooks_url" value="{{.ThriftbooksURL}}" placeholder="https://www.thriftbooks.com/..."
+          class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">
+      </div>
+    </div>
+
+    <!-- Advanced section -->
+    <div>
+      <button type="button"
+        data-collapse-trigger="advanced-section"
+        aria-expanded="false"
+        class="text-primary hover:text-text-light transition-colors font-medium text-sm no-underline"
+      >
+        Advanced Options ▾
+      </button>
+      <div id="advanced-section" hidden class="mt-4 space-y-4 pt-4 border-t" style="border-color: rgba(139, 69, 19, 0.1);">
+        <div>
+          <label for="cover_image_url" class="block text-sm font-medium text-text mb-1">Cover Image URL</label>
+          <input type="url" id="cover_image_url" name="cover_image_url" value="{{.CoverImageURL}}"
+            class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">
+        </div>
+        <div>
+          <label for="notes" class="block text-sm font-medium text-text mb-1">Notes</label>
+          <textarea id="notes" name="notes" rows="3"
+            class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">{{.Notes}}</textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error display -->
+    <div id="form-error" class="hidden p-3 rounded-lg bg-error/10 border border-error/20 text-error text-sm" role="alert"></div>
+
+    <!-- Actions -->
+    <div class="flex justify-end gap-3 pt-4">
+      <a href="{{.CancelURL}}"
+        class="px-5 py-2.5 rounded-lg border text-text-light hover:text-text transition-colors no-underline"
+        style="border-color: var(--color-secondary);">Cancel</a>
+      <button type="submit"
+        class="px-5 py-2.5 rounded-lg font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md"
+        style="background-color: var(--color-primary);">
+        {{if .IsEdit}}Save Changes{{else}}Add Item{{end}}
+      </button>
+    </div>
+  </form>
+
+</div>
+{{end}}

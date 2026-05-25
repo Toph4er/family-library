@@ -821,3 +821,207 @@ func TestHTMLDeleteUserHandler_NotFound(t *testing.T) {
 		t.Fatalf("expected status 404, got %d: %s", rec.Code, rec.Body.String())
 	}
 }
+
+// ---------- HTML Wishlist Handlers ----------
+
+func TestHTMLCreateWishlistItemHandler_Success(t *testing.T) {
+	env := setupTestEnv(t)
+
+	form := url.Values{}
+	form.Set("title", "Wishlist Test Book")
+	form.Set("author", "Test Author")
+	form.Set("isbn", "9780061120084")
+	form.Set("reason", "Gift idea")
+	form.Set("priority", "4")
+	form.Set("amazon_url", "https://www.amazon.com/dp/ABC123")
+	form.Set("thriftbooks_url", "https://www.thriftbooks.com/w/xyz")
+	form.Set("cover_image_url", "https://example.com/cover.jpg")
+	form.Set("notes", "Some notes")
+
+	req := httptest.NewRequest("POST", "/wishlist/create", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	r := buildAdminHTMLRouter(t, env, "POST", "/wishlist/create", handlers.HTMLCreateWishlistItemHandler(env.db))
+
+	cookie := loginAndGetCookie(t, env)
+	req.Header.Set("Cookie", cookie)
+
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusFound {
+		t.Fatalf("expected status 302, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	// Verify item was created in DB with store links
+	var title, reason, amazonURL, thriftbooksURL, coverImageURL, notesStr string
+	var priority int
+	var author, isbn sql.NullString
+	err := env.db.QueryRow("SELECT title, author, isbn, reason, priority, amazon_url, thriftbooks_url, cover_image_url, notes FROM wishlist WHERE title = ?", "Wishlist Test Book").Scan(
+		&title, &author, &isbn, &reason, &priority, &amazonURL, &thriftbooksURL, &coverImageURL, &notesStr,
+	)
+	if err != nil {
+		t.Fatalf("failed to query wishlist item: %v", err)
+	}
+	if title != "Wishlist Test Book" {
+		t.Fatalf("expected title='Wishlist Test Book', got %q", title)
+	}
+	if priority != 4 {
+		t.Fatalf("expected priority=4, got %d", priority)
+	}
+	if amazonURL != "https://www.amazon.com/dp/ABC123" {
+		t.Fatalf("expected amazon_url, got %q", amazonURL)
+	}
+	if thriftbooksURL != "https://www.thriftbooks.com/w/xyz" {
+		t.Fatalf("expected thriftbooks_url, got %q", thriftbooksURL)
+	}
+}
+
+func TestHTMLCreateWishlistItemHandler_MissingTitle(t *testing.T) {
+	env := setupTestEnv(t)
+
+	form := url.Values{}
+	form.Set("author", "Test Author")
+	// No title
+
+	req := httptest.NewRequest("POST", "/wishlist/create", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	r := buildAdminHTMLRouter(t, env, "POST", "/wishlist/create", handlers.HTMLCreateWishlistItemHandler(env.db))
+
+	cookie := loginAndGetCookie(t, env)
+	req.Header.Set("Cookie", cookie)
+
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestHTMLCreateWishlistItemHandler_NotAuthenticated(t *testing.T) {
+	env := setupTestEnv(t)
+
+	form := url.Values{}
+	form.Set("title", "Test Book")
+
+	req := httptest.NewRequest("POST", "/wishlist/create", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	r := buildAdminHTMLRouter(t, env, "POST", "/wishlist/create", handlers.HTMLCreateWishlistItemHandler(env.db))
+
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	// RequireAdminHTML redirects unauthenticated users to /
+	if rec.Code != http.StatusFound {
+		t.Fatalf("expected redirect (302), got %d", rec.Code)
+	}
+	if loc := rec.Header().Get("Location"); loc != "/" {
+		t.Fatalf("expected redirect to /, got %q", loc)
+	}
+}
+
+func TestHTMLUpdateWishlistItemHandler_Success(t *testing.T) {
+	env := setupTestEnv(t)
+
+	result, err := env.db.Exec("INSERT INTO wishlist (title, priority) VALUES (?, ?)", "Old Title", 3)
+	if err != nil {
+		t.Fatalf("failed to insert wishlist item: %v", err)
+	}
+	id, _ := result.LastInsertId()
+
+	form := url.Values{}
+	form.Set("title", "Updated Title")
+	form.Set("author", "Updated Author")
+	form.Set("priority", "5")
+	form.Set("amazon_url", "https://www.amazon.com/dp/NEW123")
+	form.Set("reason", "Updated reason")
+
+	req := httptest.NewRequest("POST", "/wishlist/1/update", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req = setURLParam(req, "id", fmt.Sprintf("%d", id))
+
+	r := buildAdminHTMLRouter(t, env, "POST", "/wishlist/{id}/update", handlers.HTMLUpdateWishlistItemHandler(env.db))
+
+	cookie := loginAndGetCookie(t, env)
+	req.Header.Set("Cookie", cookie)
+
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusFound {
+		t.Fatalf("expected status 302, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	// Verify update persisted
+	var title, reason, amazonURL string
+	var priority int
+	var author sql.NullString
+	err = env.db.QueryRow("SELECT title, author, reason, priority, amazon_url FROM wishlist WHERE id = ?", id).Scan(&title, &author, &reason, &priority, &amazonURL)
+	if err != nil {
+		t.Fatalf("failed to query wishlist item: %v", err)
+	}
+	if title != "Updated Title" {
+		t.Fatalf("expected title='Updated Title', got %q", title)
+	}
+	if priority != 5 {
+		t.Fatalf("expected priority=5, got %d", priority)
+	}
+	if amazonURL != "https://www.amazon.com/dp/NEW123" {
+		t.Fatalf("expected amazon_url, got %q", amazonURL)
+	}
+}
+
+func TestHTMLUpdateWishlistItemHandler_NotFound(t *testing.T) {
+	env := setupTestEnv(t)
+
+	form := url.Values{}
+	form.Set("title", "New Title")
+
+	req := httptest.NewRequest("POST", "/wishlist/999/update", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req = setURLParam(req, "id", "999")
+
+	r := buildAdminHTMLRouter(t, env, "POST", "/wishlist/{id}/update", handlers.HTMLUpdateWishlistItemHandler(env.db))
+
+	cookie := loginAndGetCookie(t, env)
+	req.Header.Set("Cookie", cookie)
+
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected status 404, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestHTMLUpdateWishlistItemHandler_MissingTitle(t *testing.T) {
+	env := setupTestEnv(t)
+
+	result, err := env.db.Exec("INSERT INTO wishlist (title, priority) VALUES (?, ?)", "Test", 3)
+	if err != nil {
+		t.Fatalf("failed to insert wishlist item: %v", err)
+	}
+	id, _ := result.LastInsertId()
+
+	form := url.Values{}
+	// No title
+
+	req := httptest.NewRequest("POST", "/wishlist/1/update", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req = setURLParam(req, "id", fmt.Sprintf("%d", id))
+
+	r := buildAdminHTMLRouter(t, env, "POST", "/wishlist/{id}/update", handlers.HTMLUpdateWishlistItemHandler(env.db))
+
+	cookie := loginAndGetCookie(t, env)
+	req.Header.Set("Cookie", cookie)
+
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
