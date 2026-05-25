@@ -414,7 +414,12 @@ func RenderWishlistFormPage(tmpl *template.Template, db *sql.DB, store *sessions
 			"Author":        derefString(item.Author),
 			"ISBN":          derefString(item.ISBN),
 			"Reason":        derefString(item.Reason),
-			"Priority":      item.Priority,
+			"Priority": func() int {
+				if isEdit {
+					return item.Priority
+				}
+				return 3
+			}(),
 			"AmazonURL":     derefString(item.AmazonURL),
 			"ThriftbooksURL": derefString(item.ThriftbooksURL),
 			"CoverImageURL": derefString(item.CoverImageURL),

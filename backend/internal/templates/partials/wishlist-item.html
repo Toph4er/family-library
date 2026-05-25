@@ -19,9 +19,9 @@
       <div class="flex items-center gap-2 flex-wrap">
         <h4 class="font-heading text-lg font-semibold text-primary truncate">{{.Title}}</h4>
         <!-- Priority badge -->
-        {{if .Priority}}
+        {{if gt .Priority 0}}
         <span class="mushroom-tag bg-accent/20 text-accent text-xs whitespace-nowrap" title="Priority: {{.Priority}} out of 5">
-          {{range seq .Priority}}★{{end}}{{range seq (sub 5 .Priority)}}☆{{end}}
+          {{range seq 1 .Priority}}★{{end}}{{range seq (add 1 .Priority) 5}}☆{{end}}
         </span>
         {{end}}
       </div>
