@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -784,11 +785,16 @@ func LookupISBNHandler(db *sql.DB) http.HandlerFunc {
 			}
 		}
 
-		// Fetch from Open Library
+		// Fetch from Open Library, fall back to Google Books
 		book, coverSource, apiErr := fetchFromOpenLibrary(isbn)
 		if apiErr != nil {
-			JSONError(w, http.StatusBadGateway, "book lookup service is unavailable")
-			return
+			slog.Warn("Open Library lookup failed, trying Google Books", "isbn", isbn, "error", apiErr)
+			book, coverSource, apiErr = fetchFromGoogleBooks(isbn)
+			if apiErr != nil {
+				slog.Error("All book lookup services failed", "isbn", isbn, "error", apiErr)
+				JSONError(w, http.StatusBadGateway, fmt.Sprintf("book lookup unavailable: %v", apiErr))
+				return
+			}
 		}
 		if book == nil {
 			JSONError(w, http.StatusNotFound, "book not found")
@@ -1055,6 +1061,114 @@ func fetchFromOpenLibrary(isbn string) (*models.Book, string, error) {
 	}
 
 	return book, "open_library", nil
+}
+
+// fetchFromGoogleBooks fetches book metadata from the Google Books API.
+func fetchFromGoogleBooks(isbn string) (*models.Book, string, error) {
+	u := fmt.Sprintf("https://www.googleapis.com/books/v1/volumes?q=isbn:%s&maxResults=1", url.QueryEscape(isbn))
+	req, err := http.NewRequest("GET", u, nil)
+	if err != nil {
+		return nil, "", fmt.Errorf("building Google Books request: %w", err)
+	}
+
+	resp, err := apiHTTPClient.Do(req)
+	if err != nil {
+		return nil, "", fmt.Errorf("Google Books HTTP request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, "", fmt.Errorf("reading Google Books response: %w", err)
+	}
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, "", nil
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, "", fmt.Errorf("Google Books returned status %d", resp.StatusCode)
+	}
+
+	var gbResp map[string]interface{}
+	if err := json.Unmarshal(body, &gbResp); err != nil {
+		return nil, "", fmt.Errorf("parsing Google Books JSON: %w", err)
+	}
+
+	items, ok := gbResp["items"].([]interface{})
+	if !ok || len(items) == 0 {
+		return nil, "", nil
+	}
+
+	volumeInfo, ok := items[0].(map[string]interface{})["volumeInfo"].(map[string]interface{})
+	if !ok {
+		return nil, "", fmt.Errorf("unexpected Google Books response structure")
+	}
+
+	book := &models.Book{
+		Title: toString(volumeInfo["title"]),
+	}
+
+	if subtitle, ok := volumeInfo["subtitle"].(string); ok && subtitle != "" {
+		book.Subtitle = &subtitle
+	}
+
+	// Authors
+	if authorsRaw, ok := volumeInfo["authors"].([]interface{}); ok && len(authorsRaw) > 0 {
+		var authors []string
+		for _, a := range authorsRaw {
+			if name, ok := a.(string); ok && name != "" {
+				authors = append(authors, name)
+			}
+		}
+		if len(authors) > 0 {
+			authorsJSON, _ := json.Marshal(authors)
+			s := string(authorsJSON)
+			book.Authors = &s
+		}
+	}
+
+	// Publisher
+	if pub, ok := volumeInfo["publisher"].(string); ok && pub != "" {
+		book.Publisher = &pub
+	}
+
+	// Publication year
+	if pubDate, ok := volumeInfo["publishedDate"].(string); ok && pubDate != "" {
+		if m := yearRe.FindStringSubmatch(pubDate); m != nil {
+			year, _ := strconv.Atoi(m[1])
+			book.PublicationYear = &year
+		}
+	}
+
+	// Page count
+	if pagesRaw, ok := volumeInfo["pageCount"].(float64); ok && pagesRaw > 0 {
+		pages := int(pagesRaw)
+		book.PageCount = &pages
+	}
+
+	// Genres (categories)
+	if catsRaw, ok := volumeInfo["categories"].([]interface{}); ok && len(catsRaw) > 0 {
+		var cats []string
+		for _, c := range catsRaw {
+			if cat, ok := c.(string); ok && cat != "" {
+				cats = append(cats, cat)
+			}
+		}
+		if len(cats) > 0 {
+			catsJSON, _ := json.Marshal(cats)
+			s := string(catsJSON)
+			book.Genres = &s
+		}
+	}
+
+	// Cover image
+	if imageLinksRaw, ok := volumeInfo["imageLinks"].(map[string]interface{}); ok {
+		if thumbnail, ok := imageLinksRaw["thumbnail"].(string); ok && thumbnail != "" {
+			book.CoverImageURL = &thumbnail
+		}
+	}
+
+	return book, "google_books", nil
 }
 
 // resolveOpenLibraryAuthorKeys resolves author entries from the Open Library API.
