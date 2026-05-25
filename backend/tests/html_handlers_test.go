@@ -777,8 +777,8 @@ func TestHTMLDeleteUserHandler_Success(t *testing.T) {
 	}
 	id, _ := result.LastInsertId()
 
-	req := httptest.NewRequest("DELETE", "/admin/users/1", nil)
-	req = setURLParam(req, "id", fmt.Sprintf("%d", id))
+	// Use the actual ID in the URL path so chi extracts the correct value
+	req := httptest.NewRequest("DELETE", "/admin/users/"+fmt.Sprintf("%d", id), nil)
 
 	r := buildAdminHTMLRouter(t, env, "DELETE", "/admin/users/{id}", handlers.HTMLDeleteUserHandler(env.db))
 
@@ -792,7 +792,7 @@ func TestHTMLDeleteUserHandler_Success(t *testing.T) {
 		t.Fatalf("expected status 200, got %d: %s", rec.Code, rec.Body.String())
 	}
 
-	// Verify user was deleted (query by ID since that's what the handler uses)
+	// Verify user was deleted
 	var count int
 	err = env.db.QueryRow("SELECT COUNT(*) FROM users WHERE id = ?", id).Scan(&count)
 	if err != nil || count != 0 {
