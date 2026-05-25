@@ -385,6 +385,14 @@ func HTMLWishlistFormHandler(db *sql.DB) http.HandlerFunc {
     </div>
     <form hx-post="/wishlist/create" hx-target="#modal-target" hx-swap="outerHTML">
       <div class="space-y-4">
+        ` + (func() string {
+			if coverURL != "" {
+				return `<div class="flex justify-center mb-2">
+              <img src="` + html.EscapeString(coverURL) + `" alt="Cover preview" class="w-24 h-36 object-cover rounded-lg shadow-sm border" style="border-color: rgba(139, 69, 19, 0.1);">
+            </div>`
+			}
+			return ""
+		})() + `
         <div>
           <label for="wl-title" class="block text-sm font-medium text-text mb-1">Title <span class="text-error">*</span></label>
           <input type="text" id="wl-title" name="title" value="` + html.EscapeString(title) + `" required class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">
