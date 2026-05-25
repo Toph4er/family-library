@@ -62,8 +62,22 @@
     <div class="grid grid-cols-2 gap-4">
       <div>
         <label for="isbn" class="block text-sm font-medium text-text mb-1">ISBN</label>
-        <input type="text" id="isbn" name="isbn" value="{{.ISBN}}" placeholder="978-0-12345-678-9"
-          class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">
+        <div class="flex gap-2">
+          <input type="text" id="isbn" name="isbn" value="{{.ISBN}}" placeholder="978-0-12345-678-9"
+            class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">
+          <button type="button" id="isbn-lookup-btn"
+            class="px-3 py-2 rounded-lg font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md whitespace-nowrap"
+            style="background-color: var(--color-primary);"
+            title="Look up book metadata from Open Library"
+            aria-label="Look up book by ISBN"
+          >
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </button>
+        </div>
+        <div id="isbn-lookup-status" class="hidden mt-1 text-xs" role="status" aria-live="polite"></div>
       </div>
       <div>
         <label for="publisher" class="block text-sm font-medium text-text mb-1">Publisher</label>
@@ -229,5 +243,67 @@ function setRating(n) {
     star.className = 'text-2xl ' + (val <= n ? 'text-accent' : 'text-text-light/30');
   });
 }
+
+// ISBN lookup
+(function() {
+  var btn = document.getElementById('isbn-lookup-btn');
+  var statusEl = document.getElementById('isbn-lookup-status');
+  if (!btn) return;
+
+  btn.addEventListener('click', function() {
+    var isbn = document.getElementById('isbn').value.trim();
+    if (!isbn) {
+      showStatus('Please enter an ISBN first.', 'error');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>';
+    showStatus('Looking up...', 'info');
+
+    fetch('/api/v1/books/lookup-isbn?isbn=' + encodeURIComponent(isbn), {
+      headers: { 'X-CSRF-Token': document.querySelector('input[name="csrf_token"]').value }
+    })
+    .then(function(res) {
+      if (!res.ok) return res.json().then(function(e) { throw new Error(e.error || 'Lookup failed') });
+      return res.json();
+    })
+    .then(function(data) {
+      populateForm(data);
+      showStatus('Book data loaded from Open Library.', 'success');
+    })
+    .catch(function(err) {
+      showStatus(err.message, 'error');
+    })
+    .finally(function() {
+      btn.disabled = false;
+      btn.innerHTML = '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
+    });
+  });
+
+  function showStatus(msg, kind) {
+    if (!statusEl) return;
+    statusEl.textContent = msg;
+    statusEl.classList.remove('hidden');
+    statusEl.className = 'mt-1 text-xs ' + (kind === 'error' ? 'text-error' : kind === 'success' ? 'text-accent' : 'text-text-light/70');
+  }
+
+  function populateForm(data) {
+    var fields = ['title', 'subtitle', 'authors', 'illustrators', 'publisher',
+                  'publication_year', 'page_count', 'book_type', 'genres',
+                  'themes', 'awards', 'reading_levels', 'cover_image_url'];
+    fields.forEach(function(f) {
+      var el = document.getElementById(f);
+      if (el && data[f] !== undefined && data[f] !== null && data[f] !== '') {
+        el.value = data[f];
+      }
+    });
+    // Handle select elements
+    var bookType = document.getElementById('book_type');
+    if (bookType && data.book_type) {
+      bookType.value = data.book_type;
+    }
+  }
+})();
 </script>
 {{end}}
