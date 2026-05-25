@@ -2,6 +2,8 @@
 package tests
 
 import (
+	"database/sql"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -269,12 +271,12 @@ func TestHTMLCreateBookHandler_NotAuthenticated(t *testing.T) {
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
-	// RequireAdminHTML redirects unauthenticated users to /login
+	// RequireAdminHTML redirects unauthenticated users to /
 	if rec.Code != http.StatusFound {
 		t.Fatalf("expected redirect (302), got %d", rec.Code)
 	}
-	if loc := rec.Header().Get("Location"); loc != "/login" {
-		t.Fatalf("expected redirect to /login, got %q", loc)
+	if loc := rec.Header().Get("Location"); loc != "/" {
+		t.Fatalf("expected redirect to /, got %q", loc)
 	}
 }
 
@@ -353,14 +355,14 @@ func TestHTMLUpdateBookHandler_ClearFieldToNull(t *testing.T) {
 		t.Fatalf("expected status 302, got %d: %s", rec.Code, rec.Body.String())
 	}
 
-	// Verify notes is NULL (empty string in Go after scan)
-	var notes string
+	// Verify notes is NULL
+	var notes sql.NullString
 	err = env.db.QueryRow("SELECT notes FROM books WHERE id = ?", id).Scan(&notes)
 	if err != nil {
 		t.Fatalf("failed to query book: %v", err)
 	}
-	if notes != "" {
-		t.Fatalf("expected notes to be NULL (empty), got %q", notes)
+	if notes.Valid {
+		t.Fatalf("expected notes to be NULL, got %q", notes.String)
 	}
 }
 
@@ -473,11 +475,10 @@ func TestHTMLUpdateSettingHandler_NotFound(t *testing.T) {
 func TestHTMLUpdateGuestVisibilityHandler_Success(t *testing.T) {
 	env := setupTestEnv(t)
 
-	form := url.Values{}
-	form.Set("fields", "title,authors,isbn")
-
-	req := httptest.NewRequest("POST", "/settings/guest-visibility/update", strings.NewReader(form.Encode()))
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	// Handler expects JSON body: {"field": "...", "visible": true/false}
+	body := `{"field":"title","visible":true}`
+	req := httptest.NewRequest("POST", "/settings/guest-visibility/update", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
 
 	r := buildAdminHTMLRouter(t, env, "POST", "/settings/guest-visibility/update", handlers.HTMLUpdateGuestVisibilityHandler(env.db))
 
@@ -491,25 +492,22 @@ func TestHTMLUpdateGuestVisibilityHandler_Success(t *testing.T) {
 		t.Fatalf("expected status 200, got %d: %s", rec.Code, rec.Body.String())
 	}
 
-	// Verify the setting was updated
+	// Verify the setting was updated in default_guest_visibility (JSON blob)
 	var value string
-	err := env.db.QueryRow("SELECT value FROM settings WHERE key = ?", "guest_visible_fields").Scan(&value)
+	err := env.db.QueryRow("SELECT value FROM settings WHERE key = ?", "default_guest_visibility").Scan(&value)
 	if err != nil {
 		t.Fatalf("failed to query setting: %v", err)
 	}
-	if value != "title,authors,isbn" {
-		t.Fatalf("expected value='title,authors,isbn', got %q", value)
+	if !strings.Contains(value, `"title":true`) {
+		t.Fatalf("expected title:true in visibility blob, got %q", value)
 	}
 }
 
-func TestHTMLUpdateGuestVisibilityHandler_EmptyFields(t *testing.T) {
+func TestHTMLUpdateGuestVisibilityHandler_InvalidJSON(t *testing.T) {
 	env := setupTestEnv(t)
 
-	form := url.Values{}
-	form.Set("fields", "")
-
-	req := httptest.NewRequest("POST", "/settings/guest-visibility/update", strings.NewReader(form.Encode()))
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req := httptest.NewRequest("POST", "/settings/guest-visibility/update", strings.NewReader("not-json"))
+	req.Header.Set("Content-Type", "application/json")
 
 	r := buildAdminHTMLRouter(t, env, "POST", "/settings/guest-visibility/update", handlers.HTMLUpdateGuestVisibilityHandler(env.db))
 
@@ -519,9 +517,8 @@ func TestHTMLUpdateGuestVisibilityHandler_EmptyFields(t *testing.T) {
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
-	// Empty fields should be accepted (means hide everything from guests)
-	if rec.Code != http.StatusOK {
-		t.Fatalf("expected status 200, got %d: %s", rec.Code, rec.Body.String())
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d: %s", rec.Code, rec.Body.String())
 	}
 }
 
@@ -599,13 +596,13 @@ func TestPtrIfNonEmpty(t *testing.T) {
 	}
 
 	// Verify requested_by is NULL
-	var requestedBy string
+	var requestedBy sql.NullString
 	err = env.db.QueryRow("SELECT requested_by FROM wishlist WHERE id = ?", id).Scan(&requestedBy)
 	if err != nil {
 		t.Fatalf("failed to query wishlist: %v", err)
 	}
-	if requestedBy != "" {
-		t.Fatalf("expected requested_by to be NULL (empty), got %q", requestedBy)
+	if requestedBy.Valid {
+		t.Fatalf("expected requested_by to be NULL, got %q", requestedBy.String)
 	}
 }
 
@@ -700,9 +697,11 @@ func TestCSRFTokenHandler(t *testing.T) {
 		t.Fatalf("expected status 200, got %d: %s", rec.Code, rec.Body.String())
 	}
 
-	// Should return a CSRF token
-	if token := rec.Header().Get("X-CSRF-Token"); token == "" {
-		t.Fatal("expected X-CSRF-Token header to be set")
+	// Should return a CSRF token in the JSON body
+	var resp map[string]interface{}
+	json.NewDecoder(rec.Body).Decode(&resp)
+	if _, ok := resp["csrf_token"]; !ok {
+		t.Fatalf("expected csrf_token in response body, got: %s", rec.Body.String())
 	}
 }
 
@@ -793,11 +792,11 @@ func TestHTMLDeleteUserHandler_Success(t *testing.T) {
 		t.Fatalf("expected status 200, got %d: %s", rec.Code, rec.Body.String())
 	}
 
-	// Verify user was deleted
+	// Verify user was deleted (query by ID since that's what the handler uses)
 	var count int
-	err = env.db.QueryRow("SELECT COUNT(*) FROM users WHERE username = ?", "todelete").Scan(&count)
+	err = env.db.QueryRow("SELECT COUNT(*) FROM users WHERE id = ?", id).Scan(&count)
 	if err != nil || count != 0 {
-		t.Fatalf("expected user to be deleted, got count=%d", count)
+		t.Fatalf("expected user (id=%d) to be deleted, got count=%d", id, count)
 	}
 }
 
