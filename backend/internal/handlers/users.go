@@ -251,8 +251,8 @@ func DeleteUserHandler(db *sql.DB) http.HandlerFunc {
 }
 
 // HTMLUserFormHandler returns a modal HTML fragment for creating or editing a user.
-// For new users: GET /admin/users/new-form
-// For editing: GET /admin/users/{id}/edit
+// For new users: GET /settings/users/new-form
+// For editing: GET /settings/users/{id}/edit
 func HTMLUserFormHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		idStr := chi.URLParam(r, "id")
@@ -295,9 +295,9 @@ func HTMLUserFormHandler(db *sql.DB) http.HandlerFunc {
     </div>
     <form hx-` + (func() string {
 			if isEdit {
-				return `put="/admin/users/` + idStr + `"`
+				return `put="/settings/users/` + idStr + `"`
 			}
-			return `post="/admin/users"`
+			return `post="/settings/users"`
 		})() + ` hx-target="#modal-target" hx-swap="outerHTML">
       <div class="space-y-4">
         <div>

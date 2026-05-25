@@ -71,20 +71,20 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLUpdateGuestVisibilityHandler(database))).ServeHTTP(w, r)
 	})
 
-	// Admin user management (HTMX)
-	r.Get("/admin/users/new-form", func(w http.ResponseWriter, r *http.Request) {
+	// User management (HTMX, under /settings)
+	r.Get("/settings/users/new-form", func(w http.ResponseWriter, r *http.Request) {
 		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLUserFormHandler(database))).ServeHTTP(w, r)
 	})
-	r.Get("/admin/users/{id}/edit", func(w http.ResponseWriter, r *http.Request) {
+	r.Get("/settings/users/{id}/edit", func(w http.ResponseWriter, r *http.Request) {
 		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLUserFormHandler(database))).ServeHTTP(w, r)
 	})
-	r.Post("/admin/users", func(w http.ResponseWriter, r *http.Request) {
+	r.Post("/settings/users", func(w http.ResponseWriter, r *http.Request) {
 		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLCreateUserHandler(database))).ServeHTTP(w, r)
 	})
-	r.Put("/admin/users/{id}", func(w http.ResponseWriter, r *http.Request) {
+	r.Put("/settings/users/{id}", func(w http.ResponseWriter, r *http.Request) {
 		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLUpdateUserHandler(database))).ServeHTTP(w, r)
 	})
-	r.Delete("/admin/users/{id}", func(w http.ResponseWriter, r *http.Request) {
+	r.Delete("/settings/users/{id}", func(w http.ResponseWriter, r *http.Request) {
 		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLDeleteUserHandler(database))).ServeHTTP(w, r)
 	})
 
@@ -210,15 +210,13 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 				r.Put("/{key}", handlers.UpdateSettingHandler(database))
 			})
 
-			// Admin (admin only)
-			r.Route("/admin", func(r chi.Router) {
+			// User management (admin only, under /settings)
+			r.Route("/settings/users", func(r chi.Router) {
 				r.Use(authSvc.RequireAdmin)
-				r.Route("/users", func(r chi.Router) {
-					r.Get("/", handlers.ListUsersHandler(database))
-					r.Post("/", handlers.CreateUserHandler(database))
-					r.Put("/{id}", handlers.UpdateUserHandler(database))
-					r.Delete("/{id}", handlers.DeleteUserHandler(database))
-				})
+				r.Get("/", handlers.ListUsersHandler(database))
+				r.Post("/", handlers.CreateUserHandler(database))
+				r.Put("/{id}", handlers.UpdateUserHandler(database))
+				r.Delete("/{id}", handlers.DeleteUserHandler(database))
 			})
 		})
 	})

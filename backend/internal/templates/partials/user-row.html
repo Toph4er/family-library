@@ -11,7 +11,7 @@
   <td class="py-3 px-4">
     <div class="flex gap-1">
       <button type="button"
-        hx-get="/admin/users/{{.id}}/edit"
+        hx-get="/settings/users/{{.id}}/edit"
         hx-target="#modal-target"
         hx-swap="innerHTML"
         class="text-primary hover:text-text-light text-sm no-underline p-1"
@@ -19,7 +19,7 @@
       >✏️</button>
       {{if ne .username "current"}}
       <button type="button"
-        hx-delete="/admin/users/{{.id}}"
+        hx-delete="/settings/users/{{.id}}"
         hx-confirm="Delete user {{.username}}?"
         hx-target="closest tr"
         hx-swap="outerHTML"

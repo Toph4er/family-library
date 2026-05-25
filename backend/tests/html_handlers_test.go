@@ -545,12 +545,12 @@ func TestRequireAdminHTML_RedirectsGuest(t *testing.T) {
 	}
 
 	// Try to access an admin-only HTML endpoint
-	r := buildAdminHTMLRouter(t, env, "GET", "/admin/test", func(w http.ResponseWriter, r *http.Request) {
+	r := buildAdminHTMLRouter(t, env, "GET", "/settings/test", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("should not see this"))
 	})
 
-	req = httptest.NewRequest("GET", "/admin/test", nil)
+	req = httptest.NewRequest("GET", "/settings/test", nil)
 	req.Header.Set("Cookie", guestCookie)
 	rec = httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
@@ -719,10 +719,10 @@ func TestHTMLCreateUserHandler_Success(t *testing.T) {
 	form.Set("role", "admin")
 	form.Set("display_name", "New User")
 
-	req := httptest.NewRequest("POST", "/admin/users", strings.NewReader(form.Encode()))
+	req := httptest.NewRequest("POST", "/settings/users", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	r := buildAdminHTMLRouter(t, env, "POST", "/admin/users", handlers.HTMLCreateUserHandler(env.db))
+	r := buildAdminHTMLRouter(t, env, "POST", "/settings/users", handlers.HTMLCreateUserHandler(env.db))
 
 	cookie := loginAndGetCookie(t, env)
 	req.Header.Set("Cookie", cookie)
@@ -750,10 +750,10 @@ func TestHTMLCreateUserHandler_DuplicateUsername(t *testing.T) {
 	form.Set("password", "pass123")
 	form.Set("role", "admin")
 
-	req := httptest.NewRequest("POST", "/admin/users", strings.NewReader(form.Encode()))
+	req := httptest.NewRequest("POST", "/settings/users", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	r := buildAdminHTMLRouter(t, env, "POST", "/admin/users", handlers.HTMLCreateUserHandler(env.db))
+	r := buildAdminHTMLRouter(t, env, "POST", "/settings/users", handlers.HTMLCreateUserHandler(env.db))
 
 	cookie := loginAndGetCookie(t, env)
 	req.Header.Set("Cookie", cookie)
@@ -781,9 +781,9 @@ func TestHTMLDeleteUserHandler_Success(t *testing.T) {
 	id, _ := result.LastInsertId()
 
 	// Use the actual ID in the URL path so chi extracts the correct value
-	req := httptest.NewRequest("DELETE", "/admin/users/"+fmt.Sprintf("%d", id), nil)
+	req := httptest.NewRequest("DELETE", "/settings/users/"+fmt.Sprintf("%d", id), nil)
 
-	r := buildAdminHTMLRouter(t, env, "DELETE", "/admin/users/{id}", handlers.HTMLDeleteUserHandler(env.db))
+	r := buildAdminHTMLRouter(t, env, "DELETE", "/settings/users/{id}", handlers.HTMLDeleteUserHandler(env.db))
 
 	cookie := loginAndGetCookie(t, env)
 	req.Header.Set("Cookie", cookie)
@@ -806,10 +806,10 @@ func TestHTMLDeleteUserHandler_Success(t *testing.T) {
 func TestHTMLDeleteUserHandler_NotFound(t *testing.T) {
 	env := setupTestEnv(t)
 
-	req := httptest.NewRequest("DELETE", "/admin/users/999", nil)
+	req := httptest.NewRequest("DELETE", "/settings/users/999", nil)
 	req = setURLParam(req, "id", "999")
 
-	r := buildAdminHTMLRouter(t, env, "DELETE", "/admin/users/{id}", handlers.HTMLDeleteUserHandler(env.db))
+	r := buildAdminHTMLRouter(t, env, "DELETE", "/settings/users/{id}", handlers.HTMLDeleteUserHandler(env.db))
 
 	cookie := loginAndGetCookie(t, env)
 	req.Header.Set("Cookie", cookie)
