@@ -788,7 +788,7 @@ func LookupISBNHandler(db *sql.DB) http.HandlerFunc {
 		)
 		// Purge stale cache entries (older than 24h) to prevent unbounded growth.
 		_, _ = db.Exec(
-			`DELETE FROM isbn_cache WHERE fetched_at < datetime('now', '-24 hours')`,
+			`DELETE FROM isbn_cache WHERE datetime(fetched_at) < datetime('now', '-24 hours')`,
 		)
 
 		JSONResponse(w, http.StatusOK, resp)
