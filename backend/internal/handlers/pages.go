@@ -357,55 +357,6 @@ func RenderWishlistPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 	}
 }
 
-// RenderAdminPage renders the admin page (admin required).
-func RenderAdminPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := buildPageContext(r, store, sessionName)
-
-		// Defense-in-depth: reject unauthenticated or non-admin requests before querying the DB.
-		if !ctx.IsAuthenticated {
-			http.Redirect(w, r, "/login", http.StatusFound)
-			return
-		}
-		if !ctx.IsAdmin {
-			http.Redirect(w, r, "/", http.StatusFound)
-			return
-		}
-
-		rows, err := db.Query("SELECT id, username, role, display_name, created_at FROM users ORDER BY id")
-		if err != nil {
-			http.Error(w, "database error", http.StatusInternalServerError)
-			return
-		}
-		defer rows.Close()
-
-		users := make([]map[string]interface{}, 0)
-		for rows.Next() {
-			var id int64
-			var username, role, displayName, createdAt string
-			if err := rows.Scan(&id, &username, &role, &displayName, &createdAt); err != nil {
-				http.Error(w, "database error", http.StatusInternalServerError)
-				return
-			}
-			users = append(users, map[string]interface{}{
-				"id":           id,
-				"username":     username,
-				"role":         role,
-				"display_name": displayName,
-				"created_at":   createdAt,
-			})
-		}
-		if err = rows.Err(); err != nil {
-			http.Error(w, "database error", http.StatusInternalServerError)
-			return
-		}
-
-		ctx.Users = users
-
-		renderPage(w, r, tmpl, "admin.html", ctx)
-	}
-}
-
 // RenderSettingsPage renders the settings page (admin required).
 func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
