@@ -373,6 +373,10 @@ func CreateBookHandler(db *sql.DB) http.HandlerFunc {
 		if req.ISBN != nil {
 			isbn = strings.ReplaceAll(*req.ISBN, "-", "")
 		}
+		if isbn == "" {
+			JSONError(w, http.StatusBadRequest, "ISBN is required")
+			return
+		}
 
 		// Default cover_source to 'none'
 		coverSource := "none"
@@ -441,6 +445,19 @@ func UpdateBookHandler(db *sql.DB) http.HandlerFunc {
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			JSONError(w, http.StatusBadRequest, "invalid request body")
 			return
+		}
+
+		// Require title and ISBN on updates too.
+		if req.Title != nil && strings.TrimSpace(*req.Title) == "" {
+			JSONError(w, http.StatusBadRequest, "title is required")
+			return
+		}
+		if req.ISBN != nil {
+			normalized := strings.ReplaceAll(strings.TrimSpace(*req.ISBN), "-", "")
+			if normalized == "" {
+				JSONError(w, http.StatusBadRequest, "ISBN is required")
+				return
+			}
 		}
 
 		// Build dynamic UPDATE from non-nil fields.
@@ -1200,6 +1217,10 @@ func HTMLCreateBookHandler(db *sql.DB) http.HandlerFunc {
 		}
 
 		isbn := strings.ReplaceAll(strings.TrimSpace(r.FormValue("isbn")), "-", "")
+		if isbn == "" {
+			http.Error(w, "ISBN is required", http.StatusBadRequest)
+			return
+		}
 
 		coverSource := "none"
 		childRatingStr := r.FormValue("child_rating")
@@ -1288,7 +1309,18 @@ func HTMLUpdateBookHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// Build dynamic UPDATE from non-empty form fields
+		title := strings.TrimSpace(r.FormValue("title"))
+		if title == "" {
+			http.Error(w, "Title is required", http.StatusBadRequest)
+			return
+		}
+		isbn := strings.ReplaceAll(strings.TrimSpace(r.FormValue("isbn")), "-", "")
+		if isbn == "" {
+			http.Error(w, "ISBN is required", http.StatusBadRequest)
+			return
+		}
+
+		// Build dynamic UPDATE from form fields
 		sets := []string{}
 		args := []interface{}{}
 
@@ -1312,13 +1344,11 @@ func HTMLUpdateBookHandler(db *sql.DB) http.HandlerFunc {
 			"cover_image_url",
 		}
 
-		// ISBN - normalize; empty string means clear to NULL
-		isbn := strings.ReplaceAll(strings.TrimSpace(r.FormValue("isbn")), "-", "")
+		// ISBN - already validated and normalized above; add to update sets
 		sets = append(sets, "isbn = ?")
 		args = append(args, ptrIfNonEmpty(isbn))
 
-		// Title - always update; empty string means clear to NULL
-		title := strings.TrimSpace(r.FormValue("title"))
+		// Title - already validated above; add to update sets
 		sets = append(sets, "title = ?")
 		args = append(args, ptrIfNonEmpty(title))
 

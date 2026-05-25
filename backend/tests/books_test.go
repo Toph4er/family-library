@@ -146,7 +146,7 @@ func TestListBooksHandler_NotAuthenticated(t *testing.T) {
 func TestCreateBookHandler_Success(t *testing.T) {
 	env := setupTestEnv(t)
 
-	body := `{"title":"The Great Gatsby","authors":"[\"F. Scott Fitzgerald\"]"}`
+	body := `{"title":"The Great Gatsby","isbn":"9780743273565","authors":"[\"F. Scott Fitzgerald\"]"}`
 	r := buildAdminRouter(t, env, "POST", "/", handlers.CreateBookHandler(env.db))
 	cookie := loginAndGetCookie(t, env)
 

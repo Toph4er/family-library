@@ -293,6 +293,7 @@ func TestHTMLUpdateBookHandler_Success(t *testing.T) {
 
 	form := url.Values{}
 	form.Set("title", "New Title")
+	form.Set("isbn", "9780743273565")
 	form.Set("authors", "New Author")
 
 	req := httptest.NewRequest("POST", "/books/1/update", strings.NewReader(form.Encode()))
@@ -337,6 +338,7 @@ func TestHTMLUpdateBookHandler_ClearFieldToNull(t *testing.T) {
 	// Send empty string for notes to clear it to NULL
 	form := url.Values{}
 	form.Set("title", "Test Book")
+	form.Set("isbn", "9780743273565")
 	form.Set("notes", "")
 
 	req := httptest.NewRequest("POST", "/books/1/update", strings.NewReader(form.Encode()))
@@ -371,6 +373,7 @@ func TestHTMLUpdateBookHandler_NotFound(t *testing.T) {
 
 	form := url.Values{}
 	form.Set("title", "New Title")
+	form.Set("isbn", "9780743273565")
 
 	req := httptest.NewRequest("POST", "/books/999/update", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
