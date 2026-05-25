@@ -247,7 +247,7 @@
   {{block "extra-head" .}}{{end}}
 </head>
 <body class="min-h-screen flex flex-col">
-  <div id="page-wrapper" class="flex flex-col min-h-screen">
+  <div id="page-wrapper" class="flex flex-col min-h-screen" x-data="{ mobileMenuOpen: false }">
 
     <!-- Skip to content link (WCAG 2.1 AA) -->
     <a href="#main-content" class="skip-link">
@@ -257,7 +257,7 @@
     <!-- Header / Navigation -->
     <header class="bg-surface/90 backdrop-blur-sm shadow-md border-b z-50 relative" style="border-color: rgba(139, 69, 19, 0.1);">
       <div class="max-w-7xl mx-auto px-4 py-4">
-        <div class="flex items-center justify-between flex-wrap gap-4">
+        <div class="flex items-center justify-between">
           <!-- Brand -->
           <a href="/" class="flex items-center gap-3 no-underline" aria-label="Woodland Library home">
             <svg class="w-7 h-7 text-primary" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -266,69 +266,70 @@
             <span class="text-2xl font-heading text-primary">Woodland Library</span>
           </a>
 
-          <!-- Desktop nav (hamburger for all screen sizes) -->
-          <div x-data="{ open: false }" class="flex items-center gap-6">
-            <!-- Desktop links (visible on md+) -->
-            <nav class="hidden md:flex items-center gap-6" aria-label="Main navigation">
-              <a href="/books" class="text-primary hover:text-text-light transition-colors font-medium text-sm no-underline">Books</a>
-              <a href="/wishlist" class="text-primary hover:text-text-light transition-colors font-medium text-sm no-underline">Wishlist</a>
-              {{if .IsAuthenticated}}
-              {{if .IsAdmin}}
-              <a href="/settings" class="text-primary hover:text-text-light transition-colors font-medium text-sm no-underline">Settings</a>
-              {{end}}
-              <a href="/logout" class="text-error hover:text-error/80 transition-colors font-medium text-sm no-underline">Logout</a>
-              {{else}}
-              <a href="/login" class="text-primary hover:text-text-light transition-colors font-medium text-sm no-underline">Login</a>
-              {{end}}
-            </nav>
-            <!-- Hamburger button -->
-            <button
-              type="button"
-              @click="open = !open"
-              class="text-text-light hover:text-primary transition-colors p-2 rounded-lg hover:bg-background"
-              :aria-expanded="open"
-              aria-controls="mobile-menu"
-              aria-label="Toggle navigation menu"
-            >
-              <svg class="w-6 h-6" x-show="!open" x-cloak viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                <path d="M3 12h18M3 6h18M3 18h18" />
-              </svg>
-              <svg class="w-6 h-6" x-show="open" x-cloak viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                <path d="M18 6L6 18M6 6l12 12" />
-              </svg>
-            </button>
-            <!-- Mobile menu (only visible on small screens) -->
-            <div
-              id="mobile-menu"
-              x-show="open"
-              x-cloak
-              x-transition:enter="transition ease-out duration-200"
-              x-transition:enter-start="opacity-0 -translate-y-2"
-              x-transition:enter-end="opacity-100 translate-y-0"
-              x-transition:leave="transition ease-in duration-150"
-              x-transition:leave-start="opacity-100 translate-y-0"
-              x-transition:leave-end="opacity-0 -translate-y-2"
-              class="md:hidden absolute top-16 left-0 right-0 z-50 shadow-lg pb-2 border-t w-full"
-              style="border-color: rgba(139, 69, 19, 0.1); background: var(--color-surface);"
-              role="menu"
-            >
-            <div class="flex flex-col gap-2 pt-3">
-              <a href="/books" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Books</a>
-              <a href="/wishlist" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Wishlist</a>
-              {{if .IsAuthenticated}}
-              {{if .IsAdmin}}
-              <a href="/settings" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Settings</a>
-              {{end}}
-              <a href="/logout" role="menuitem" class="text-error hover:text-error/80 transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Logout</a>
-              {{else}}
-              <a href="/login" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Login</a>
-              {{end}}
-            </div>
-            </div>
-          </div>
+          <!-- Desktop nav links (visible on md+) -->
+          <nav class="hidden md:flex items-center gap-6" aria-label="Main navigation">
+            <a href="/books" class="text-primary hover:text-text-light transition-colors font-medium text-sm no-underline">Books</a>
+            <a href="/wishlist" class="text-primary hover:text-text-light transition-colors font-medium text-sm no-underline">Wishlist</a>
+            {{if .IsAuthenticated}}
+            {{if .IsAdmin}}
+            <a href="/settings" class="text-primary hover:text-text-light transition-colors font-medium text-sm no-underline">Settings</a>
+            {{end}}
+            <a href="/logout" class="text-error hover:text-error/80 transition-colors font-medium text-sm no-underline">Logout</a>
+            {{else}}
+            <a href="/login" class="text-primary hover:text-text-light transition-colors font-medium text-sm no-underline">Login</a>
+            {{end}}
+          </nav>
+
+          <!-- Hamburger button (mobile only) -->
+          <button
+            type="button"
+            @click="mobileMenuOpen = !mobileMenuOpen"
+            class="md:hidden text-text-light hover:text-primary transition-colors p-2 rounded-lg hover:bg-background"
+            :aria-expanded="mobileMenuOpen"
+            aria-controls="mobile-menu"
+            aria-label="Toggle navigation menu"
+          >
+            <svg class="w-6 h-6" x-show="!mobileMenuOpen" x-cloak viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <path d="M3 12h18M3 6h18M3 18h18" />
+            </svg>
+            <svg class="w-6 h-6" x-show="mobileMenuOpen" x-cloak viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
         </div>
       </div>
     </header>
+
+    <!-- Mobile menu dropdown — sibling of header so it sits in normal document flow with a solid background -->
+    <div
+      id="mobile-menu"
+      x-show="mobileMenuOpen"
+      x-cloak
+      x-transition:enter="transition ease-out duration-200"
+      x-transition:enter-start="opacity-0 -translate-y-2"
+      x-transition:enter-end="opacity-100 translate-y-0"
+      x-transition:leave="transition ease-in duration-150"
+      x-transition:leave-start="opacity-100 translate-y-0"
+      x-transition:leave-end="opacity-0 -translate-y-2"
+      class="md:hidden border-t shadow-lg"
+      style="border-color: rgba(139, 69, 19, 0.1); background-color: #faf8f5;"
+      role="menu"
+    >
+      <div class="max-w-7xl mx-auto px-4 pb-2">
+        <div class="flex flex-col gap-2 pt-3">
+          <a href="/books" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Books</a>
+          <a href="/wishlist" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Wishlist</a>
+          {{if .IsAuthenticated}}
+          {{if .IsAdmin}}
+          <a href="/settings" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Settings</a>
+          {{end}}
+          <a href="/logout" role="menuitem" class="text-error hover:text-error/80 transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Logout</a>
+          {{else}}
+          <a href="/login" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Login</a>
+          {{end}}
+        </div>
+      </div>
+    </div>
 
     <!-- Main content -->
     <main id="main-content" class="flex-1 max-w-7xl mx-auto px-4 py-8 w-full">
@@ -419,16 +420,7 @@
       });
     });
 
-    // Close mobile menu on link click
-    document.querySelectorAll('#mobile-menu a').forEach(function(link) {
-      link.addEventListener('click', function() {
-        var menu = document.getElementById('mobile-menu');
-        if (menu) {
-          var btn = menu.previousElementSibling?.querySelector('button[x-data]');
-          if (btn) btn.click();
-        }
-      });
-    });
+    // Close mobile menu on link click (handled by Alpine @click on links)
   </script>
 
   {{block "scripts" .}}{{end}}
