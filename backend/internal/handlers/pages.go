@@ -306,7 +306,7 @@ func RenderWishlistPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 			return
 		}
 
-		rows, err := db.Query("SELECT id, isbn, title, author, priority, notes, fulfilled, requested_by, requested_at, fulfilled_at FROM wishlist ORDER BY priority DESC, requested_at DESC")
+		rows, err := db.Query("SELECT id, isbn, title, author, priority, notes, fulfilled, requested_by, requested_at, fulfilled_at, cover_image_url FROM wishlist ORDER BY priority DESC, requested_at DESC")
 		if err != nil {
 			http.Error(w, "database error", http.StatusInternalServerError)
 			return
@@ -320,7 +320,8 @@ func RenderWishlistPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 			var fulfilled bool
 			var requestedBy sql.NullString
 			var requestedAtStr, fulfilledAtStr sql.NullString
-			if err := rows.Scan(&item.ID, &isbn, &item.Title, &author, &item.Priority, &notes, &fulfilled, &requestedBy, &requestedAtStr, &fulfilledAtStr); err != nil {
+			var coverImageURL sql.NullString
+			if err := rows.Scan(&item.ID, &isbn, &item.Title, &author, &item.Priority, &notes, &fulfilled, &requestedBy, &requestedAtStr, &fulfilledAtStr, &coverImageURL); err != nil {
 				http.Error(w, "database error", http.StatusInternalServerError)
 				return
 			}
@@ -339,11 +340,15 @@ func RenderWishlistPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 			if requestedAtStr.Valid {
 				item.RequestedAt = requestedAtStr.String
 			}
+			if coverImageURL.Valid {
+				item.CoverImageURL = &coverImageURL.String
+			}
 			item.Fulfilled = fulfilled
 			if fulfilledAtStr.Valid {
 				item.FulfilledAt = &fulfilledAtStr.String
 				item.Fulfilled = true
 			}
+			item.IsAdmin = ctx.IsAdmin
 			items = append(items, item)
 		}
 		if err = rows.Err(); err != nil {

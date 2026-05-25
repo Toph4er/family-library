@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"html"
 	"net/http"
 	"strconv"
 	"strings"
@@ -347,5 +348,126 @@ func FulfillWishlistItemHandler(db *sql.DB) http.HandlerFunc {
 		}
 
 		JSONResponse(w, http.StatusOK, item)
+	}
+}
+
+// HTMLWishlistFormHandler returns a modal HTML fragment for creating a wishlist item.
+// Optionally pre-fills fields from a book_id query parameter.
+func HTMLWishlistFormHandler(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		bookID := r.URL.Query().Get("book_id")
+
+		var title, author, isbn, coverURL string
+		if bookID != "" {
+			row := db.QueryRow(`SELECT title, authors, isbn, cover_image_url FROM books WHERE id = ?`, bookID)
+			var authors sql.NullString
+			var nullISBN, nullCover sql.NullString
+			if err := row.Scan(&title, &authors, &nullISBN, &nullCover); err == nil {
+				if authors.Valid {
+					author = authors.String
+				}
+				if nullISBN.Valid {
+					isbn = nullISBN.String
+				}
+				if nullCover.Valid {
+					coverURL = nullCover.String
+				}
+			}
+		}
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_, _ = w.Write([]byte(`
+<div id="modal-backdrop" class="modal-backdrop" hx-on::click="if(event.target===this)document.getElementById('modal-backdrop').remove()">
+  <div class="modal-content modal-sm p-6" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-between mb-4 pb-3 border-b" style="border-color: rgba(139, 69, 19, 0.1);">
+      <h2 class="text-xl font-heading font-semibold text-primary">Add to Wishlist</h2>
+      <button type="button" hx-on::click="document.getElementById('modal-backdrop').remove()" class="text-text-light hover:text-text transition-colors text-2xl no-underline" aria-label="Close modal">×</button>
+    </div>
+    <form hx-post="/wishlist/create" hx-target="#modal-target" hx-swap="outerHTML">
+      <div class="space-y-4">
+        <div>
+          <label for="wl-title" class="block text-sm font-medium text-text mb-1">Title <span class="text-error">*</span></label>
+          <input type="text" id="wl-title" name="title" value="` + html.EscapeString(title) + `" required class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">
+        </div>
+        <div>
+          <label for="wl-author" class="block text-sm font-medium text-text mb-1">Author</label>
+          <input type="text" id="wl-author" name="author" value="` + html.EscapeString(author) + `" class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">
+        </div>
+        <div>
+          <label for="wl-isbn" class="block text-sm font-medium text-text mb-1">ISBN</label>
+          <input type="text" id="wl-isbn" name="isbn" value="` + html.EscapeString(isbn) + `" class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">
+        </div>
+        <div>
+          <label for="wl-reason" class="block text-sm font-medium text-text mb-1">Reason</label>
+          <input type="text" id="wl-reason" name="reason" placeholder='Why do you want this book?' class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">
+        </div>
+        <div>
+          <label for="wl-priority" class="block text-sm font-medium text-text mb-1">Priority (1-5)</label>
+          <input type="number" id="wl-priority" name="priority" value="3" min="1" max="5" class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">
+        </div>
+        <div>
+          <label for="wl-notes" class="block text-sm font-medium text-text mb-1">Notes</label>
+          <textarea id="wl-notes" name="notes" rows="2" class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);"></textarea>
+        </div>
+      </div>
+      <div id="wishlist-form-error" class="mt-4"></div>
+      <div class="flex justify-end gap-3 mt-6">
+        <button type="button" hx-on::click="document.getElementById('modal-backdrop').remove()" class="px-4 py-2 rounded-lg border text-text-light hover:text-text transition-colors no-underline" style="border-color: var(--color-secondary);">Cancel</button>
+        <button type="submit" class="px-4 py-2 rounded-lg font-medium text-white" style="background-color: var(--color-primary);">Add to Wishlist</button>
+      </div>
+    </form>
+  </div>
+</div>`))
+	}
+}
+
+// HTMLCreateWishlistItemHandler creates a wishlist item from form-encoded data.
+// On success: returns a success toast and redirects the wishlist list.
+// On failure: returns an HTML error fragment.
+func HTMLCreateWishlistItemHandler(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := r.ParseForm(); err != nil {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(htmlErrorFragment("Invalid request")))
+			return
+		}
+
+		title := strings.TrimSpace(r.FormValue("title"))
+		if title == "" {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(htmlErrorFragment("Title is required")))
+			return
+		}
+
+		author := ptrIfNonEmpty(r.FormValue("author"))
+		isbn := ptrIfNonEmpty(r.FormValue("isbn"))
+		reason := ptrIfNonEmpty(r.FormValue("reason"))
+		notes := ptrIfNonEmpty(r.FormValue("notes"))
+
+		priority := 3
+		if p := strings.TrimSpace(r.FormValue("priority")); p != "" {
+			if parsed, err := strconv.Atoi(p); err == nil {
+				if parsed >= 1 && parsed <= 5 {
+					priority = parsed
+				}
+			}
+		}
+
+		query := `
+			INSERT INTO wishlist (title, author, isbn, reason, priority, notes)
+			VALUES (?, ?, ?, ?, ?, ?)
+		`
+		_, err := db.Exec(query, title, author, isbn, reason, priority, notes)
+		if err != nil {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(htmlErrorFragment("Failed to add to wishlist")))
+			return
+		}
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_, _ = w.Write([]byte(htmlSuccessToast("Added to wishlist!")))
 	}
 }

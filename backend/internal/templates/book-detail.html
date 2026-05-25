@@ -123,9 +123,31 @@
         {{end}}
       </div>
 
-      <!-- Admin actions -->
-      {{if .IsAdmin}}
-      <div class="flex gap-3 pt-2">
+      <!-- Actions -->
+      <div class="flex flex-wrap gap-3 pt-2">
+        <!-- Add to Wishlist (all authenticated users) -->
+        {{if .IsAuthenticated}}
+        <button
+          type="button"
+          hx-get="/wishlist/new-form?book_id={{.Book.ID}}"
+          hx-target="#modal-target"
+          hx-swap="innerHTML"
+          class="px-5 py-2.5 rounded-xl font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 no-underline"
+          style="background-color: var(--color-accent);"
+          onmouseenter="this.style.backgroundColor='var(--color-primary)'"
+          onmouseleave="this.style.backgroundColor='var(--color-accent)'"
+          aria-label="Add {{.Book.Title}} to wishlist"
+        >
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+            </svg>
+            Add to Wishlist
+          </span>
+        </button>
+        {{end}}
+        <!-- Admin actions -->
+        {{if .IsAdmin}}
         <a href="/books/{{.Book.ID}}/edit-book"
           class="px-5 py-2.5 rounded-xl font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 no-underline"
           style="background-color: var(--color-primary);"
@@ -161,8 +183,8 @@
             Delete
           </span>
         </button>
+        {{end}}
       </div>
-      {{end}}
 
     </div>
   </div>
@@ -331,4 +353,7 @@
   {{end}}
 
 </div>
+
+  <!-- Modal Container -->
+  <div id="modal-target"></div>
 {{end}}

@@ -134,6 +134,9 @@ type WishlistItem struct {
 	Fulfilled      bool     `json:"fulfilled"`
 	FulfilledAt    *string  `json:"fulfilled_at,omitempty"`
 	Notes          *string  `json:"notes,omitempty"`
+	// IsAdmin is set by page handlers for template conditionals. It is not
+	// serialized to JSON (json:"-" omitempty).
+	IsAdmin bool `json:"-"`
 }
 
 // CreateBookRequest represents a book creation request body

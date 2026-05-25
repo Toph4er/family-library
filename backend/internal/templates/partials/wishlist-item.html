@@ -1,12 +1,20 @@
 {{define "partials/wishlist-item"}}
-<div class="bg-surface rounded-lg shadow p-4 border" style="border-color: rgba(139, 69, 19, 0.1);">
+<div id="wishlist-item-{{.ID}}" class="bg-surface rounded-lg shadow p-4 border" style="border-color: rgba(139, 69, 19, 0.1);">
   <div class="flex items-start gap-4">
-    <div class="flex-shrink-0">
-      <span class="inline-flex items-center justify-center w-10 h-10 rounded-full font-bold text-white text-sm"
-        style="background-color: {{if .Fulfilled}}var(--color-success){{else}}var(--color-accent){{end}};">
-        {{.Priority}}
-      </span>
+    <!-- Cover image thumbnail -->
+    {{if .CoverImageURL}}
+    <div class="flex-shrink-0 w-16 h-24 rounded-lg overflow-hidden shadow-sm border" style="border-color: rgba(139, 69, 19, 0.1);">
+      <img src="{{.CoverImageURL}}" alt="Cover of {{.Title}}" class="w-full h-full object-cover" loading="lazy">
     </div>
+    {{else}}
+    <div class="flex-shrink-0 w-16 h-24 rounded-lg overflow-hidden shadow-sm border flex items-center justify-center" style="border-color: rgba(139, 69, 19, 0.1); background-color: var(--color-background);">
+      <svg class="w-8 h-8 text-text-light/20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z"/>
+      </svg>
+    </div>
+    {{end}}
+
+    <!-- Info -->
     <div class="flex-1 min-w-0">
       <h4 class="font-heading text-lg font-semibold text-primary truncate">{{.Title}}</h4>
       {{if .Author}}
@@ -32,29 +40,24 @@
         {{end}}
       </div>
     </div>
+
+    <!-- Admin actions -->
     {{if .IsAdmin}}
     <div class="flex-shrink-0 flex gap-1">
       {{if not .Fulfilled}}
       <button type="button"
-        hx-patch="/api/v1/wishlist/{{.ID}}/fulfill"
+        hx-post="/api/v1/wishlist/{{.ID}}/fulfill"
         hx-confirm="Mark this as fulfilled?"
-        hx-target="closest div"
+        hx-target="#wishlist-item-{{.ID}}"
         hx-swap="outerHTML"
         class="text-success hover:text-success/80 text-sm no-underline p-1"
         aria-label="Mark as fulfilled"
       >✓</button>
       {{end}}
       <button type="button"
-        hx-get="/wishlist/{{.ID}}/edit"
-        hx-target="#modal-target"
-        hx-swap="innerHTML"
-        class="text-primary hover:text-text-light text-sm no-underline p-1"
-        aria-label="Edit"
-      >✏️</button>
-      <button type="button"
         hx-delete="/api/v1/wishlist/{{.ID}}"
         hx-confirm="Remove this item?"
-        hx-target="closest div"
+        hx-target="#wishlist-item-{{.ID}}"
         hx-swap="outerHTML"
         class="text-error hover:text-error/80 text-sm no-underline p-1"
         aria-label="Delete"
