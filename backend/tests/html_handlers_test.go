@@ -586,7 +586,7 @@ func TestPtrIfNonEmpty(t *testing.T) {
 	req = setURLParam(req, "id", fmt.Sprintf("%d", id))
 
 	r := chi.NewRouter()
-	r.Put("/wishlist/{id}", env.auth.RequireAdmin(http.HandlerFunc(handlers.UpdateWishlistItemHandler(env.db))))
+	r.Handle("/wishlist/{id}", env.auth.RequireAdmin(handlers.UpdateWishlistItemHandler(env.db)))
 
 	cookie := loginAndGetCookie(t, env)
 	req.Header.Set("Cookie", cookie)
