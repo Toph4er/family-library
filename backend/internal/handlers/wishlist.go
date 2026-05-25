@@ -179,25 +179,26 @@ func UpdateWishlistItemHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// Build dynamic UPDATE from non-nil fields
+		// Build dynamic UPDATE from non-nil fields.
+		// Empty strings are treated as "set to NULL" so fields can be cleared.
 		sets := []string{}
 		args := []interface{}{}
 
 		if req.Title != nil {
 			sets = append(sets, "title = ?")
-			args = append(args, *req.Title)
+			args = append(args, ptrIfNonEmpty(*req.Title))
 		}
 		if req.Author != nil {
 			sets = append(sets, "author = ?")
-			args = append(args, *req.Author)
+			args = append(args, ptrIfNonEmpty(*req.Author))
 		}
 		if req.ISBN != nil {
 			sets = append(sets, "isbn = ?")
-			args = append(args, *req.ISBN)
+			args = append(args, ptrIfNonEmpty(*req.ISBN))
 		}
 		if req.Reason != nil {
 			sets = append(sets, "reason = ?")
-			args = append(args, *req.Reason)
+			args = append(args, ptrIfNonEmpty(*req.Reason))
 		}
 		if req.Priority != nil {
 			sets = append(sets, "priority = ?")
@@ -205,27 +206,27 @@ func UpdateWishlistItemHandler(db *sql.DB) http.HandlerFunc {
 		}
 		if req.AmazonURL != nil {
 			sets = append(sets, "amazon_url = ?")
-			args = append(args, *req.AmazonURL)
+			args = append(args, ptrIfNonEmpty(*req.AmazonURL))
 		}
 		if req.ThriftbooksURL != nil {
 			sets = append(sets, "thriftbooks_url = ?")
-			args = append(args, *req.ThriftbooksURL)
+			args = append(args, ptrIfNonEmpty(*req.ThriftbooksURL))
 		}
 		if req.OtherURLs != nil {
 			sets = append(sets, "other_urls = ?")
-			args = append(args, *req.OtherURLs)
+			args = append(args, ptrIfNonEmpty(*req.OtherURLs))
 		}
 		if req.CoverImageURL != nil {
 			sets = append(sets, "cover_image_url = ?")
-			args = append(args, *req.CoverImageURL)
+			args = append(args, ptrIfNonEmpty(*req.CoverImageURL))
 		}
 		if req.RequestedBy != nil {
 			sets = append(sets, "requested_by = ?")
-			args = append(args, *req.RequestedBy)
+			args = append(args, ptrIfNonEmpty(*req.RequestedBy))
 		}
 		if req.Notes != nil {
 			sets = append(sets, "notes = ?")
-			args = append(args, *req.Notes)
+			args = append(args, ptrIfNonEmpty(*req.Notes))
 		}
 
 		if len(sets) == 0 {
