@@ -389,7 +389,7 @@ func CreateBookHandler(db *sql.DB) http.HandlerFunc {
 		`
 
 		result, err := db.Exec(query,
-			isbn, req.Title, req.Subtitle, req.Authors, req.Illustrators,
+			ptrIfNonEmpty(isbn), req.Title, req.Subtitle, req.Authors, req.Illustrators,
 			req.Publisher, req.PublicationYear, req.PageCount, req.BookType,
 			req.ReadingLevels, req.Genres, req.Themes, req.Awards,
 			req.GiftFrom, req.GiftRelationship, req.DateReceived,
@@ -1236,7 +1236,7 @@ func HTMLCreateBookHandler(db *sql.DB) http.HandlerFunc {
 		`
 
 		result, err := db.Exec(query,
-			isbn, title,
+			ptrIfNonEmpty(isbn), title,
 			ptrIfNonEmpty(r.FormValue("subtitle")),
 			ptrIfNonEmpty(r.FormValue("authors")),
 			ptrIfNonEmpty(r.FormValue("illustrators")),
