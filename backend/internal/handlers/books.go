@@ -1066,11 +1066,14 @@ func fetchFromOpenLibrary(isbn string) (*models.Book, string, error) {
 // fetchFromGoogleBooks fetches book metadata from the Google Books API.
 func fetchFromGoogleBooks(isbn string) (*models.Book, string, error) {
 	u := fmt.Sprintf("https://www.googleapis.com/books/v1/volumes?q=isbn:%s&maxResults=1", url.QueryEscape(isbn))
+	// #nosec G704 -- URL domain is hardcoded to googleapis.com (trusted external API);
+	// isbn is sanitized with url.QueryEscape. This is a client-side lookup, not a redirect.
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		return nil, "", fmt.Errorf("building Google Books request: %w", err)
 	}
 
+	// #nosec G704 -- URL is constructed from hardcoded googleapis.com base; isbn is sanitized
 	resp, err := apiHTTPClient.Do(req)
 	if err != nil {
 		return nil, "", fmt.Errorf("Google Books HTTP request: %w", err)
