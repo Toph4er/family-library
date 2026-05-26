@@ -1025,3 +1025,89 @@ func TestHTMLUpdateWishlistItemHandler_MissingTitle(t *testing.T) {
 		t.Fatalf("expected status 400, got %d: %s", rec.Code, rec.Body.String())
 	}
 }
+
+// ---------- CSRF Token in Page Context ----------
+
+// TestBuildPageContext_CSRFTokenWithAuthHTMLMiddleware verifies that
+// buildPageContext correctly reads the CSRF token from the session store
+// when the user is in the request context (set by RequireAuthHTML) but the
+// session is not in the context. This is the regression test for the bug
+// where HTMX DELETE requests failed with "CSRF token missing" because the
+// page template rendered an empty CSRF token.
+func TestBuildPageContext_CSRFTokenWithAuthHTMLMiddleware(t *testing.T) {
+	env := setupTestEnv(t)
+
+	// Step 1: Login to create a session with a CSRF token.
+	body := fmt.Sprintf(`{"username":"%s","password":"%s"}`, testUsername, testPassword)
+	req := httptest.NewRequest("POST", "/api/v1/auth/login", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	handlers.LoginHandler(env.auth).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("login failed: status %d", rec.Code)
+	}
+
+	cookie := getSessionCookie(rec)
+	if cookie == "" {
+		t.Fatal("no session cookie in login response")
+	}
+
+	// Step 2: Fetch the CSRF token via the /api/v1/csrf endpoint.
+	req = httptest.NewRequest("GET", "/api/v1/csrf", nil)
+	req.Header.Set("Cookie", cookie)
+	rec = httptest.NewRecorder()
+	handlers.CSRFTokenHandler(env.auth).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("csrf endpoint failed: status %d", rec.Code)
+	}
+
+	var csrfResp map[string]interface{}
+	json.NewDecoder(rec.Body).Decode(&csrfResp)
+	csrfToken, ok := csrfResp["csrf_token"].(string)
+	if !ok || csrfToken == "" {
+		t.Fatal("expected non-empty csrf_token from /api/v1/csrf")
+	}
+
+	// The CSRF endpoint saves the session (with the token) via Set-Cookie.
+	// Use the updated cookie for subsequent requests.
+	updatedCookie := getSessionCookie(rec)
+	if updatedCookie != "" {
+		cookie = updatedCookie
+	}
+
+	// Step 3: Simulate a GET request through RequireAuthHTML middleware.
+	// RequireAuthHTML puts the user in context but does NOT put the session
+	// in context. buildPageContext should still be able to read the CSRF
+	// token from the session store.
+	r := chi.NewRouter()
+	var capturedCtx handlers.PageContextForTest
+	r.Handle("/test", env.auth.RequireAuthHTML(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		capturedCtx = handlers.BuildPageContextForTest(r, env.auth.Store(), auth.SessionID)
+		w.WriteHeader(http.StatusOK)
+	})))
+
+	req = httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("Cookie", cookie)
+	rec = httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", rec.Code)
+	}
+
+	// Verify the CSRF token was correctly read from the session store.
+	if capturedCtx.CSRFToken != csrfToken {
+		t.Fatalf("expected CSRF token %q in page context, got %q", csrfToken, capturedCtx.CSRFToken)
+	}
+	if capturedCtx.CSRFToken == "" {
+		t.Fatal("expected non-empty CSRF token in page context")
+	}
+	if !capturedCtx.IsAuthenticated {
+		t.Fatal("expected IsAuthenticated=true")
+	}
+	if !capturedCtx.IsAdmin {
+		t.Fatal("expected IsAdmin=true")
+	}
+}

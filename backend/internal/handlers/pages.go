@@ -49,6 +49,14 @@ func buildPageContext(r *http.Request, store *sessions.CookieStore, sessionName 
 			if token, ok := s.Values[middleware.CSRFTokenKey].(string); ok && token != "" {
 				ctx.CSRFToken = token
 			}
+		} else {
+			// Session not in context (e.g. GET request through RequireAuthHTML).
+			// Read from store to extract the CSRF token.
+			if session, err := store.Get(r, sessionName); err == nil {
+				if token, ok := session.Values[middleware.CSRFTokenKey].(string); ok && token != "" {
+					ctx.CSRFToken = token
+				}
+			}
 		}
 		return ctx
 	}
@@ -589,6 +597,28 @@ func RenderBookFormPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 			slog.Error("template error", "page", "book-form", "error", err)
 			http.Error(w, "template error", http.StatusInternalServerError)
 		}
+	}
+}
+
+// --- Exported for testing ---
+
+// PageContextForTest is the exported pageContext struct for test access.
+type PageContextForTest struct {
+	CSRFToken       string
+	IsAdmin         bool
+	IsAuthenticated bool
+	Username        string
+}
+
+// BuildPageContextForTest calls buildPageContext and returns the fields
+// needed for CSRF token verification in tests.
+func BuildPageContextForTest(r *http.Request, store *sessions.CookieStore, sessionName string) PageContextForTest {
+	ctx := buildPageContext(r, store, sessionName)
+	return PageContextForTest{
+		CSRFToken:       ctx.CSRFToken,
+		IsAdmin:         ctx.IsAdmin,
+		IsAuthenticated: ctx.IsAuthenticated,
+		Username:        ctx.Username,
 	}
 }
 
