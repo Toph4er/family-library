@@ -37,7 +37,7 @@
       </div>
     </div>
 
-    <!-- Right: Title, subtitle, authors, metadata -->
+    <!-- Right: Title, subtitle, authors, metadata, tags -->
     <div class="flex flex-col gap-5">
 
       <!-- Title & subtitle -->
@@ -45,87 +45,106 @@
         <h1 class="text-3xl md:text-4xl font-heading text-primary leading-tight">
           {{.Book.Title}}
         </h1>
-        {{if .Book.Subtitle}}
-        <p class="text-xl font-accent text-text-light/80 mt-1">{{.Book.Subtitle}}</p>
-        {{end}}
+        <p class="text-xl font-accent text-text-light/80 mt-1">{{if .Book.Subtitle}}{{.Book.Subtitle}}{{else}}—{{end}}</p>
       </div>
 
       <!-- Authors -->
-      {{if .Book.Authors}}
       <div>
         <span class="text-sm font-medium text-text-light/60">By</span>
-        <p class="text-lg text-text mt-1">
-          {{join ", " (split .Book.Authors)}}
-        </p>
+        <p class="text-lg text-text mt-1">{{if .Book.Authors}}{{join ", " (split .Book.Authors)}}{{else}}—{{end}}</p>
       </div>
-      {{end}}
 
       <!-- Illustrators -->
-      {{if .Book.Illustrators}}
       <div>
         <span class="text-sm font-medium text-text-light/60">Illustrated by</span>
-        <p class="text-lg text-text mt-1">
-          {{join ", " (split .Book.Illustrators)}}
-        </p>
+        <p class="text-lg text-text mt-1">{{if .Book.Illustrators}}{{join ", " (split .Book.Illustrators)}}{{else}}—{{end}}</p>
       </div>
-      {{end}}
 
       <!-- Star rating -->
-      {{if .Book.ChildRating}}
-      {{if gt .Book.ChildRating 0}}
       <div aria-label="Child rating: {{.Book.ChildRating}} out of 5 stars">
         <span class="text-sm font-medium text-text-light/60">Child Rating</span>
         <div class="flex items-center gap-1 mt-1">
-          {{range seq .Book.ChildRating}}<span class="text-accent text-2xl" aria-hidden="true">★</span>{{end}}
-          {{range seq (sub 5 .Book.ChildRating)}}<span class="text-text-light/30 text-2xl" aria-hidden="true">★</span>{{end}}
+          {{range seq 1 5}}<span class="{{if le . $.Book.ChildRating}}text-accent{{else}}text-text-light/30{{end}} text-2xl" aria-hidden="true">★</span>{{end}}
         </div>
       </div>
-      {{end}}
-      {{end}}
 
-      <!-- Key metadata -->
-      <div class="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-        {{if .Book.ISBN}}
+      <!-- Key metadata grid -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-2 text-sm">
         <div>
           <span class="text-text-light/60">ISBN:</span>
-          <span class="text-text ml-1">{{formatISBN .Book.ISBN}}</span>
+          <span class="text-text ml-1">{{if .Book.ISBN}}{{formatISBN .Book.ISBN}}{{else}}—{{end}}</span>
         </div>
-        {{end}}
-        {{if .Book.Publisher}}
         <div>
           <span class="text-text-light/60">Publisher:</span>
-          <span class="text-text ml-1">{{.Book.Publisher}}</span>
+          <span class="text-text ml-1">{{if .Book.Publisher}}{{.Book.Publisher}}{{else}}—{{end}}</span>
         </div>
-        {{end}}
-        {{if .Book.PublicationYear}}
         <div>
           <span class="text-text-light/60">Year:</span>
-          <span class="text-text ml-1">{{.Book.PublicationYear}}</span>
+          <span class="text-text ml-1">{{if .Book.PublicationYear}}{{.Book.PublicationYear}}{{else}}—{{end}}</span>
         </div>
-        {{end}}
-        {{if .Book.PageCount}}
         <div>
           <span class="text-text-light/60">Pages:</span>
-          <span class="text-text ml-1">{{.Book.PageCount}}</span>
+          <span class="text-text ml-1">{{if .Book.PageCount}}{{.Book.PageCount}}{{else}}—{{end}}</span>
         </div>
-        {{end}}
-        {{if .Book.BookType}}
         <div>
           <span class="text-text-light/60">Type:</span>
-          <span class="text-text ml-1 capitalize">{{.Book.BookType}}</span>
+          <span class="text-text ml-1">{{if .Book.BookType}}{{.Book.BookType}}{{else}}—{{end}}</span>
         </div>
-        {{end}}
-        {{if .Book.Condition}}
         <div>
           <span class="text-text-light/60">Condition:</span>
-          <span class="text-text ml-1 capitalize">{{.Book.Condition}}</span>
+          <span class="text-text ml-1">{{if .Book.Condition}}{{.Book.Condition}}{{else}}—{{end}}</span>
         </div>
-        {{end}}
+      </div>
+
+      <!-- Tag sections: Genres, Themes, Awards, Reading Levels — always visible -->
+      <div class="flex flex-col gap-4">
+        <div>
+          <span class="text-sm font-medium text-text-light/60">Genres</span>
+          <div class="flex flex-wrap gap-2 mt-1">
+            {{range (split .Book.Genres)}}
+              <a href="/books?q={{.}}" class="mushroom-tag bg-primary/10 text-primary hover:bg-primary/20 no-underline transition-colors" title="Find books with genre: {{.}}">{{.}}</a>
+            {{else}}
+              <span class="text-text-light/40 text-sm">—</span>
+            {{end}}
+          </div>
+        </div>
+
+        <div>
+          <span class="text-sm font-medium text-text-light/60">Themes</span>
+          <div class="flex flex-wrap gap-2 mt-1">
+            {{range (split .Book.Themes)}}
+              <a href="/books?q={{.}}" class="mushroom-tag bg-secondary/10 text-secondary hover:bg-secondary/20 no-underline transition-colors" title="Find books with theme: {{.}}">{{.}}</a>
+            {{else}}
+              <span class="text-text-light/40 text-sm">—</span>
+            {{end}}
+          </div>
+        </div>
+
+        <div>
+          <span class="text-sm font-medium text-text-light/60">Awards</span>
+          <div class="flex flex-wrap gap-2 mt-1">
+            {{range (split .Book.Awards)}}
+              <a href="/books?q={{.}}" class="mushroom-tag bg-accent/20 text-accent hover:bg-accent/30 no-underline transition-colors" title="Find books with award: {{.}}">{{.}}</a>
+            {{else}}
+              <span class="text-text-light/40 text-sm">—</span>
+            {{end}}
+          </div>
+        </div>
+
+        <div>
+          <span class="text-sm font-medium text-text-light/60">Reading Levels</span>
+          <div class="flex flex-wrap gap-2 mt-1">
+            {{range (split .Book.ReadingLevels)}}
+              <a href="/books?q={{.}}" class="mushroom-tag bg-text-light/10 text-text-light hover:bg-text-light/20 no-underline transition-colors" title="Find books at reading level: {{.}}">{{.}}</a>
+            {{else}}
+              <span class="text-text-light/40 text-sm">—</span>
+            {{end}}
+          </div>
+        </div>
       </div>
 
       <!-- Actions -->
       <div class="flex flex-wrap gap-3 pt-2">
-        <!-- Admin actions -->
         {{if .IsAdmin}}
         <a href="/books/{{.Book.ID}}/edit-book"
           class="px-5 py-2.5 rounded-xl font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 no-underline"
@@ -168,151 +187,60 @@
     </div>
   </div>
 
-  <!-- Vine divider -->
-  <div class="vine-divider" aria-hidden="true"></div>
+  <!-- All additional details — always visible, no collapsible section -->
+  <div class="bg-surface rounded-xl border p-6" style="border-color: rgba(139, 69, 19, 0.1);">
+    <h2 class="text-lg font-heading text-primary mb-4">Details</h2>
+    <dl class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4 text-sm">
 
-  <!-- Tags section -->
-  <div class="flex flex-col gap-4">
-    {{if .Book.Genres}}
-    <div>
-      <h2 class="text-sm font-medium text-text-light/60 mb-2">Genres</h2>
-      <div class="flex flex-wrap gap-2">
-        {{range (split .Book.Genres)}}
-        <span class="mushroom-tag bg-primary/10 text-primary">{{.}}</span>
-        {{end}}
+      <!-- Gift info -->
+      <div>
+        <dt class="text-text-light/60 font-medium">Gift From</dt>
+        <dd class="text-text mt-1">{{if .Book.GiftFrom}}{{.Book.GiftFrom}}{{else}}—{{end}}</dd>
       </div>
-    </div>
-    {{end}}
-
-    {{if .Book.Themes}}
-    <div>
-      <h2 class="text-sm font-medium text-text-light/60 mb-2">Themes</h2>
-      <div class="flex flex-wrap gap-2">
-        {{range (split .Book.Themes)}}
-        <span class="mushroom-tag bg-secondary/10 text-secondary">{{.}}</span>
-        {{end}}
+      <div>
+        <dt class="text-text-light/60 font-medium">Relationship</dt>
+        <dd class="text-text mt-1">{{if .Book.GiftRelationship}}{{.Book.GiftRelationship}}{{else}}—{{end}}</dd>
       </div>
-    </div>
-    {{end}}
-
-    {{if .Book.Awards}}
-    <div>
-      <h2 class="text-sm font-medium text-text-light/60 mb-2">Awards</h2>
-      <div class="flex flex-wrap gap-2">
-        {{range (split .Book.Awards)}}
-        <span class="mushroom-tag bg-accent/20 text-accent">{{.}}</span>
-        {{end}}
+      <div>
+        <dt class="text-text-light/60 font-medium">Date Received</dt>
+        <dd class="text-text mt-1">{{if .Book.DateReceived}}{{.Book.DateReceived}}{{else}}—{{end}}</dd>
       </div>
-    </div>
-    {{end}}
 
-    {{if .Book.ReadingLevels}}
-    <div>
-      <h2 class="text-sm font-medium text-text-light/60 mb-2">Reading Levels</h2>
-      <div class="flex flex-wrap gap-2">
-        {{range (split .Book.ReadingLevels)}}
-        <span class="mushroom-tag bg-text-light/10 text-text-light">{{.}}</span>
-        {{end}}
+      <!-- Location -->
+      <div>
+        <dt class="text-text-light/60 font-medium">Location</dt>
+        <dd class="text-text mt-1">{{if .Book.Location}}{{.Book.Location}}{{else}}—{{end}}</dd>
       </div>
-    </div>
-    {{end}}
-  </div>
 
-  <!-- Vine divider -->
-  <div class="vine-divider" aria-hidden="true"></div>
+      <!-- Read count -->
+      <div>
+        <dt class="text-text-light/60 font-medium">Read Count</dt>
+        <dd class="text-text mt-1">{{.Book.ReadCount}}</dd>
+      </div>
 
-  <!-- Advanced info (collapsible with Alpine.js) -->
-  <div x-data="{ showAdvanced: false }">
-    <button
-      type="button"
-      @click="showAdvanced = !showAdvanced"
-      class="flex items-center gap-2 text-primary hover:text-text-light transition-colors font-medium text-sm no-underline"
-      :aria-expanded="showAdvanced"
-      aria-controls="advanced-info"
-    >
-      <svg class="w-4 h-4 transition-transform duration-200" :class="{'rotate-90': showAdvanced}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <polyline points="9 18 15 12 9 6"/>
-      </svg>
-      Additional Details
-    </button>
+      <!-- Last read date -->
+      <div>
+        <dt class="text-text-light/60 font-medium">Last Read</dt>
+        <dd class="text-text mt-1">{{if .Book.LastReadDate}}{{.Book.LastReadDate}}{{else}}—{{end}}</dd>
+      </div>
 
-    <div
-      id="advanced-info"
-      x-show="showAdvanced"
-      x-cloak
-      x-transition:enter="transition ease-out duration-200"
-      x-transition:enter-start="opacity-0 -translate-y-2"
-      x-transition:enter-end="opacity-100 translate-y-0"
-      x-transition:leave="transition ease-in duration-150"
-      x-transition:leave-start="opacity-100 translate-y-0"
-      x-transition:leave-end="opacity-0 -translate-y-2"
-      class="mt-4 p-6 rounded-xl bg-surface/60 border"
-      style="border-color: rgba(139, 69, 19, 0.1);"
-    >
-      <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
+      <!-- Timestamps -->
+      <div>
+        <dt class="text-text-light/60 font-medium">Added</dt>
+        <dd class="text-text mt-1">{{formatTime .Book.CreatedAt}}</dd>
+      </div>
+      <div>
+        <dt class="text-text-light/60 font-medium">Last Updated</dt>
+        <dd class="text-text mt-1">{{formatTime .Book.UpdatedAt}}</dd>
+      </div>
 
-        <!-- Gift info -->
-        {{if .Book.GiftFrom}}
-        <div>
-          <dt class="text-text-light/60 font-medium">Gift From</dt>
-          <dd class="text-text mt-1">{{.Book.GiftFrom}}</dd>
-        </div>
-        {{end}}
-        {{if .Book.GiftRelationship}}
-        <div>
-          <dt class="text-text-light/60 font-medium">Relationship</dt>
-          <dd class="text-text mt-1">{{.Book.GiftRelationship}}</dd>
-        </div>
-        {{end}}
-        {{if .Book.DateReceived}}
-        <div>
-          <dt class="text-text-light/60 font-medium">Date Received</dt>
-          <dd class="text-text mt-1">{{.Book.DateReceived}}</dd>
-        </div>
-        {{end}}
+      <!-- Notes — spans full width -->
+      <div class="sm:col-span-2 lg:col-span-3">
+        <dt class="text-text-light/60 font-medium">Notes</dt>
+        <dd class="text-text mt-1 whitespace-pre-wrap">{{if .Book.Notes}}{{.Book.Notes}}{{else}}—{{end}}</dd>
+      </div>
 
-        <!-- Location -->
-        {{if .Book.Location}}
-        <div>
-          <dt class="text-text-light/60 font-medium">Location</dt>
-          <dd class="text-text mt-1">{{.Book.Location}}</dd>
-        </div>
-        {{end}}
-
-        <!-- Read count -->
-        <div>
-          <dt class="text-text-light/60 font-medium">Read Count</dt>
-          <dd class="text-text mt-1">{{.Book.ReadCount}}</dd>
-        </div>
-
-        <!-- Last read date -->
-        {{if .Book.LastReadDate}}
-        <div>
-          <dt class="text-text-light/60 font-medium">Last Read</dt>
-          <dd class="text-text mt-1">{{.Book.LastReadDate}}</dd>
-        </div>
-        {{end}}
-
-        <!-- Notes -->
-        {{if .Book.Notes}}
-        <div class="sm:col-span-2">
-          <dt class="text-text-light/60 font-medium">Notes</dt>
-          <dd class="text-text mt-1 whitespace-pre-wrap">{{.Book.Notes}}</dd>
-        </div>
-        {{end}}
-
-        <!-- Timestamps -->
-        <div>
-          <dt class="text-text-light/60 font-medium">Added</dt>
-          <dd class="text-text mt-1">{{formatTime .Book.CreatedAt}}</dd>
-        </div>
-        <div>
-          <dt class="text-text-light/60 font-medium">Last Updated</dt>
-          <dd class="text-text mt-1">{{formatTime .Book.UpdatedAt}}</dd>
-        </div>
-
-      </dl>
-    </div>
+    </dl>
   </div>
 
   <!-- Open Library attribution -->

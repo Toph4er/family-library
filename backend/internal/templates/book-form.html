@@ -30,7 +30,7 @@
   <div class="vine-divider max-w-md mx-auto" aria-hidden="true"></div>
 
   <!-- Form -->
-  <form method="POST" action="{{.ActionURL}}" class="space-y-5">
+  <form method="POST" action="{{.ActionURL}}" class="space-y-5" id="book-form">
     <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 
     <!-- Basic fields -->
@@ -128,29 +128,37 @@
       </div>
     </div>
 
-    <!-- Tag inputs -->
+    <!-- Tag inputs: Genres, Themes, Awards, Reading Levels -->
     <div>
-      <label for="genres" class="block text-sm font-medium text-text mb-1">Genres</label>
-      <input type="text" id="genres" name="genres" value="{{.Genres}}" placeholder="Fantasy, Adventure (comma-separated)"
-        class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">
+      <label class="block text-sm font-medium text-text mb-1">Genres</label>
+      <div class="tag-input-container" data-values="{{.Genres}}" id="tag-input-genres">
+        <input type="hidden" name="genres" value="{{.Genres}}">
+        <input type="text" class="tag-input-field" placeholder="Fantasy, Adventure…" aria-label="Add genre">
+      </div>
     </div>
 
     <div>
-      <label for="themes" class="block text-sm font-medium text-text mb-1">Themes</label>
-      <input type="text" id="themes" name="themes" value="{{.Themes}}" placeholder="Family, Courage (comma-separated)"
-        class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">
+      <label class="block text-sm font-medium text-text mb-1">Themes</label>
+      <div class="tag-input-container" data-values="{{.Themes}}" id="tag-input-themes">
+        <input type="hidden" name="themes" value="{{.Themes}}">
+        <input type="text" class="tag-input-field" placeholder="Family, Courage…" aria-label="Add theme">
+      </div>
     </div>
 
     <div>
-      <label for="awards" class="block text-sm font-medium text-text mb-1">Awards</label>
-      <input type="text" id="awards" name="awards" value="{{.Awards}}" placeholder="Newbery Medal (comma-separated)"
-        class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">
+      <label class="block text-sm font-medium text-text mb-1">Awards</label>
+      <div class="tag-input-container" data-values="{{.Awards}}" id="tag-input-awards">
+        <input type="hidden" name="awards" value="{{.Awards}}">
+        <input type="text" class="tag-input-field" placeholder="Newbery Medal…" aria-label="Add award">
+      </div>
     </div>
 
     <div>
-      <label for="reading_levels" class="block text-sm font-medium text-text mb-1">Reading Levels</label>
-      <input type="text" id="reading_levels" name="reading_levels" value="{{.ReadingLevels}}" placeholder="Ages 6-8, Grade 1 (comma-separated)"
-        class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">
+      <label class="block text-sm font-medium text-text mb-1">Reading Levels</label>
+      <div class="tag-input-container" data-values="{{.ReadingLevels}}" id="tag-input-reading-levels">
+        <input type="hidden" name="reading_levels" value="{{.ReadingLevels}}">
+        <input type="text" class="tag-input-field" placeholder="Ages 6-8, Grade 1…" aria-label="Add reading level">
+      </div>
     </div>
 
     <!-- Child rating -->
@@ -235,6 +243,15 @@ function setRating(n) {
   });
 }
 
+// Initialize tag inputs
+var tagInputs = {};
+['genres', 'themes', 'awards', 'reading-levels'].forEach(function(field) {
+  var el = document.getElementById('tag-input-' + field);
+  if (el) {
+    tagInputs[field] = new TagInput(el, { removable: true });
+  }
+});
+
 // ISBN lookup
 (function() {
   var btn = document.getElementById('isbn-lookup-btn');
@@ -280,20 +297,29 @@ function setRating(n) {
   }
 
   function populateForm(data) {
+    // Standard text fields
     var fields = ['title', 'subtitle', 'authors', 'illustrators', 'publisher',
-                  'publication_year', 'page_count', 'book_type', 'genres',
-                  'themes', 'awards', 'reading_levels', 'cover_image_url'];
+                  'publication_year', 'page_count', 'cover_image_url'];
     fields.forEach(function(f) {
       var el = document.getElementById(f);
       if (el && data[f] !== undefined && data[f] !== null && data[f] !== '') {
         el.value = data[f];
       }
     });
-    // Handle select elements
+    // Select elements
     var bookType = document.getElementById('book_type');
     if (bookType && data.book_type) {
       bookType.value = data.book_type;
     }
+    // Tag fields — use TagInput.setTags
+    var tagFields = { genres: 'genres', themes: 'themes', awards: 'awards', 'reading-levels': 'reading_levels' };
+    Object.keys(tagFields).forEach(function(key) {
+      var apiKey = tagFields[key];
+      var ti = tagInputs[key];
+      if (ti && data[apiKey]) {
+        ti.setTags(data[apiKey]);
+      }
+    });
   }
 })();
 </script>

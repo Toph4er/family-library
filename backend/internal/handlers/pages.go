@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -32,6 +33,8 @@ type pageContext struct {
 	Users                  []map[string]interface{}
 	Settings               map[string]string
 	DefaultGuestVisibility map[string]bool
+	CurrentQuery           string
+	TotalResults           int
 }
 
 // buildPageContext creates a pageContext for the given request.
@@ -140,6 +143,7 @@ func RenderLandingPage(tmpl *template.Template, db *sql.DB, store *sessions.Cook
 }
 
 // RenderBooksPage renders the books listing page (auth required).
+// Supports ?q= search parameter for filtering books.
 func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := buildPageContext(r, store, sessionName)
@@ -150,10 +154,30 @@ func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 			return
 		}
 
-		rows, err := db.Query("SELECT id, title, authors, isbn, cover_image_url, created_at FROM books ORDER BY title ASC")
-		if err != nil {
-			http.Error(w, "database error", http.StatusInternalServerError)
-			return
+		q := strings.TrimSpace(r.URL.Query().Get("q"))
+		if q != "" {
+			ctx.CurrentQuery = q
+		}
+
+		var rows *sql.Rows
+		var err error
+
+		if q != "" {
+			like := "%" + q + "%"
+			rows, err = db.Query(
+				"SELECT id, title, authors, isbn, cover_image_url, created_at FROM books WHERE title LIKE ? OR authors LIKE ? OR isbn LIKE ? OR genres LIKE ? OR themes LIKE ? OR awards LIKE ? OR reading_levels LIKE ? ORDER BY title ASC",
+				like, like, like, like, like, like, like,
+			)
+			if err != nil {
+				http.Error(w, "database error", http.StatusInternalServerError)
+				return
+			}
+		} else {
+			rows, err = db.Query("SELECT id, title, authors, isbn, cover_image_url, created_at FROM books ORDER BY title ASC")
+			if err != nil {
+				http.Error(w, "database error", http.StatusInternalServerError)
+				return
+			}
 		}
 		defer rows.Close()
 
@@ -184,6 +208,7 @@ func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 		}
 
 		ctx.Books = books
+		ctx.TotalResults = len(books)
 		filterBooksForGuest(r, books)
 
 		renderPage(w, r, tmpl, "books.html", ctx)

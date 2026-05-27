@@ -142,6 +142,77 @@
       transform: scale(1.05);
     }
 
+    /* Tag input component */
+    .tag-input-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.375rem;
+      padding: 0.375rem 0.625rem;
+      min-height: 2.75rem;
+      border-radius: 0.5rem;
+      border: 1px solid var(--color-secondary);
+      background-color: var(--color-surface);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      cursor: text;
+    }
+    .tag-input-container:focus-within {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 2px rgba(45, 80, 22, 0.15);
+    }
+    .tag-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.1875rem 0.625rem;
+      border-radius: 9999px;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      background-color: rgba(45, 80, 22, 0.1);
+      color: var(--color-primary);
+      border: 1px solid rgba(45, 80, 22, 0.15);
+      animation: fadeIn 0.15s ease-out;
+      line-height: 1.4;
+    }
+    .tag-pill-remove {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1rem;
+      height: 1rem;
+      border-radius: 9999px;
+      border: none;
+      background: transparent;
+      color: var(--color-primary);
+      cursor: pointer;
+      font-size: 0.875rem;
+      line-height: 1;
+      padding: 0;
+      opacity: 0.6;
+      transition: opacity 0.15s ease, background-color 0.15s ease;
+    }
+    .tag-pill-remove:hover {
+      opacity: 1;
+      background-color: rgba(45, 80, 22, 0.15);
+    }
+    .tag-input-field {
+      flex: 1 0 auto;
+      min-width: 8rem;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 0.875rem;
+      font-family: var(--font-body);
+      color: var(--color-text);
+      padding: 0.125rem 0;
+    }
+    .tag-input-field::placeholder {
+      color: var(--color-text-light);
+      opacity: 0.5;
+    }
+    .tag-input-container.has-pills .tag-input-field::placeholder {
+      color: transparent;
+    }
+
     *:focus-visible {
       outline: 2px solid var(--color-primary);
       outline-offset: 2px;
@@ -421,6 +492,143 @@
     });
 
     // Close mobile menu on link click (handled by Alpine @click on links)
+  </script>
+
+  <!-- TagInput module -->
+  <script>
+  var TagInput = (function() {
+    var instances = [];
+
+    function TagInput(containerEl, opts) {
+      opts = opts || {};
+      this.container = containerEl;
+      this.hiddenInput = containerEl.querySelector('input[type="hidden"]');
+      this.input = containerEl.querySelector('.tag-input-field');
+      this.removable = opts.removable !== false;
+      this.tags = [];
+
+      var initial = containerEl.getAttribute('data-values') || '';
+      if (initial) this.setTags(initial);
+
+      var self = this;
+      this.input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ',') {
+          e.preventDefault();
+          self.addTag(self.input.value.trim());
+        }
+        if (e.key === 'Backspace' && !self.input.value && self.tags.length) {
+          self.removeTag(self.tags.length - 1);
+        }
+      });
+      this.container.addEventListener('click', function() { self.input.focus(); });
+
+      if (this.removable) {
+        this.container.addEventListener('click', function(e) {
+          var btn = e.target.closest('.tag-pill-remove');
+          if (btn) {
+            e.preventDefault();
+            e.stopPropagation();
+            var idx = parseInt(btn.getAttribute('data-index'));
+            self.removeTag(idx);
+            self.input.focus();
+          }
+        });
+      }
+
+      instances.push(this);
+    }
+
+    TagInput.prototype.setTags = function(values) {
+      var self = this;
+      var arr = [];
+      if (typeof values === 'string') {
+        var parsed = values.trim();
+        if (!parsed) { arr = []; }
+        else if (parsed.charAt(0) === '[') {
+          try { arr = JSON.parse(parsed); } catch(e) { arr = parsed.split(',').map(function(s){ return s.trim(); }).filter(Boolean); }
+        } else {
+          arr = parsed.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+        }
+      } else if (Array.isArray(values)) {
+        arr = values.filter(Boolean);
+      }
+      this.tags = arr;
+      this.render();
+      this.sync();
+    };
+
+    TagInput.prototype.addTag = function(tag) {
+      if (!tag || this.tags.indexOf(tag) !== -1) return;
+      this.tags.push(tag);
+      this.input.value = '';
+      this.render();
+      this.sync();
+    };
+
+    TagInput.prototype.removeTag = function(idx) {
+      if (idx < 0 || idx >= this.tags.length) return;
+      this.tags.splice(idx, 1);
+      this.render();
+      this.sync();
+    };
+
+    TagInput.prototype.render = function() {
+      var self = this;
+      var pills = this.container.querySelectorAll('.tag-pill');
+      pills.forEach(function(p) { p.remove(); });
+
+      this.tags.forEach(function(tag, idx) {
+        var pill = document.createElement('span');
+        pill.className = 'tag-pill';
+        pill.textContent = tag;
+        if (self.removable) {
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'tag-pill-remove';
+          btn.setAttribute('data-index', idx);
+          btn.setAttribute('aria-label', 'Remove ' + tag);
+          btn.innerHTML = '&#x2715;';
+          pill.appendChild(btn);
+        }
+        self.container.insertBefore(pill, self.input);
+      });
+
+      if (this.tags.length) {
+        this.container.classList.add('has-pills');
+      } else {
+        this.container.classList.remove('has-pills');
+      }
+    };
+
+    TagInput.prototype.sync = function() {
+      if (this.hiddenInput) {
+        this.hiddenInput.value = this.tags.join(', ');
+      }
+    };
+
+    TagInput.syncAll = function() {
+      instances.forEach(function(inst) { inst.sync(); });
+    };
+
+    document.addEventListener('submit', function(e) {
+      var form = e.target;
+      if (form && form.tagName === 'FORM') {
+        var containers = form.querySelectorAll('.tag-input-container');
+        containers.forEach(function(c) {
+          var hidden = c.querySelector('input[type="hidden"]');
+          var pills = c.querySelectorAll('.tag-pill');
+          var tags = [];
+          pills.forEach(function(p) {
+            var text = p.childNodes[0];
+            if (text) tags.push(text.textContent.trim());
+          });
+          if (hidden) hidden.value = tags.join(', ');
+        });
+      }
+    });
+
+    return TagInput;
+  })();
   </script>
 
   {{block "scripts" .}}{{end}}
