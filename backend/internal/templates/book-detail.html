@@ -18,7 +18,7 @@
     </ol>
   </nav>
 
-  <!-- Two-column layout: cover + details -->
+  <!-- Two-column layout: cover + info -->
   <div class="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-8">
 
     <!-- Left: Cover image -->
@@ -37,7 +37,7 @@
       </div>
     </div>
 
-    <!-- Right: Title, subtitle, authors, metadata, tags -->
+    <!-- Right: Title, authors, rating, actions -->
     <div class="flex flex-col gap-5">
 
       <!-- Title & subtitle -->
@@ -65,81 +65,6 @@
         <span class="text-sm font-medium text-text-light/60">Child Rating</span>
         <div class="flex items-center gap-1 mt-1">
           {{range seq 1 5}}<span class="{{if le . $.Book.ChildRating}}text-accent{{else}}text-text-light/30{{end}} text-2xl" aria-hidden="true">★</span>{{end}}
-        </div>
-      </div>
-
-      <!-- Key metadata grid -->
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-2 text-sm">
-        <div>
-          <span class="text-text-light/60">ISBN:</span>
-          <span class="text-text ml-1">{{if .Book.ISBN}}{{formatISBN .Book.ISBN}}{{else}}—{{end}}</span>
-        </div>
-        <div>
-          <span class="text-text-light/60">Publisher:</span>
-          <span class="text-text ml-1">{{if .Book.Publisher}}{{.Book.Publisher}}{{else}}—{{end}}</span>
-        </div>
-        <div>
-          <span class="text-text-light/60">Year:</span>
-          <span class="text-text ml-1">{{if .Book.PublicationYear}}{{.Book.PublicationYear}}{{else}}—{{end}}</span>
-        </div>
-        <div>
-          <span class="text-text-light/60">Pages:</span>
-          <span class="text-text ml-1">{{if .Book.PageCount}}{{.Book.PageCount}}{{else}}—{{end}}</span>
-        </div>
-        <div>
-          <span class="text-text-light/60">Type:</span>
-          <span class="text-text ml-1">{{if .Book.BookType}}{{.Book.BookType}}{{else}}—{{end}}</span>
-        </div>
-        <div>
-          <span class="text-text-light/60">Condition:</span>
-          <span class="text-text ml-1">{{if .Book.Condition}}{{.Book.Condition}}{{else}}—{{end}}</span>
-        </div>
-      </div>
-
-      <!-- Tag sections: Genres, Themes, Awards, Reading Levels — always visible -->
-      <div class="flex flex-col gap-4">
-        <div>
-          <span class="text-sm font-medium text-text-light/60">Genres</span>
-          <div class="flex flex-wrap gap-2 mt-1">
-            {{range (split .Book.Genres)}}
-              <a href="/books?q={{.}}" class="mushroom-tag bg-primary/10 text-primary hover:bg-primary/20 no-underline transition-colors" title="Find books with genre: {{.}}">{{.}}</a>
-            {{else}}
-              <span class="text-text-light/40 text-sm">—</span>
-            {{end}}
-          </div>
-        </div>
-
-        <div>
-          <span class="text-sm font-medium text-text-light/60">Themes</span>
-          <div class="flex flex-wrap gap-2 mt-1">
-            {{range (split .Book.Themes)}}
-              <a href="/books?q={{.}}" class="mushroom-tag bg-secondary/10 text-secondary hover:bg-secondary/20 no-underline transition-colors" title="Find books with theme: {{.}}">{{.}}</a>
-            {{else}}
-              <span class="text-text-light/40 text-sm">—</span>
-            {{end}}
-          </div>
-        </div>
-
-        <div>
-          <span class="text-sm font-medium text-text-light/60">Awards</span>
-          <div class="flex flex-wrap gap-2 mt-1">
-            {{range (split .Book.Awards)}}
-              <a href="/books?q={{.}}" class="mushroom-tag bg-accent/20 text-accent hover:bg-accent/30 no-underline transition-colors" title="Find books with award: {{.}}">{{.}}</a>
-            {{else}}
-              <span class="text-text-light/40 text-sm">—</span>
-            {{end}}
-          </div>
-        </div>
-
-        <div>
-          <span class="text-sm font-medium text-text-light/60">Reading Levels</span>
-          <div class="flex flex-wrap gap-2 mt-1">
-            {{range (split .Book.ReadingLevels)}}
-              <a href="/books?q={{.}}" class="mushroom-tag bg-text-light/10 text-text-light hover:bg-text-light/20 no-underline transition-colors" title="Find books at reading level: {{.}}">{{.}}</a>
-            {{else}}
-              <span class="text-text-light/40 text-sm">—</span>
-            {{end}}
-          </div>
         </div>
       </div>
 
@@ -187,9 +112,89 @@
     </div>
   </div>
 
-  <!-- All additional details — always visible, no collapsible section -->
+  <!-- Details card: metadata, tags, gift info, timestamps -->
   <div class="bg-surface rounded-xl border p-6" style="border-color: rgba(139, 69, 19, 0.1);">
     <h2 class="text-lg font-heading text-primary mb-4">Details</h2>
+
+    <!-- Metadata grid -->
+    <dl class="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-2 text-sm mb-6">
+      <div>
+        <dt class="text-text-light/60">ISBN</dt>
+        <dd class="text-text mt-1">{{if .Book.ISBN}}{{formatISBN .Book.ISBN}}{{else}}—{{end}}</dd>
+      </div>
+      <div>
+        <dt class="text-text-light/60">Publisher</dt>
+        <dd class="text-text mt-1">{{if .Book.Publisher}}{{.Book.Publisher}}{{else}}—{{end}}</dd>
+      </div>
+      <div>
+        <dt class="text-text-light/60">Year</dt>
+        <dd class="text-text mt-1">{{if .Book.PublicationYear}}{{.Book.PublicationYear}}{{else}}—{{end}}</dd>
+      </div>
+      <div>
+        <dt class="text-text-light/60">Pages</dt>
+        <dd class="text-text mt-1">{{if .Book.PageCount}}{{.Book.PageCount}}{{else}}—{{end}}</dd>
+      </div>
+      <div>
+        <dt class="text-text-light/60">Type</dt>
+        <dd class="text-text mt-1">{{if .Book.BookType}}{{.Book.BookType}}{{else}}—{{end}}</dd>
+      </div>
+      <div>
+        <dt class="text-text-light/60">Condition</dt>
+        <dd class="text-text mt-1">{{if .Book.Condition}}{{.Book.Condition}}{{else}}—{{end}}</dd>
+      </div>
+    </dl>
+
+    <!-- Tag sections: Genres, Themes, Awards, Reading Levels -->
+    <div class="flex flex-col gap-4 mb-6">
+      <div>
+        <dt class="text-sm font-medium text-text-light/60">Genres</dt>
+        <dd class="flex flex-wrap gap-2 mt-1">
+          {{range (split .Book.Genres)}}
+            <a href="/books?q={{.}}" class="mushroom-tag bg-primary/10 text-primary hover:bg-primary/20 no-underline transition-colors" title="Find books with genre: {{.}}">{{.}}</a>
+          {{else}}
+            <span class="text-text-light/40 text-sm">—</span>
+          {{end}}
+        </dd>
+      </div>
+
+      <div>
+        <dt class="text-sm font-medium text-text-light/60">Themes</dt>
+        <dd class="flex flex-wrap gap-2 mt-1">
+          {{range (split .Book.Themes)}}
+            <a href="/books?q={{.}}" class="mushroom-tag bg-secondary/10 text-secondary hover:bg-secondary/20 no-underline transition-colors" title="Find books with theme: {{.}}">{{.}}</a>
+          {{else}}
+            <span class="text-text-light/40 text-sm">—</span>
+          {{end}}
+        </dd>
+      </div>
+
+      <div>
+        <dt class="text-sm font-medium text-text-light/60">Awards</dt>
+        <dd class="flex flex-wrap gap-2 mt-1">
+          {{range (split .Book.Awards)}}
+            <a href="/books?q={{.}}" class="mushroom-tag bg-accent/20 text-accent hover:bg-accent/30 no-underline transition-colors" title="Find books with award: {{.}}">{{.}}</a>
+          {{else}}
+            <span class="text-text-light/40 text-sm">—</span>
+          {{end}}
+        </dd>
+      </div>
+
+      <div>
+        <dt class="text-sm font-medium text-text-light/60">Reading Levels</dt>
+        <dd class="flex flex-wrap gap-2 mt-1">
+          {{range (split .Book.ReadingLevels)}}
+            <a href="/books?q={{.}}" class="mushroom-tag bg-text-light/10 text-text-light hover:bg-text-light/20 no-underline transition-colors" title="Find books at reading level: {{.}}">{{.}}</a>
+          {{else}}
+            <span class="text-text-light/40 text-sm">—</span>
+          {{end}}
+        </dd>
+      </div>
+    </div>
+
+    <!-- Divider -->
+    <div class="border-t my-4" style="border-color: rgba(139, 69, 19, 0.1);"></div>
+
+    <!-- Gift info, read tracking, timestamps -->
     <dl class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4 text-sm">
 
       <!-- Gift info -->
