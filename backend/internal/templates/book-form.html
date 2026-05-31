@@ -76,6 +76,20 @@
               <line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
           </button>
+          <button type="button" id="isbn-scan-btn"
+            class="px-3 py-2 rounded-lg font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md whitespace-nowrap"
+            style="background-color: var(--color-secondary);"
+            title="Scan ISBN barcode with camera"
+            aria-label="Scan ISBN barcode"
+          >
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 7V5a2 2 0 012-2h2"/>
+              <path d="M17 3h2a2 2 0 012 2v2"/>
+              <path d="M21 17v2a2 2 0 01-2 2h-2"/>
+              <path d="M7 21H5a2 2 0 01-2-2v-2"/>
+              <line x1="7" y1="12" x2="17" y2="12"/>
+            </svg>
+          </button>
         </div>
         <div id="isbn-lookup-status" class="hidden mt-1 text-xs" role="status" aria-live="polite"></div>
       </div>
@@ -234,6 +248,25 @@
     </div>
   </form>
 
+  <!-- Barcode Scanner Modal -->
+  <div id="scanner-modal" class="hidden modal-backdrop" role="dialog" aria-modal="true" aria-label="ISBN barcode scanner">
+    <div class="modal-content modal-md">
+      <div class="flex items-center justify-between p-4 border-b" style="border-color: rgba(139, 69, 19, 0.1);">
+        <h3 class="text-lg font-heading text-primary">Scan ISBN Barcode</h3>
+        <button type="button" id="scanner-close-btn" class="text-text-light/60 hover:text-text transition-colors p-1" aria-label="Close scanner">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="p-4">
+        <div id="scanner-reader" class="w-full rounded-lg overflow-hidden bg-black" style="min-height: 240px;"></div>
+        <p class="text-text-light/60 text-sm text-center mt-3">Point your camera at the ISBN barcode (usually on the back cover)</p>
+        <div id="scanner-status" class="text-center mt-2 text-sm" role="status" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+
 </div>
 {{end}}
 
@@ -370,6 +403,91 @@ var tagInputs = {};
     .catch(function() {
       showToast('Network error. Please try again.', 'error', 5000);
     });
+  });
+})();
+
+// ISBN Barcode Scanner
+(function() {
+  var scanBtn = document.getElementById('isbn-scan-btn');
+  var modal = document.getElementById('scanner-modal');
+  var closeBtn = document.getElementById('scanner-close-btn');
+  var statusEl = document.getElementById('scanner-status');
+  var isbnInput = document.getElementById('isbn');
+  if (!scanBtn || !modal) return;
+
+  var html5QrcodeScanner = null;
+
+  scanBtn.addEventListener('click', function() {
+    modal.classList.remove('hidden');
+    statusEl.textContent = 'Starting camera...';
+    statusEl.className = 'text-center mt-2 text-sm text-text-light/70';
+
+    // Dynamically load the html5-qrcode library
+    if (!window.Html5QrcodeScanner) {
+      var script = document.createElement('script');
+      script.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
+      script.onload = function() { initScanner(); };
+      script.onerror = function() {
+        statusEl.textContent = 'Failed to load scanner library.';
+        statusEl.className = 'text-center mt-2 text-sm text-error';
+      };
+      document.head.appendChild(script);
+    } else {
+      initScanner();
+    }
+  });
+
+  function initScanner() {
+    var readerEl = document.getElementById('scanner-reader');
+    if (html5QrcodeScanner) {
+      html5QrcodeScanner.clear().catch(function() {});
+    }
+
+    html5QrcodeScanner = new Html5QrcodeScanner("scanner-reader", {
+      fps: 10,
+      qrbox: { width: 250, height: 100 },
+      aspectRatio: 2.0,
+      rememberLastUsedCamera: true,
+      showTorchButtonIfNeeded: true
+    }, false);
+
+    html5QrcodeScanner.render(function(decodedText) {
+      // Success — populate ISBN and trigger lookup
+      var isbn = decodedText.replace(/[^0-9Xx]/g, '');
+      if (isbn.length >= 10) {
+        if (isbnInput) isbnInput.value = isbn;
+        closeModal();
+        statusEl.textContent = 'ISBN scanned: ' + isbn;
+        statusEl.className = 'text-center mt-2 text-sm text-accent';
+        // Trigger lookup
+        var lookupBtn = document.getElementById('isbn-lookup-btn');
+        if (lookupBtn) lookupBtn.click();
+      }
+    }, function(err) {
+      // Scan error (ignoring — continuous scan keeps trying)
+    });
+  }
+
+  function closeModal() {
+    if (html5QrcodeScanner) {
+      html5QrcodeScanner.clear().catch(function() {});
+      html5QrcodeScanner = null;
+    }
+    modal.classList.add('hidden');
+  }
+
+  closeBtn.addEventListener('click', closeModal);
+
+  // Close on backdrop click
+  modal.addEventListener('click', function(e) {
+    if (e.target === modal) closeModal();
+  });
+
+  // Close on Escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+      closeModal();
+    }
   });
 })();
 </script>
