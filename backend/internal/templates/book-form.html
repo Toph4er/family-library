@@ -333,5 +333,39 @@ var tagInputs = {};
     });
   }
 })();
+
+// Intercept form submit to gracefully handle duplicate ISBN (409) errors
+(function() {
+  var form = document.getElementById('book-form');
+  if (!form) return;
+
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    var action = form.action;
+    var formData = new FormData(form);
+
+    fetch(action, {
+      method: 'POST',
+      body: formData,
+      credentials: 'same-origin'
+    })
+    .then(function(res) {
+      if (res.ok || res.status === 302) {
+        // Success — redirect to the book detail page
+        window.location.href = res.headers.get('Location') || '/books';
+      } else if (res.status === 409) {
+        // Duplicate ISBN
+        showToast('A book with this ISBN already exists.', 'error', 5000);
+      } else {
+        // Other error
+        showToast('Failed to save book. Please try again.', 'error', 5000);
+      }
+    })
+    .catch(function() {
+      showToast('Network error. Please try again.', 'error', 5000);
+    });
+  });
+})();
 </script>
 {{end}}
