@@ -282,7 +282,7 @@ func loadTemplates(dir string) (map[string]*template.Template, error) {
 		"guestVisibilityFields": func() []string {
 			return []string{
 				"title", "subtitle", "authors", "illustrators",
-				"publisher", "publication_year", "page_count", "book_type",
+				"publisher", "publication_year", "page_count", "quantity", "book_type",
 				"reading_levels", "genres", "themes", "awards",
 				"gift_from", "gift_relationship", "child_rating", "read_count",
 				"cover_image_url", "cover_source",

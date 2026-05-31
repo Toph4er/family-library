@@ -26,6 +26,7 @@ type Book struct {
 	Location            *string   `json:"location,omitempty"`
 	Notes               *string   `json:"notes,omitempty"`
 	ChildRating         *int      `json:"child_rating,omitempty"`
+	Quantity            int       `json:"quantity"`
 	ReadCount           int       `json:"read_count"`
 	LastReadDate        *string   `json:"last_read_date,omitempty"`
 	CoverImageURL       *string   `json:"cover_image_url,omitempty"`
@@ -187,6 +188,7 @@ type UpdateBookRequest struct {
 	Location         *string `json:"location"`
 	Notes            *string `json:"notes"`
 	ChildRating      *int    `json:"child_rating"`
+	Quantity         *int    `json:"quantity"`
 	ReadCount        *int    `json:"read_count"`
 	LastReadDate     *string `json:"last_read_date"`
 	CoverImageURL    *string `json:"cover_image_url"`

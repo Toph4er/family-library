@@ -49,6 +49,7 @@ func scanBook(s scanner) (*models.Book, error) {
 	var location sql.NullString
 	var notes sql.NullString
 	var childRating sql.NullInt64
+	var quantity sql.NullInt64
 	var lastReadDate sql.NullString
 	var coverImageURL sql.NullString
 	var coverSource sql.NullString
@@ -77,6 +78,7 @@ func scanBook(s scanner) (*models.Book, error) {
 		&location,
 		&notes,
 		&childRating,
+		&quantity,
 		&readCount,
 		&lastReadDate,
 		&coverImageURL,
@@ -108,6 +110,12 @@ func scanBook(s scanner) (*models.Book, error) {
 	b.Location = nullStrPtr(location)
 	b.Notes = nullStrPtr(notes)
 	b.ChildRating = nullIntPtr(childRating)
+	// quantity defaults to 1 if NULL
+	if quantity.Valid {
+		b.Quantity = int(quantity.Int64)
+	} else {
+		b.Quantity = 1
+	}
 	b.LastReadDate = nullStrPtr(lastReadDate)
 	b.CoverImageURL = nullStrPtr(coverImageURL)
 	b.CoverSource = nullStrPtr(coverSource)
@@ -167,7 +175,7 @@ const bookColumns = `
 	reading_levels, genres, themes, awards,
 	gift_from, gift_relationship, date_received,
 	condition, location, notes,
-	child_rating, read_count, last_read_date,
+	child_rating, quantity, read_count, last_read_date,
 	cover_image_url, cover_source, guest_visible_fields,
 	created_at, updated_at
 `
@@ -389,8 +397,8 @@ func CreateBookHandler(db *sql.DB) http.HandlerFunc {
 				reading_levels, genres, themes, awards,
 				gift_from, gift_relationship, date_received,
 				condition, location, notes,
-				child_rating, read_count, last_read_date, cover_image_url, cover_source, guest_visible_fields
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)
+				child_rating, quantity, read_count, last_read_date, cover_image_url, cover_source, guest_visible_fields
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?, ?, ?)
 		`
 
 		result, err := db.Exec(query,
@@ -546,6 +554,10 @@ func UpdateBookHandler(db *sql.DB) http.HandlerFunc {
 		if req.ChildRating != nil {
 			sets = append(sets, "child_rating = ?")
 			args = append(args, req.ChildRating)
+		}
+		if req.Quantity != nil {
+			sets = append(sets, "quantity = ?")
+			args = append(args, req.Quantity)
 		}
 		if req.ReadCount != nil {
 			sets = append(sets, "read_count = ?")
@@ -869,8 +881,8 @@ func ImportISBNHandler(db *sql.DB) http.HandlerFunc {
 				reading_levels, genres, themes, awards,
 				gift_from, gift_relationship, date_received,
 				condition, location, notes,
-				child_rating, read_count, cover_image_url, cover_source, guest_visible_fields
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)
+				child_rating, quantity, read_count, cover_image_url, cover_source, guest_visible_fields
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?, ?)
 		`
 
 		result, err := db.Exec(query,
@@ -1148,6 +1160,7 @@ func defaultGuestVisibleFields() string {
 		"publisher":          true,
 		"publication_year":   true,
 		"page_count":         true,
+		"quantity":           true,
 		"book_type":          true,
 		"reading_levels":     true,
 		"genres":             true,
@@ -1256,8 +1269,8 @@ func HTMLCreateBookHandler(db *sql.DB) http.HandlerFunc {
 				reading_levels, genres, themes, awards,
 				gift_from, gift_relationship, date_received,
 				condition, location, notes,
-				child_rating, read_count, last_read_date, cover_image_url, cover_source, guest_visible_fields
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)
+				child_rating, quantity, read_count, last_read_date, cover_image_url, cover_source, guest_visible_fields
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?, ?, ?)
 		`
 
 		result, err := db.Exec(query,
@@ -1401,6 +1414,18 @@ func HTMLUpdateBookHandler(db *sql.DB) http.HandlerFunc {
 			}
 		} else {
 			sets = append(sets, "child_rating = ?")
+			args = append(args, nil)
+		}
+		if v := strings.TrimSpace(r.FormValue("quantity")); v != "" {
+			if n, err := strconv.Atoi(v); err == nil && n >= 1 {
+				sets = append(sets, "quantity = ?")
+				args = append(args, &n)
+			} else {
+				sets = append(sets, "quantity = ?")
+				args = append(args, nil)
+			}
+		} else {
+			sets = append(sets, "quantity = ?")
 			args = append(args, nil)
 		}
 

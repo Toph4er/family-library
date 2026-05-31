@@ -231,10 +231,10 @@ func RenderBookDetailPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 		var book models.Book
 		var title, createdAt, updatedAt string
 		var subtitle, author, illustrators, publisher, bookType, readingLevels, genres, themes, awards, giftFrom, giftRelationship, dateReceived, condition, location, notes, lastReadDate, coverImage, coverSource, guestVisibleFields sql.NullString
-		var pubYear, pageCount, childRating, readCount sql.NullInt64
+		var pubYear, pageCount, childRating, quantity, readCount sql.NullInt64
 
-		err := db.QueryRow(`SELECT id, title, subtitle, authors, illustrators, isbn, publisher, publication_year, page_count, book_type, reading_levels, genres, themes, awards, gift_from, gift_relationship, date_received, condition, location, notes, child_rating, read_count, last_read_date, cover_image_url, cover_source, guest_visible_fields, created_at, updated_at FROM books WHERE id = ?`, id).Scan(
-			&book.ID, &title, &subtitle, &author, &illustrators, &book.ISBN, &publisher, &pubYear, &pageCount, &bookType, &readingLevels, &genres, &themes, &awards, &giftFrom, &giftRelationship, &dateReceived, &condition, &location, &notes, &childRating, &readCount, &lastReadDate, &coverImage, &coverSource, &guestVisibleFields, &createdAt, &updatedAt,
+		err := db.QueryRow(`SELECT id, title, subtitle, authors, illustrators, isbn, publisher, publication_year, page_count, book_type, reading_levels, genres, themes, awards, gift_from, gift_relationship, date_received, condition, location, notes, child_rating, quantity, read_count, last_read_date, cover_image_url, cover_source, guest_visible_fields, created_at, updated_at FROM books WHERE id = ?`, id).Scan(
+			&book.ID, &title, &subtitle, &author, &illustrators, &book.ISBN, &publisher, &pubYear, &pageCount, &bookType, &readingLevels, &genres, &themes, &awards, &giftFrom, &giftRelationship, &dateReceived, &condition, &location, &notes, &childRating, &quantity, &readCount, &lastReadDate, &coverImage, &coverSource, &guestVisibleFields, &createdAt, &updatedAt,
 		)
 		if err == sql.ErrNoRows {
 			http.NotFound(w, r)
@@ -302,6 +302,11 @@ func RenderBookDetailPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 		if childRating.Valid {
 			cr := int(childRating.Int64)
 			book.ChildRating = &cr
+		}
+		if quantity.Valid {
+			book.Quantity = int(quantity.Int64)
+		} else {
+			book.Quantity = 1
 		}
 		if readCount.Valid {
 			book.ReadCount = int(readCount.Int64)
@@ -615,6 +620,7 @@ func RenderBookFormPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 			"CoverImageURL":   derefString(book.CoverImageURL),
 			"Notes":           derefString(book.Notes),
 			"ChildRating":     derefInt(book.ChildRating),
+			"Quantity":        book.Quantity,
 		}
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
