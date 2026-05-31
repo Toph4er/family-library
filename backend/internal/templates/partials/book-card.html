@@ -13,7 +13,7 @@
     <div class="p-4">
       <h3 class="font-heading text-lg font-semibold text-primary mb-1 truncate">{{.Title}}</h3>
       {{if .Authors}}
-      <p class="text-text-light text-sm mb-2">{{.Authors}}</p>
+      <p class="text-text-light text-sm mb-2">{{join ", " (split .Authors)}}</p>
       {{end}}
       {{if .ChildRating}}
       <div class="flex items-center gap-1" aria-label="Child rating: {{.ChildRating}} out of 5 stars">

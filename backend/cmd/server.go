@@ -226,6 +226,20 @@ func loadTemplates(dir string) (map[string]*template.Template, error) {
 			}
 			return parts
 		},
+		// parseJSONArray converts a JSON array string (e.g. ["A","B"]) to a
+		// comma-separated display string. If the input is not a JSON array,
+		// it returns it unchanged. Used in form inputs for fields stored as
+		// JSON arrays.
+		"parseJSONArray": func(s string) string {
+			if s == "" {
+				return ""
+			}
+			var result []string
+			if err := json.Unmarshal([]byte(s), &result); err == nil {
+				return strings.Join(result, ", ")
+			}
+			return s
+		},
 		// --- Comparison helpers ---
 		"eq": func(a, b interface{}) bool {
 			return fmt.Sprintf("%v", a) == fmt.Sprintf("%v", b)
