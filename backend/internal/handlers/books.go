@@ -23,6 +23,9 @@ import (
 	"golang.org/x/time/rate"
 )
 
+// olConfig holds Open Library API configuration loaded from environment.
+var olConfig = LoadOLConfig()
+
 // scanner is implemented by both *sql.Row and *sql.Rows
 type scanner interface {
 	Scan(dest ...interface{}) error
@@ -776,6 +779,15 @@ func buildLookupResponse(book *models.Book, coverSource string) map[string]inter
 	if book.Language != nil {
 		resp["language"] = *book.Language
 	}
+	if book.SubjectPlaces != nil {
+		resp["subject_places"] = *book.SubjectPlaces
+	}
+	if book.SubjectPeople != nil {
+		resp["subject_people"] = *book.SubjectPeople
+	}
+	if book.SubjectTimes != nil {
+		resp["subject_times"] = *book.SubjectTimes
+	}
 	return resp
 }
 
@@ -832,6 +844,15 @@ func bookFromLookupResponse(resp map[string]interface{}) *models.Book {
 	if v, ok := resp["language"].(string); ok && v != "" {
 		book.Language = &v
 	}
+	if v, ok := resp["subject_places"].(string); ok && v != "" {
+		book.SubjectPlaces = &v
+	}
+	if v, ok := resp["subject_people"].(string); ok && v != "" {
+		book.SubjectPeople = &v
+	}
+	if v, ok := resp["subject_times"].(string); ok && v != "" {
+		book.SubjectTimes = &v
+	}
 	return book
 }
 
@@ -845,7 +866,7 @@ func cachedFetchFromOpenLibrary(db *sql.DB, isbn string, force bool) (*models.Bo
 		var cachedAt string
 		err := db.QueryRow("SELECT data, fetched_at FROM isbn_cache WHERE isbn = ?", isbn).Scan(&cachedData, &cachedAt)
 		if err == nil {
-			if t, parseErr := time.Parse(time.RFC3339, cachedAt); parseErr == nil && time.Since(t) < 24*time.Hour {
+			if t, parseErr := time.Parse(time.RFC3339, cachedAt); parseErr == nil && time.Since(t) < olConfig.CacheTTL {
 				var resp map[string]interface{}
 				if jsonErr := json.Unmarshal([]byte(cachedData), &resp); jsonErr == nil {
 					book := bookFromLookupResponse(resp)
@@ -871,9 +892,11 @@ func cachedFetchFromOpenLibrary(db *sql.DB, isbn string, force bool) (*models.Bo
 		`INSERT OR REPLACE INTO isbn_cache (isbn, data, fetched_at) VALUES (?, ?, ?)`,
 		isbn, string(dataJSON), time.Now().UTC().Format(time.RFC3339),
 	)
-	// Purge stale cache entries (older than 24h) to prevent unbounded growth.
+	// Purge stale cache entries to prevent unbounded growth.
+	cacheHours := int(olConfig.CacheTTL.Hours())
 	_, _ = db.Exec(
-		`DELETE FROM isbn_cache WHERE datetime(fetched_at) < datetime('now', '-24 hours')`,
+		`DELETE FROM isbn_cache WHERE datetime(fetched_at) < datetime('now', '-' || ? || ' hours')`,
+		cacheHours,
 	)
 
 	return book, coverSource, nil
@@ -1016,7 +1039,7 @@ func ImportISBNHandler(db *sql.DB) http.HandlerFunc {
 
 // apiHTTPClient is shared across all API fetches.
 var apiHTTPClient = &http.Client{
-	Timeout: 10 * time.Second,
+	Timeout: olConfig.HTTPTimeout,
 }
 
 // olRateLimiter caps outgoing Open Library requests at 2 req/s (burst of 1)
@@ -1036,35 +1059,59 @@ var yearRe = regexp.MustCompile(`^(\d{4})`)
 // Returns the populated book, cover source string, and any error.
 // If no results are found, returns (nil, "", nil).
 func fetchFromOpenLibrary(isbn string) (*models.Book, string, error) {
-	waitOLRateLimit()
+	maxRetries := 2
+	var body []byte
+	var resp *http.Response
+	var lastErr error
 
-	u := fmt.Sprintf("https://openlibrary.org/isbn/%s.json", url.PathEscape(isbn))
-	// #nosec G704 -- URL domain is hardcoded to openlibrary.org (trusted external API);
-	// isbn is sanitized with url.PathEscape. This is a client-side lookup, not a redirect.
-	req, err := http.NewRequest("GET", u, nil)
-	if err != nil {
-		return nil, "", fmt.Errorf("building Open Library request: %w", err)
-	}
-	// Open Library blocks requests without a User-Agent header.
-	req.Header.Set("User-Agent", "WoodlandLibrary/1.0 (personal children's library collection; contact@woodlandlibrary.local)")
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		if attempt > 0 {
+			backoff := time.Duration(attempt) * time.Second
+			time.Sleep(backoff)
+			slog.Info("retrying Open Library request", "isbn", isbn, "attempt", attempt+1, "backoff", backoff)
+		}
 
-	// #nosec G704 -- URL is constructed from hardcoded openlibrary.org base; isbn is sanitized
-	resp, err := apiHTTPClient.Do(req)
-	if err != nil {
-		return nil, "", fmt.Errorf("Open Library HTTP request: %w", err)
-	}
-	defer resp.Body.Close()
+		waitOLRateLimit()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, "", fmt.Errorf("reading Open Library response: %w", err)
+		u := fmt.Sprintf("%s/isbn/%s.json", olConfig.BaseURL, url.PathEscape(isbn))
+		// #nosec G704 -- URL domain is configured via OL_BASE_URL (trusted external API);
+		// isbn is sanitized with url.PathEscape. This is a client-side lookup, not a redirect.
+		req, err := http.NewRequest("GET", u, nil)
+		if err != nil {
+			return nil, "", fmt.Errorf("building Open Library request: %w", err)
+		}
+		// Open Library blocks requests without a User-Agent header.
+		req.Header.Set("User-Agent", olConfig.UserAgent)
+
+		// #nosec G704 -- URL is constructed from configured OL base; isbn is sanitized
+		resp, err = apiHTTPClient.Do(req)
+		if err != nil {
+			lastErr = fmt.Errorf("Open Library HTTP request: %w", err)
+			continue
+		}
+
+		body, err = io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			lastErr = fmt.Errorf("reading Open Library response: %w", err)
+			continue
+		}
+
+		if resp.StatusCode == http.StatusNotFound {
+			return nil, "", nil
+		}
+		if resp.StatusCode == http.StatusOK {
+			break // success
+		}
+
+		lastErr = fmt.Errorf("Open Library returned status %d", resp.StatusCode)
 	}
 
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, "", nil
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, "", fmt.Errorf("Open Library returned status %d", resp.StatusCode)
+	if resp == nil || resp.StatusCode != http.StatusOK {
+		if lastErr == nil {
+			lastErr = fmt.Errorf("Open Library request failed after %d attempts", maxRetries+1)
+		}
+		return nil, "", fmt.Errorf("Open Library request failed after %d retries: %w", maxRetries+1, lastErr)
 	}
 
 	var olResp map[string]interface{}
@@ -1137,6 +1184,28 @@ func fetchFromOpenLibrary(isbn string) (*models.Book, string, error) {
 		}
 	}
 
+	// Subject dimensions: places, people, times — arrays of strings from OL.
+	// Stored as JSON strings, same pattern as genres.
+	extractStringSlice := func(field string) *string {
+		if raw, ok := olResp[field].([]interface{}); ok && len(raw) > 0 {
+			var vals []string
+			for _, v := range raw {
+				if s, ok := v.(string); ok && s != "" {
+					vals = append(vals, s)
+				}
+			}
+			if len(vals) > 0 {
+				b, _ := json.Marshal(vals)
+				s := string(b)
+				return &s
+			}
+		}
+		return nil
+	}
+	book.SubjectPlaces = extractStringSlice("subject_places")
+	book.SubjectPeople = extractStringSlice("subject_people")
+	book.SubjectTimes = extractStringSlice("subject_times")
+
 	// Illustrators: array of {name: "..."} or {key: "..."} (same pattern as authors)
 	if illustratorsRaw, ok := olResp["illustrators"].([]interface{}); ok && len(illustratorsRaw) > 0 {
 		illustrators := resolveOpenLibraryAuthorKeys(illustratorsRaw)
@@ -1159,8 +1228,24 @@ func fetchFromOpenLibrary(isbn string) (*models.Book, string, error) {
 		}
 	}
 	if coverID > 0 {
-		coverURL := fmt.Sprintf("https://covers.openlibrary.org/b/id/%d-L.jpg", int(coverID))
+		coverURL := fmt.Sprintf("%s/b/id/%d-L.jpg", olConfig.CoversURL, int(coverID))
 		book.CoverImageURL = &coverURL
+	}
+
+	// Fallback: if no cover found via cover_i or covers array, try the work's OLID.
+	// The OL response may have a "work" field with a "key" like "/works/OL12345W".
+	if book.CoverImageURL == nil {
+		if workRaw, ok := olResp["work"].(map[string]interface{}); ok {
+			if workKey, ok := workRaw["key"].(string); ok && workKey != "" {
+				// Extract OLID from "/works/OL12345W" -> "OL12345W"
+				workKeyParts := strings.Split(workKey, "/")
+				if len(workKeyParts) > 0 {
+					olid := workKeyParts[len(workKeyParts)-1]
+					coverURL := fmt.Sprintf("%s/b/olid/%s-L.jpg", olConfig.CoversURL, olid)
+					book.CoverImageURL = &coverURL
+				}
+			}
+		}
 	}
 
 	// Dewey Decimal Classification: can be a string or an array of strings.
@@ -1266,13 +1351,13 @@ func resolveOpenLibraryAuthorKeys(raw []interface{}) []string {
 func fetchOpenLibraryAuthorName(key string) string {
 	waitOLRateLimit()
 
-	u := fmt.Sprintf("https://openlibrary.org%s.json", key)
+	u := fmt.Sprintf("%s%s.json", olConfig.BaseURL, key)
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		slog.Warn("failed to build Open Library author request", "key", key, "error", err)
 		return ""
 	}
-	req.Header.Set("User-Agent", "WoodlandLibrary/1.0 (personal children's library collection; contact@woodlandlibrary.local)")
+	req.Header.Set("User-Agent", olConfig.UserAgent)
 
 	resp, err := apiHTTPClient.Do(req)
 	if err != nil {

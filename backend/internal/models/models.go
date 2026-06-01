@@ -34,6 +34,9 @@ type Book struct {
 	DeweyDecimalClass   *string   `json:"dewey_decimal_class,omitempty"`
 	Description         *string   `json:"description,omitempty"`
 	Language            *string   `json:"language,omitempty"`
+	SubjectPlaces       *string   `json:"subject_places,omitempty"`  // JSON array
+	SubjectPeople       *string   `json:"subject_people,omitempty"`  // JSON array
+	SubjectTimes        *string   `json:"subject_times,omitempty"`   // JSON array
 	GuestVisibleFields  string    `json:"-"`
 	CreatedAt           string    `json:"created_at"`
 	UpdatedAt           string    `json:"updated_at"`
