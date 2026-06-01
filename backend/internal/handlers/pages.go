@@ -31,6 +31,7 @@ type pageContext struct {
 	Book                   *models.Book
 	Items                  []models.WishlistItem
 	Users                  []map[string]interface{}
+	FamilyMembers          []models.FamilyMember
 	Settings               map[string]string
 	DefaultGuestVisibility map[string]bool
 	CurrentQuery           string
@@ -542,6 +543,32 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 			return
 		}
 		ctx.Users = users
+
+		// Load family members
+		fmRows, err := db.Query("SELECT id, name, relation, created_at, updated_at FROM family_members ORDER BY name ASC")
+		if err != nil {
+			http.Error(w, "database error", http.StatusInternalServerError)
+			return
+		}
+		defer fmRows.Close()
+
+		familyMembers := make([]models.FamilyMember, 0)
+		for fmRows.Next() {
+			var fm models.FamilyMember
+			var createdAt, updatedAt string
+			if err := fmRows.Scan(&fm.ID, &fm.Name, &fm.Relation, &createdAt, &updatedAt); err != nil {
+				http.Error(w, "database error", http.StatusInternalServerError)
+				return
+			}
+			fm.CreatedAt = createdAt
+			fm.UpdatedAt = updatedAt
+			familyMembers = append(familyMembers, fm)
+		}
+		if err = fmRows.Err(); err != nil {
+			http.Error(w, "database error", http.StatusInternalServerError)
+			return
+		}
+		ctx.FamilyMembers = familyMembers
 
 		// Load default guest visibility
 		var defaultVisibility string

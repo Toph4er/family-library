@@ -88,6 +88,23 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLDeleteUserHandler(database))).ServeHTTP(w, r)
 	})
 
+	// Family member management (HTMX, under /settings)
+	r.Get("/settings/family-members/new-form", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLFamilyMemberFormHandler(database))).ServeHTTP(w, r)
+	})
+	r.Get("/settings/family-members/{id}/edit", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLFamilyMemberFormHandler(database))).ServeHTTP(w, r)
+	})
+	r.Post("/settings/family-members", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLCreateFamilyMemberHandler(database))).ServeHTTP(w, r)
+	})
+	r.Put("/settings/family-members/{id}", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLUpdateFamilyMemberHandler(database))).ServeHTTP(w, r)
+	})
+	r.Delete("/settings/family-members/{id}", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLDeleteFamilyMemberHandler(database))).ServeHTTP(w, r)
+	})
+
 	// / — public landing page; authenticated users are redirected to /books
 	r.Get("/", handlers.RenderLandingPage(cfg.Templates["landing"], database, authSvc.Store(), auth.SessionID))
 
@@ -230,6 +247,15 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 				r.Post("/", handlers.CreateUserHandler(database))
 				r.Put("/{id}", handlers.UpdateUserHandler(database))
 				r.Delete("/{id}", handlers.DeleteUserHandler(database))
+			})
+
+			// Family member management (admin only, under /settings)
+			r.Route("/settings/family-members", func(r chi.Router) {
+				r.Use(authSvc.RequireAdmin)
+				r.Get("/", handlers.ListFamilyMembersHandler(database))
+				r.Post("/", handlers.CreateFamilyMemberHandler(database))
+				r.Put("/{id}", handlers.UpdateFamilyMemberHandler(database))
+				r.Delete("/{id}", handlers.DeleteFamilyMemberHandler(database))
 			})
 		})
 	})

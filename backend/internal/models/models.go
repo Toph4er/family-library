@@ -224,3 +224,27 @@ type UpdateWishlistItemRequest struct {
 	RequestedBy    *string `json:"requested_by"`
 	Notes          *string `json:"notes"`
 }
+
+// FamilyMember represents a family member
+//
+type FamilyMember struct {
+	ID        int64  `json:"id"`
+	Name      string `json:"name"`
+	Relation  string `json:"relation"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+}
+
+// CreateFamilyMemberRequest represents a family member creation request
+//
+type CreateFamilyMemberRequest struct {
+	Name     string `json:"name" validate:"required"`
+	Relation string `json:"relation" validate:"required"`
+}
+
+// UpdateFamilyMemberRequest represents a family member update request
+//
+type UpdateFamilyMemberRequest struct {
+	Name     *string `json:"name"`
+	Relation *string `json:"relation"`
+}

@@ -120,6 +120,92 @@
     </div>
   </section>
 
+  <!-- Vine divider -->
+  <div class="vine-divider max-w-md mx-auto" aria-hidden="true"></div>
+
+  <!-- Family Members -->
+  <section aria-label="Family members">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-2xl font-heading text-primary">Family Members</h2>
+      <button
+        type="button"
+        hx-get="/settings/family-members/new-form"
+        hx-target="#modal-target"
+        hx-swap="innerHTML"
+        class="px-4 py-2 rounded-xl font-medium text-white shadow-sm text-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+        style="background-color: var(--color-primary);"
+        onmouseenter="this.style.backgroundColor='var(--color-text-light)'"
+        onmouseleave="this.style.backgroundColor='var(--color-primary)'"
+        aria-label="Add a new family member"
+      >
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Add Member
+        </span>
+      </button>
+    </div>
+    <div class="overflow-x-auto rounded-xl shadow-sm" style="background-color: var(--color-surface); border: 1px solid rgba(139, 69, 19, 0.1);">
+      <table class="w-full" role="table">
+        <caption class="sr-only">List of family members</caption>
+        <thead>
+          <tr class="border-b" style="border-color: rgba(139, 69, 19, 0.1);">
+            <th scope="col" class="text-left py-3 px-4 font-heading text-primary text-sm">Name</th>
+            <th scope="col" class="text-left py-3 px-4 font-heading text-primary text-sm">Relation</th>
+            <th scope="col" class="text-left py-3 px-4 font-heading text-primary text-sm">Added</th>
+            <th scope="col" class="text-left py-3 px-4 font-heading text-primary text-sm">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="family-members-list">
+          {{range .FamilyMembers}}
+          <tr class="border-b" style="border-color: rgba(139, 69, 19, 0.1);" id="family-member-{{.ID}}">
+            <td class="py-3 px-4 text-sm font-medium text-text">{{.Name}}</td>
+            <td class="py-3 px-4 text-sm text-text-light">{{.Relation}}</td>
+            <td class="py-3 px-4 text-sm text-text-light/60 whitespace-nowrap">{{formatTime .CreatedAt}}</td>
+            <td class="py-3 px-4 text-sm">
+              <div class="flex items-center gap-2">
+                <button type="button"
+                  hx-get="/settings/family-members/{{.ID}}/edit"
+                  hx-target="#modal-target"
+                  hx-swap="innerHTML"
+                  class="text-text-light/60 hover:text-primary transition-colors"
+                  aria-label="Edit {{.Name}}"
+                >
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+                <button type="button"
+                  hx-delete="/settings/family-members/{{.ID}}"
+                  hx-confirm="Delete {{.Name}}?"
+                  hx-target="#family-member-{{.ID}}"
+                  hx-swap="outerHTML"
+                  class="text-text-light/60 hover:text-error transition-colors"
+                  aria-label="Delete {{.Name}}"
+                >
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+          {{else}}
+          <tr>
+            <td colspan="4" class="py-12 text-center text-text-light/60">
+              No family members yet. Add your first member to get started.
+            </td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
   <!-- Modal Container -->
   <div id="modal-target"></div>
 
