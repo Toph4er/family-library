@@ -768,6 +768,97 @@ func buildLookupResponse(book *models.Book, coverSource string) map[string]inter
 	return resp
 }
 
+// bookFromLookupResponse reconstructs a *models.Book from a lookup response map.
+// This is the inverse of buildLookupResponse, used when reading from cache.
+func bookFromLookupResponse(resp map[string]interface{}) *models.Book {
+	book := &models.Book{
+		Title: toString(resp["title"]),
+	}
+	if v, ok := resp["subtitle"].(string); ok && v != "" {
+		book.Subtitle = &v
+	}
+	if v, ok := resp["authors"].(string); ok && v != "" {
+		book.Authors = &v
+	}
+	if v, ok := resp["illustrators"].(string); ok && v != "" {
+		book.Illustrators = &v
+	}
+	if v, ok := resp["publisher"].(string); ok && v != "" {
+		book.Publisher = &v
+	}
+	if v, ok := resp["publication_year"].(float64); ok {
+		y := int(v)
+		book.PublicationYear = &y
+	}
+	if v, ok := resp["page_count"].(float64); ok {
+		p := int(v)
+		book.PageCount = &p
+	}
+	if v, ok := resp["book_type"].(string); ok && v != "" {
+		book.BookType = &v
+	}
+	if v, ok := resp["reading_levels"].(string); ok && v != "" {
+		book.ReadingLevels = &v
+	}
+	if v, ok := resp["genres"].(string); ok && v != "" {
+		book.Genres = &v
+	}
+	if v, ok := resp["themes"].(string); ok && v != "" {
+		book.Themes = &v
+	}
+	if v, ok := resp["awards"].(string); ok && v != "" {
+		book.Awards = &v
+	}
+	if v, ok := resp["cover_image_url"].(string); ok && v != "" {
+		book.CoverImageURL = &v
+	}
+	return book
+}
+
+// cachedFetchFromOpenLibrary checks the SQLite cache first, then fetches from
+// Open Library on a miss or if force=true. On success it stores the result in
+// the cache and purges stale entries.
+func cachedFetchFromOpenLibrary(db *sql.DB, isbn string, force bool) (*models.Book, string, error) {
+	// Check cache unless forced
+	if !force {
+		var cachedData string
+		var cachedAt string
+		err := db.QueryRow("SELECT data, fetched_at FROM isbn_cache WHERE isbn = ?", isbn).Scan(&cachedData, &cachedAt)
+		if err == nil {
+			if t, parseErr := time.Parse(time.RFC3339, cachedAt); parseErr == nil && time.Since(t) < 24*time.Hour {
+				var resp map[string]interface{}
+				if jsonErr := json.Unmarshal([]byte(cachedData), &resp); jsonErr == nil {
+					book := bookFromLookupResponse(resp)
+					if coverSource, ok := resp["cover_source"].(string); ok {
+						return book, coverSource, nil
+					}
+					return book, "open_library", nil
+				}
+			}
+		}
+	}
+
+	// Fetch from Open Library
+	book, coverSource, err := fetchFromOpenLibrary(isbn)
+	if err != nil || book == nil {
+		return book, coverSource, err
+	}
+
+	// Cache the result
+	resp := buildLookupResponse(book, coverSource)
+	dataJSON, _ := json.Marshal(resp)
+	_, _ = db.Exec(
+		`INSERT OR REPLACE INTO isbn_cache (isbn, data, fetched_at) VALUES (?, ?, ?)`,
+		isbn, string(dataJSON), time.Now().UTC().Format(time.RFC3339),
+	)
+	// Purge stale cache entries (older than 24h) to prevent unbounded growth.
+	_, _ = db.Exec(
+		`DELETE FROM isbn_cache WHERE datetime(fetched_at) < datetime('now', '-24 hours')`,
+	)
+
+	return book, coverSource, nil
+}
+
 // LookupISBNHandler looks up book metadata by ISBN without creating a record.
 // Returns the data from Open Library as JSON, with SQLite caching (24h TTL).
 // Pass ?force=true to bypass the cache.
@@ -780,25 +871,7 @@ func LookupISBNHandler(db *sql.DB) http.HandlerFunc {
 		}
 		force := r.URL.Query().Get("force") == "true"
 
-		// Check cache unless forced
-		if !force {
-			var cachedData string
-			var cachedAt string
-			err := db.QueryRow("SELECT data, fetched_at FROM isbn_cache WHERE isbn = ?", isbn).Scan(&cachedData, &cachedAt)
-			if err == nil {
-				// Check if cache is within 24h
-				if t, parseErr := time.Parse(time.RFC3339, cachedAt); parseErr == nil && time.Since(t) < 24*time.Hour {
-					var resp map[string]interface{}
-					if jsonErr := json.Unmarshal([]byte(cachedData), &resp); jsonErr == nil {
-						JSONResponse(w, http.StatusOK, resp)
-						return
-					}
-				}
-			}
-		}
-
-		// Fetch from Open Library
-		book, coverSource, apiErr := fetchFromOpenLibrary(isbn)
+		book, coverSource, apiErr := cachedFetchFromOpenLibrary(db, isbn, force)
 		if apiErr != nil {
 			slog.Error("Open Library lookup failed", "isbn", isbn, "error", apiErr)
 			JSONError(w, http.StatusBadGateway, fmt.Sprintf("book lookup unavailable: %v", apiErr))
@@ -810,18 +883,6 @@ func LookupISBNHandler(db *sql.DB) http.HandlerFunc {
 		}
 
 		resp := buildLookupResponse(book, coverSource)
-
-		// Cache the result
-		dataJSON, _ := json.Marshal(resp)
-		_, _ = db.Exec(
-			`INSERT OR REPLACE INTO isbn_cache (isbn, data, fetched_at) VALUES (?, ?, ?)`,
-			isbn, string(dataJSON), time.Now().UTC().Format(time.RFC3339),
-		)
-		// Purge stale cache entries (older than 24h) to prevent unbounded growth.
-		_, _ = db.Exec(
-			`DELETE FROM isbn_cache WHERE datetime(fetched_at) < datetime('now', '-24 hours')`,
-		)
-
 		JSONResponse(w, http.StatusOK, resp)
 	}
 }
@@ -862,8 +923,8 @@ func ImportISBNHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// 3. Fetch from Open Library
-		book, coverSource, apiErr := fetchFromOpenLibrary(isbn)
+		// 3. Fetch from Open Library (uses cache if available)
+		book, coverSource, apiErr := cachedFetchFromOpenLibrary(db, isbn, false)
 		if apiErr != nil {
 			JSONError(w, http.StatusBadGateway, "book lookup service is unavailable")
 			return
