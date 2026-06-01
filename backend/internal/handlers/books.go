@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -19,6 +20,7 @@ import (
 	"git.rcsmaine.com/chris/library/backend/internal/models"
 
 	"github.com/go-chi/chi/v5"
+	"golang.org/x/time/rate"
 )
 
 // scanner is implemented by both *sql.Row and *sql.Rows
@@ -1017,6 +1019,16 @@ var apiHTTPClient = &http.Client{
 	Timeout: 10 * time.Second,
 }
 
+// olRateLimiter caps outgoing Open Library requests at 2 req/s (burst of 1)
+// to stay safely under OL's 3 req/s policy.
+var olRateLimiter = rate.NewLimiter(rate.Every(500*time.Millisecond), 1)
+
+// waitOLRateLimit blocks until a token is available from the Open Library
+// rate limiter. Call this before every outgoing OL request.
+func waitOLRateLimit() {
+	olRateLimiter.Wait(context.Background())
+}
+
 // yearRe matches a 4-digit year at the start of a string.
 var yearRe = regexp.MustCompile(`^(\d{4})`)
 
@@ -1024,6 +1036,8 @@ var yearRe = regexp.MustCompile(`^(\d{4})`)
 // Returns the populated book, cover source string, and any error.
 // If no results are found, returns (nil, "", nil).
 func fetchFromOpenLibrary(isbn string) (*models.Book, string, error) {
+	waitOLRateLimit()
+
 	u := fmt.Sprintf("https://openlibrary.org/isbn/%s.json", url.PathEscape(isbn))
 	// #nosec G704 -- URL domain is hardcoded to openlibrary.org (trusted external API);
 	// isbn is sanitized with url.PathEscape. This is a client-side lookup, not a redirect.
@@ -1250,6 +1264,8 @@ func resolveOpenLibraryAuthorKeys(raw []interface{}) []string {
 
 // fetchOpenLibraryAuthorName fetches the name of a single author by their OL key.
 func fetchOpenLibraryAuthorName(key string) string {
+	waitOLRateLimit()
+
 	u := fmt.Sprintf("https://openlibrary.org%s.json", key)
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
