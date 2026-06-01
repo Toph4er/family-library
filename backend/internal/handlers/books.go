@@ -788,6 +788,12 @@ func buildLookupResponse(book *models.Book, coverSource string) map[string]inter
 	if book.SubjectTimes != nil {
 		resp["subject_times"] = *book.SubjectTimes
 	}
+	if book.AgeRange != nil {
+		resp["age_range"] = *book.AgeRange
+	}
+	if book.Series != nil {
+		resp["series"] = *book.Series
+	}
 	return resp
 }
 
@@ -852,6 +858,12 @@ func bookFromLookupResponse(resp map[string]interface{}) *models.Book {
 	}
 	if v, ok := resp["subject_times"].(string); ok && v != "" {
 		book.SubjectTimes = &v
+	}
+	if v, ok := resp["age_range"].(string); ok && v != "" {
+		book.AgeRange = &v
+	}
+	if v, ok := resp["series"].(string); ok && v != "" {
+		book.Series = &v
 	}
 	return book
 }
@@ -1054,6 +1066,9 @@ func waitOLRateLimit() {
 
 // yearRe matches a 4-digit year at the start of a string.
 var yearRe = regexp.MustCompile(`^(\d{4})`)
+
+// TODO (#23): Integrate /search.json for book discovery by subject/language
+// TODO (#24): Use /authors/{key}/works.json for series inference
 
 // fetchFromOpenLibrary fetches book metadata from the Open Library API.
 // Returns the populated book, cover source string, and any error.

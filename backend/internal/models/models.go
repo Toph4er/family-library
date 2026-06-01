@@ -37,6 +37,8 @@ type Book struct {
 	SubjectPlaces       *string   `json:"subject_places,omitempty"`  // JSON array
 	SubjectPeople       *string   `json:"subject_people,omitempty"`  // JSON array
 	SubjectTimes        *string   `json:"subject_times,omitempty"`   // JSON array
+	AgeRange            *string   `json:"age_range,omitempty"`
+	Series              *string   `json:"series,omitempty"`
 	GuestVisibleFields  string    `json:"-"`
 	CreatedAt           string    `json:"created_at"`
 	UpdatedAt           string    `json:"updated_at"`
@@ -169,6 +171,8 @@ type CreateBookRequest struct {
 	Location         *string `json:"location"`
 	Notes            *string `json:"notes"`
 	ChildRating      *int    `json:"child_rating"`
+	AgeRange         *string `json:"age_range"`
+	Series           *string `json:"series"`
 }
 
 // UpdateBookRequest represents a book update request body
@@ -199,6 +203,8 @@ type UpdateBookRequest struct {
 	LastReadDate     *string `json:"last_read_date"`
 	CoverImageURL    *string `json:"cover_image_url"`
 	CoverSource      *string `json:"cover_source"`
+	AgeRange         *string `json:"age_range"`
+	Series           *string `json:"series"`
 }
 
 // CreateWishlistItemRequest represents a wishlist item creation request

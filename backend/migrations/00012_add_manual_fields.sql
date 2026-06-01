@@ -1,0 +1,2 @@
+ALTER TABLE books ADD COLUMN age_range TEXT;
+ALTER TABLE books ADD COLUMN series TEXT;
