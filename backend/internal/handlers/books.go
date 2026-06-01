@@ -953,7 +953,7 @@ func fetchFromOpenLibrary(isbn string) (*models.Book, string, error) {
 		return nil, "", fmt.Errorf("building Open Library request: %w", err)
 	}
 	// Open Library blocks requests without a User-Agent header.
-	req.Header.Set("User-Agent", "WoodlandLibrary/1.0 (personal children's library collection)")
+	req.Header.Set("User-Agent", "WoodlandLibrary/1.0 (personal children's library collection; contact@woodlandlibrary.local)")
 
 	// #nosec G704 -- URL is constructed from hardcoded openlibrary.org base; isbn is sanitized
 	resp, err := apiHTTPClient.Do(req)
@@ -1091,16 +1091,23 @@ func resolveOpenLibraryAuthorKeys(raw []interface{}) []string {
 		}
 	}
 
-	// Resolve author keys in parallel
+	// Resolve author keys in parallel (capped at 3 concurrent requests)
 	if len(keysToResolve) > 0 {
 		results := make(chan string, len(keysToResolve))
 		var wg sync.WaitGroup
+		sem := make(chan struct{}, 3) // max 3 concurrent author resolutions
 		for _, key := range keysToResolve {
+			sem <- struct{}{}
 			wg.Add(1)
 			go func(k string) {
-				defer wg.Done()
+				defer func() {
+					<-sem
+					wg.Done()
+				}()
 				if name := fetchOpenLibraryAuthorName(k); name != "" {
 					results <- name
+				} else {
+					slog.Warn("failed to resolve Open Library author key", "key", k)
 				}
 			}(key)
 		}
@@ -1117,24 +1124,35 @@ func resolveOpenLibraryAuthorKeys(raw []interface{}) []string {
 // fetchOpenLibraryAuthorName fetches the name of a single author by their OL key.
 func fetchOpenLibraryAuthorName(key string) string {
 	u := fmt.Sprintf("https://openlibrary.org%s.json", key)
-	resp, err := apiHTTPClient.Get(u)
+	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
+		slog.Warn("failed to build Open Library author request", "key", key, "error", err)
+		return ""
+	}
+	req.Header.Set("User-Agent", "WoodlandLibrary/1.0 (personal children's library collection; contact@woodlandlibrary.local)")
+
+	resp, err := apiHTTPClient.Do(req)
+	if err != nil {
+		slog.Warn("Open Library author HTTP request failed", "key", key, "error", err)
 		return ""
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		slog.Warn("Open Library author request returned non-OK status", "key", key, "status", resp.StatusCode)
 		return ""
 	}
 
 	var data map[string]interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		slog.Warn("failed to parse Open Library author response", "key", key, "error", err)
 		return ""
 	}
 
 	if name, ok := data["name"].(string); ok {
 		return name
 	}
+	slog.Warn("Open Library author response missing name field", "key", key)
 	return ""
 }
 
