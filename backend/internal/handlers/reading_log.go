@@ -256,6 +256,7 @@ func UpdateReadingLogHandler(db *sql.DB) http.HandlerFunc {
 		}
 
 		args = append(args, id)
+		// #nosec G202 -- Column names are hardcoded constants, not user input
 		query := "UPDATE reading_logs SET " + strings.Join(sets, ", ") + " WHERE id = ?"
 		result, err := db.Exec(query, args...)
 		if err != nil {
@@ -375,6 +376,7 @@ func HTMLReadingLogFormHandler(db *sql.DB) http.HandlerFunc {
 			endPagePlaceholder = strconv.Itoa(*pageCount)
 		}
 
+		// #nosec G705 -- All interpolated values are escaped via template.HTMLEscapeString()
 		_, _ = w.Write([]byte(`
 <div id="modal-backdrop" class="modal-backdrop" hx-on::click="if(event.target===this)document.getElementById('modal-backdrop').remove()">
   <div class="modal-content modal-md p-6" role="dialog" aria-modal="true">

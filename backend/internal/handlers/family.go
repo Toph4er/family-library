@@ -160,6 +160,7 @@ func UpdateFamilyMemberHandler(db *sql.DB) http.HandlerFunc {
 		}
 
 		args = append(args, id)
+		// #nosec G202 -- Column names are hardcoded constants, not user input
 		query := "UPDATE family_members SET " + strings.Join(sets, ", ") + " WHERE id = ?"
 		result, err := db.Exec(query, args...)
 		if err != nil {
@@ -280,6 +281,7 @@ func HTMLFamilyMemberFormHandler(db *sql.DB) http.HandlerFunc {
 			}
 		}
 
+		// #nosec G705 -- All interpolated values are escaped via template.HTMLEscapeString()
 		_, _ = w.Write([]byte(`
 <div id="modal-backdrop" class="modal-backdrop" hx-on::click="if(event.target===this)document.getElementById('modal-backdrop').remove()">
   <div class="modal-content modal-sm p-6" role="dialog" aria-modal="true">
