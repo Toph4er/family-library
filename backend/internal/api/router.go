@@ -164,6 +164,20 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.RenderSettingsPage(cfg.Templates["settings"], database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
 	})
 
+	// Reading log (authenticated users)
+	r.Get("/reading-log", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAuthHTML(http.HandlerFunc(handlers.RenderReadingLogPage(cfg.Templates["reading-log"], database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
+	})
+	r.Get("/reading-logs/{book_id}/new-form", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAuthHTML(http.HandlerFunc(handlers.HTMLReadingLogFormHandler(database))).ServeHTTP(w, r)
+	})
+	r.Post("/reading-logs", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAuthHTML(http.HandlerFunc(handlers.HTMLCreateReadingLogHandler(database))).ServeHTTP(w, r)
+	})
+	r.Delete("/reading-logs/{id}", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAuthHTML(http.HandlerFunc(handlers.HTMLDeleteReadingLogHandler(database))).ServeHTTP(w, r)
+	})
+
 	// -- API routes --
 	r.Route("/api/v1", func(r chi.Router) {
 		// Public endpoints (no CSRF middleware)

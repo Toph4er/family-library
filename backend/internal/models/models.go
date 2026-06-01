@@ -248,3 +248,42 @@ type UpdateFamilyMemberRequest struct {
 	Name     *string `json:"name"`
 	Relation *string `json:"relation"`
 }
+
+// ReadingLog represents a reading session entry
+//
+type ReadingLog struct {
+	ID         int64   `json:"id"`
+	BookID     int64   `json:"book_id"`
+	BookTitle  string  `json:"book_title"`
+	StartPage  *int    `json:"start_page,omitempty"`
+	EndPage    *int    `json:"end_page,omitempty"`
+	TotalPages int     `json:"total_pages"`
+	EntireBook bool    `json:"entire_book"`
+	ReadAt     string  `json:"read_at"`
+	ReaderName string  `json:"reader_name"`
+	Notes      *string `json:"notes,omitempty"`
+	CreatedAt  string  `json:"created_at"`
+}
+
+// CreateReadingLogRequest represents a reading log creation request
+//
+type CreateReadingLogRequest struct {
+	BookID     int64   `json:"book_id" validate:"required"`
+	StartPage  *int    `json:"start_page"`
+	EndPage    *int    `json:"end_page"`
+	EntireBook bool    `json:"entire_book"`
+	ReadAt     string  `json:"read_at"`
+	ReaderName string  `json:"reader_name" validate:"required"`
+	Notes      *string `json:"notes"`
+}
+
+// UpdateReadingLogRequest represents a reading log update request
+//
+type UpdateReadingLogRequest struct {
+	StartPage  *int    `json:"start_page"`
+	EndPage    *int    `json:"end_page"`
+	EntireBook *bool   `json:"entire_book"`
+	ReadAt     *string `json:"read_at"`
+	ReaderName *string `json:"reader_name"`
+	Notes      *string `json:"notes"`
+}

@@ -32,6 +32,8 @@ type pageContext struct {
 	Items                  []models.WishlistItem
 	Users                  []map[string]interface{}
 	FamilyMembers          []models.FamilyMember
+	ReadingLogs            []models.ReadingLog
+	RecentBooks            interface{} // []bookSelect for reading-log page
 	Settings               map[string]string
 	DefaultGuestVisibility map[string]bool
 	CurrentQuery           string

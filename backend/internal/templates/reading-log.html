@@ -1,0 +1,161 @@
+{{template "base" .}}
+
+{{define "title"}}Reading Log — Woodland Library{{end}}
+
+{{define "content"}}
+<div class="flex flex-col gap-8 animate-fade-in-up">
+
+  <!-- Page Header -->
+  <header class="text-center py-6">
+    <h1 class="text-4xl md:text-5xl font-heading text-primary mb-3 leading-tight">
+      Reading Log
+    </h1>
+    <p class="text-text-light/80 text-lg max-w-2xl mx-auto font-accent text-xl">
+      Track your family's reading adventures, one page at a time.
+    </p>
+  </header>
+
+  <!-- Vine divider -->
+  <div class="vine-divider max-w-md mx-auto" aria-hidden="true"></div>
+
+  <!-- Log Reading button -->
+  <div class="flex justify-center">
+    <button
+      type="button"
+      id="log-reading-trigger"
+      class="px-6 py-3 rounded-xl font-medium text-white shadow-sm text-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+      style="background-color: var(--color-primary);"
+      onmouseenter="this.style.backgroundColor='var(--color-text-light)'"
+      onmouseleave="this.style.backgroundColor='var(--color-primary)'"
+      aria-label="Log a new reading session"
+    >
+      <span class="flex items-center gap-2">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        Log Reading
+      </span>
+    </button>
+  </div>
+
+  <!-- Reading Log Entries -->
+  <section aria-label="Reading log entries">
+    <div class="rounded-xl shadow-sm overflow-hidden" style="background-color: var(--color-surface); border: 1px solid rgba(139, 69, 19, 0.1);">
+      {{if .ReadingLogs}}
+      <div class="divide-y" style="border-color: rgba(139, 69, 19, 0.1);">
+        {{range .ReadingLogs}}
+        <div class="py-4 px-6 hover:bg-background/30 transition-colors" id="reading-log-{{.ID}}">
+          <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+            <!-- Date & reader -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <a href="/books/{{.BookID}}" class="text-primary hover:text-text-light font-medium text-sm no-underline truncate">{{.BookTitle}}</a>
+              </div>
+              <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-text-light/70">
+                <span class="flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  {{.ReaderName}}
+                </span>
+                <span class="flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                  {{formatTime .ReadAt}}
+                </span>
+                {{if .EntireBook}}
+                <span class="flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                    <path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z"/>
+                  </svg>
+                  Entire book
+                </span>
+                {{else if and .StartPage .EndPage}}
+                <span class="flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                    <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/>
+                    <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
+                  </svg>
+                  Pages {{.StartPage}}–{{.EndPage}} ({{.TotalPages}})
+                </span>
+                {{end}}
+              </div>
+              {{if .Notes}}
+              <p class="text-sm text-text-light/60 mt-1">{{.Notes}}</p>
+              {{end}}
+            </div>
+            <!-- Delete button -->
+            <div class="shrink-0">
+              <button type="button"
+                hx-delete="/reading-logs/{{.ID}}"
+                hx-confirm="Delete this reading log entry?"
+                hx-target="#reading-log-{{.ID}}"
+                hx-swap="outerHTML"
+                class="text-text-light/40 hover:text-error transition-colors p-1"
+                aria-label="Delete reading log entry"
+              >
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        {{end}}
+      </div>
+      {{else}}
+      <div class="py-16 text-center">
+        <svg class="w-16 h-16 mx-auto text-text-light/20 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+          <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/>
+          <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
+        </svg>
+        <p class="text-text-light/60 text-lg font-accent">No reading sessions logged yet</p>
+        <p class="text-text-light/40 text-sm mt-1">Click "Log Reading" to record your first session</p>
+      </div>
+      {{end}}
+    </div>
+  </section>
+
+  <!-- Modal Container -->
+  <div id="modal-target"></div>
+
+</div>
+{{end}}
+
+{{define "scripts"}}
+<script>
+document.getElementById('log-reading-trigger').addEventListener('click', function() {
+  var backdrop = document.createElement('div');
+  backdrop.id = 'modal-backdrop';
+  backdrop.className = 'modal-backdrop';
+  backdrop.setAttribute('hx-on::click', 'if(event.target===this)this.remove()');
+  backdrop.innerHTML = `
+    <div class="modal-content modal-md p-6" role="dialog" aria-modal="true">
+      <div class="flex items-center justify-between mb-4 pb-3 border-b" style="border-color: rgba(139, 69, 19, 0.1);">
+        <h2 class="text-xl font-heading font-semibold text-primary">Select a Book</h2>
+        <button type="button" onclick="document.getElementById('modal-backdrop').remove()" class="text-text-light hover:text-text transition-colors text-2xl no-underline" aria-label="Close modal">×</button>
+      </div>
+      <div class="max-h-96 overflow-y-auto space-y-2">
+        {{range .RecentBooks}}
+        <a href="#" class="block px-4 py-3 rounded-lg hover:bg-background/50 transition-colors text-sm text-text no-underline" onclick="openLogForm({{.ID}}); return false;">{{.Title}}</a>
+        {{else}}
+        <p class="text-text-light/60 text-sm text-center py-4">No books in the library yet.</p>
+        {{end}}
+      </div>
+    </div>
+  `;
+  document.body.appendChild(backdrop);
+});
+
+function openLogForm(bookId) {
+  document.getElementById('modal-backdrop').remove();
+  htmx.ajax('GET', '/reading-logs/' + bookId + '/new-form', {target: '#modal-target', swap: 'innerHTML'});
+}
+</script>
+{{end}}

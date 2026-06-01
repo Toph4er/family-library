@@ -70,6 +70,27 @@
 
       <!-- Actions -->
       <div class="flex flex-wrap gap-3 pt-2">
+        {{if .IsAuthenticated}}
+        <button
+          type="button"
+          hx-get="/reading-logs/{{.Book.ID}}/new-form"
+          hx-target="#modal-target"
+          hx-swap="innerHTML"
+          class="px-5 py-2.5 rounded-xl font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 no-underline"
+          style="background-color: var(--color-primary);"
+          onmouseenter="this.style.backgroundColor='var(--color-text-light)'"
+          onmouseleave="this.style.backgroundColor='var(--color-primary)'"
+          aria-label="Log reading for {{.Book.Title}}"
+        >
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/>
+              <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
+            </svg>
+            Log Reading
+          </span>
+        </button>
+        {{end}}
         {{if .IsAdmin}}
         <a href="/books/{{.Book.ID}}/edit-book"
           class="px-5 py-2.5 rounded-xl font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 no-underline"
@@ -267,6 +288,9 @@
   </div>
   {{end}}
   {{end}}
+
+  <!-- Modal Container -->
+  <div id="modal-target"></div>
 
 </div>
 {{end}}
