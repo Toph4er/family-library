@@ -765,6 +765,15 @@ func buildLookupResponse(book *models.Book, coverSource string) map[string]inter
 	if book.CoverImageURL != nil {
 		resp["cover_image_url"] = *book.CoverImageURL
 	}
+	if book.DeweyDecimalClass != nil {
+		resp["dewey_decimal_class"] = *book.DeweyDecimalClass
+	}
+	if book.Description != nil {
+		resp["description"] = *book.Description
+	}
+	if book.Language != nil {
+		resp["language"] = *book.Language
+	}
 	return resp
 }
 
@@ -811,6 +820,15 @@ func bookFromLookupResponse(resp map[string]interface{}) *models.Book {
 	}
 	if v, ok := resp["cover_image_url"].(string); ok && v != "" {
 		book.CoverImageURL = &v
+	}
+	if v, ok := resp["dewey_decimal_class"].(string); ok && v != "" {
+		book.DeweyDecimalClass = &v
+	}
+	if v, ok := resp["description"].(string); ok && v != "" {
+		book.Description = &v
+	}
+	if v, ok := resp["language"].(string); ok && v != "" {
+		book.Language = &v
 	}
 	return book
 }
@@ -1129,6 +1147,54 @@ func fetchFromOpenLibrary(isbn string) (*models.Book, string, error) {
 	if coverID > 0 {
 		coverURL := fmt.Sprintf("https://covers.openlibrary.org/b/id/%d-L.jpg", int(coverID))
 		book.CoverImageURL = &coverURL
+	}
+
+	// Dewey Decimal Classification: can be a string or an array of strings.
+	// Take the first value if it's an array.
+	if ddcRaw, ok := olResp["dewey_decimal_class"]; ok {
+		switch d := ddcRaw.(type) {
+		case string:
+			if d != "" {
+				book.DeweyDecimalClass = &d
+			}
+		case []interface{}:
+			if len(d) > 0 {
+				if s, ok := d[0].(string); ok && s != "" {
+					book.DeweyDecimalClass = &s
+				}
+			}
+		}
+	}
+
+	// Description: OL returns a text type — either a plain string or a map
+	// with "type" and "value" keys. Extract the plain string value.
+	if descRaw, ok := olResp["description"]; ok {
+		switch d := descRaw.(type) {
+		case string:
+			if d != "" {
+				book.Description = &d
+			}
+		case map[string]interface{}:
+			if v, ok := d["value"].(string); ok && v != "" {
+				book.Description = &v
+			}
+		}
+	}
+
+	// Language: can be a string or an array of strings. Take the first one.
+	if langRaw, ok := olResp["language"]; ok {
+		switch l := langRaw.(type) {
+		case string:
+			if l != "" {
+				book.Language = &l
+			}
+		case []interface{}:
+			if len(l) > 0 {
+				if s, ok := l[0].(string); ok && s != "" {
+					book.Language = &s
+				}
+			}
+		}
 	}
 
 	return book, "open_library", nil

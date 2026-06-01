@@ -31,6 +31,9 @@ type Book struct {
 	LastReadDate        *string   `json:"last_read_date,omitempty"`
 	CoverImageURL       *string   `json:"cover_image_url,omitempty"`
 	CoverSource         *string   `json:"cover_source,omitempty"`
+	DeweyDecimalClass   *string   `json:"dewey_decimal_class,omitempty"`
+	Description         *string   `json:"description,omitempty"`
+	Language            *string   `json:"language,omitempty"`
 	GuestVisibleFields  string    `json:"-"`
 	CreatedAt           string    `json:"created_at"`
 	UpdatedAt           string    `json:"updated_at"`
