@@ -232,6 +232,11 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 				})
 			})
 
+			// Author works (Open Library series inference, auth required)
+			r.Get("/authors/works", func(w http.ResponseWriter, r *http.Request) {
+				authSvc.RequireAuth(http.HandlerFunc(handlers.AuthorWorksHandler(database))).ServeHTTP(w, r)
+			})
+
 			// Wishlist (all require auth)
 			r.Route("/wishlist", func(r chi.Router) {
 				r.Use(authSvc.RequireAuth)

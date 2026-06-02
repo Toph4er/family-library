@@ -1159,7 +1159,141 @@ func waitOLRateLimit() {
 // yearRe matches a 4-digit year at the start of a string.
 var yearRe = regexp.MustCompile(`^(\d{4})`)
 
-// TODO (#24): Use /authors/{key}/works.json for series inference
+// AuthorWorksHandler calls Open Library's /authors/{key}/works.json to retrieve
+// an author's works and extract any series membership information.
+// Accepts query param: key (the author OL key, e.g. "OL12345A").
+func AuthorWorksHandler(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		key := strings.TrimSpace(r.URL.Query().Get("key"))
+		if key == "" {
+			JSONError(w, http.StatusBadRequest, "query parameter 'key' is required (author OL key, e.g. OL12345A)")
+			return
+		}
+
+		u := fmt.Sprintf("%s/authors/%s/works.json", olConfig.BaseURL, url.PathEscape(key))
+
+		maxRetries := 2
+		var body []byte
+		var resp *http.Response
+		var lastErr error
+
+		for attempt := 0; attempt <= maxRetries; attempt++ {
+			if attempt > 0 {
+				backoff := time.Duration(attempt) * time.Second
+				time.Sleep(backoff)
+				slog.Info("retrying Open Library author works request", "key", key, "attempt", attempt+1, "backoff", backoff)
+			}
+
+			waitOLRateLimit()
+
+			// #nosec G704 -- URL domain is configured via OL_BASE_URL (trusted external API);
+			// key is sanitized with url.PathEscape. This is a client-side lookup, not a redirect.
+			req, err := http.NewRequest("GET", u, nil)
+			if err != nil {
+				slog.Error("failed to build Open Library author works request", "key", key, "error", err)
+				JSONError(w, http.StatusInternalServerError, "failed to build request")
+				return
+			}
+			req.Header.Set("User-Agent", olConfig.UserAgent)
+
+			// #nosec G704 -- URL is constructed from configured OL base; key is sanitized
+			resp, err = apiHTTPClient.Do(req)
+			if err != nil {
+				lastErr = fmt.Errorf("Open Library author works HTTP request: %w", err)
+				continue
+			}
+
+			body, err = io.ReadAll(resp.Body)
+			resp.Body.Close()
+			if err != nil {
+				lastErr = fmt.Errorf("reading Open Library author works response: %w", err)
+				continue
+			}
+
+			if resp.StatusCode == http.StatusOK {
+				break
+			}
+
+			lastErr = fmt.Errorf("Open Library author works returned status %d", resp.StatusCode)
+		}
+
+		if resp == nil || resp.StatusCode != http.StatusOK {
+			if lastErr == nil {
+				lastErr = fmt.Errorf("Open Library author works request failed after %d attempts", maxRetries+1)
+			}
+			slog.Error("Open Library author works failed", "key", key, "error", lastErr)
+			JSONError(w, http.StatusBadGateway, fmt.Sprintf("author works unavailable: %v", lastErr))
+			return
+		}
+
+		// Parse the OL works response.
+		// Top-level shape: { "entries": [ { "work": { ... } }, ... ] }
+		var olResp struct {
+			Entries []struct {
+				Work map[string]interface{} `json:"work"`
+			} `json:"entries"`
+		}
+		if err := json.Unmarshal(body, &olResp); err != nil {
+			slog.Error("failed to parse Open Library author works response", "key", key, "error", err)
+			JSONError(w, http.StatusBadGateway, "failed to parse response")
+			return
+		}
+
+		// Extract works with series information.
+		type WorkSeriesInfo struct {
+			Key         string   `json:"key"`
+			Title       string   `json:"title"`
+			Series      []string `json:"series,omitempty"`
+			SeriesNotes []string `json:"series_notes,omitempty"`
+		}
+
+		works := make([]WorkSeriesInfo, 0, len(olResp.Entries))
+		for _, entry := range olResp.Entries {
+			work := entry.Work
+			if work == nil {
+				continue
+			}
+
+			ws := WorkSeriesInfo{
+				Key:   toString(work["key"]),
+				Title: toString(work["title"]),
+			}
+
+			// series can be a single string or an array of strings.
+			if raw, ok := work["series"]; ok {
+				switch v := raw.(type) {
+				case string:
+					if v != "" {
+						ws.Series = []string{v}
+					}
+				case []interface{}:
+					for _, s := range v {
+						if s, ok := s.(string); ok && s != "" {
+							ws.Series = append(ws.Series, s)
+						}
+					}
+				}
+			}
+
+			// series_notes is always an array.
+			if raw, ok := work["series_notes"].([]interface{}); ok {
+				for _, s := range raw {
+					if s, ok := s.(string); ok && s != "" {
+						ws.SeriesNotes = append(ws.SeriesNotes, s)
+					}
+				}
+			}
+
+			works = append(works, ws)
+		}
+
+		JSONResponse(w, http.StatusOK, map[string]interface{}{
+			"author_key": key,
+			"total_works": len(works),
+			"works":      works,
+		})
+	}
+}
 
 // SearchOpenLibraryHandler searches Open Library's catalog via /search.json.
 // Accepts query params: q, subject, language, author, page, limit.
