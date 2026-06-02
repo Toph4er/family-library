@@ -141,6 +141,12 @@ func (b *Book) FilterForGuest() {
 	if !visibility["subject_times"] {
 		b.SubjectTimes = nil
 	}
+	if !visibility["series"] {
+		b.Series = nil
+	}
+	if !visibility["age_range"] {
+		b.AgeRange = nil
+	}
 }
 
 // WishlistItem represents a book on the wishlist
