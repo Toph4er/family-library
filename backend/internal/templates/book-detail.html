@@ -220,6 +220,37 @@
       </div>
     </div>
 
+    <!-- Description / About This Book -->
+    {{if .Book.Description}}
+    <div class="mb-6">
+      <dt class="text-sm font-medium text-text-light/60 mb-2">About This Book</dt>
+      <dd id="book-description" class="text-text text-sm leading-relaxed whitespace-pre-wrap line-clamp-3">
+        {{.Book.Description}}
+      </dd>
+      <button type="button" id="desc-toggle" class="mt-1 text-sm text-primary hover:text-text-light transition-colors font-medium no-underline bg-transparent border-none cursor-pointer">
+        Show more
+      </button>
+      <script>
+        (function() {
+          var el = document.getElementById('book-description');
+          var btn = document.getElementById('desc-toggle');
+          if (!el || !btn) return;
+          if (el.scrollHeight <= el.clientHeight) {
+            btn.style.display = 'none';
+            el.classList.remove('line-clamp-3');
+            return;
+          }
+          var expanded = false;
+          btn.addEventListener('click', function() {
+            expanded = !expanded;
+            el.classList.toggle('line-clamp-3', !expanded);
+            btn.textContent = expanded ? 'Show less' : 'Show more';
+          });
+        })();
+      </script>
+    </div>
+    {{end}}
+
     <!-- Divider -->
     <div class="border-t my-4" style="border-color: rgba(139, 69, 19, 0.1);"></div>
 

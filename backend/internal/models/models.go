@@ -126,6 +126,9 @@ func (b *Book) FilterForGuest() {
 	if !visibility["dewey_decimal_class"] {
 		b.DeweyDecimalClass = nil
 	}
+	if !visibility["description"] {
+		b.Description = nil
+	}
 }
 
 // WishlistItem represents a book on the wishlist

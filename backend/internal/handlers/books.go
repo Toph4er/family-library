@@ -59,6 +59,7 @@ func scanBook(s scanner) (*models.Book, error) {
 	var coverImageURL sql.NullString
 	var coverSource sql.NullString
 	var deweyDecimalClass sql.NullString
+	var description sql.NullString
 	var readCount sql.NullInt64
 	var guestVisibleFields sql.NullString
 
@@ -90,6 +91,7 @@ func scanBook(s scanner) (*models.Book, error) {
 		&coverImageURL,
 		&coverSource,
 		&deweyDecimalClass,
+		&description,
 		&guestVisibleFields,
 		&b.CreatedAt,
 		&b.UpdatedAt,
@@ -127,6 +129,7 @@ func scanBook(s scanner) (*models.Book, error) {
 	b.CoverImageURL = nullStrPtr(coverImageURL)
 	b.CoverSource = nullStrPtr(coverSource)
 	b.DeweyDecimalClass = nullStrPtr(deweyDecimalClass)
+	b.Description = nullStrPtr(description)
 
 	// read_count defaults to 0 if NULL
 	if readCount.Valid {
@@ -1005,8 +1008,8 @@ func ImportISBNHandler(db *sql.DB) http.HandlerFunc {
 				reading_levels, genres, themes, awards,
 				gift_from, gift_relationship, date_received,
 				condition, location, notes,
-				child_rating, quantity, read_count, cover_image_url, cover_source, dewey_decimal_class, guest_visible_fields
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?, ?, ?)
+				child_rating, quantity, read_count, cover_image_url, cover_source, dewey_decimal_class, description, guest_visible_fields
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?, ?, ?, ?)
 		`
 
 		result, err := db.Exec(query,
@@ -1033,6 +1036,7 @@ func ImportISBNHandler(db *sql.DB) http.HandlerFunc {
 			book.CoverImageURL,
 			coverSource,
 			book.DeweyDecimalClass,
+			book.Description,
 			defaultGuestVisibleFields(),
 		)
 		if err != nil {
@@ -1443,6 +1447,7 @@ func defaultGuestVisibleFields() string {
 		"cover_image_url":    true,
 		"cover_source":       true,
 		"dewey_decimal_class": true,
+		"description":         true,
 		"isbn":               false,
 		"condition":          false,
 		"location":           false,
