@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -17,13 +18,17 @@ type OLConfig struct {
 
 // LoadOLConfig reads Open Library configuration from environment variables
 // with sensible defaults.
+//
+// Tests can override values by calling os.Setenv() before the handlers package
+// is imported (e.g. in a TestMain or testinit pattern).
 func LoadOLConfig() *OLConfig {
 	return &OLConfig{
-		BaseURL:     envOr("OL_BASE_URL", "https://openlibrary.org"),
-		CoversURL:   envOr("OL_COVERS_URL", "https://covers.openlibrary.org"),
-		UserAgent:   envOr("OL_USER_AGENT", "WoodlandLibrary/1.0 (personal children's library collection; contact@woodlandlibrary.local)"),
-		HTTPTimeout: durationOr("OL_HTTP_TIMEOUT", 10*time.Second),
-		CacheTTL:    durationOr("OL_CACHE_TTL", 24*time.Hour),
+		BaseURL:         envOr("OL_BASE_URL", "https://openlibrary.org"),
+		CoversURL:       envOr("OL_COVERS_URL", "https://covers.openlibrary.org"),
+		UserAgent:       envOr("OL_USER_AGENT", "WoodlandLibrary/1.0 (personal children's library collection; contact@woodlandlibrary.local)"),
+		HTTPTimeout:     durationOr("OL_HTTP_TIMEOUT", 10*time.Second),
+		CacheTTL:        durationOr("OL_CACHE_TTL", 24*time.Hour),
+		RateLimitPerSec: intOr("OL_RATE_LIMIT_PER_SEC", 2),
 	}
 }
 
@@ -38,6 +43,15 @@ func durationOr(key string, fallback time.Duration) time.Duration {
 	if v := os.Getenv(key); v != "" {
 		if d, err := time.ParseDuration(v); err == nil {
 			return d
+		}
+	}
+	return fallback
+}
+
+func intOr(key string, fallback int) int {
+	if v := os.Getenv(key); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			return n
 		}
 	}
 	return fallback

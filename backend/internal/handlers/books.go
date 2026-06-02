@@ -1078,7 +1078,7 @@ var apiHTTPClient = &http.Client{
 
 // olRateLimiter caps outgoing Open Library requests at 2 req/s (burst of 1)
 // to stay safely under OL's 3 req/s policy.
-var olRateLimiter = rate.NewLimiter(rate.Every(500*time.Millisecond), 1)
+var olRateLimiter = rate.NewLimiter(rate.Every(time.Second/time.Duration(olConfig.RateLimitPerSec)), 1)
 
 // waitOLRateLimit blocks until a token is available from the Open Library
 // rate limiter. Call this before every outgoing OL request.
