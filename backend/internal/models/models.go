@@ -123,6 +123,9 @@ func (b *Book) FilterForGuest() {
 	if !visibility["cover_source"] {
 		b.CoverSource = nil
 	}
+	if !visibility["dewey_decimal_class"] {
+		b.DeweyDecimalClass = nil
+	}
 }
 
 // WishlistItem represents a book on the wishlist
@@ -170,9 +173,10 @@ type CreateBookRequest struct {
 	Condition        *string `json:"condition"`
 	Location         *string `json:"location"`
 	Notes            *string `json:"notes"`
-	ChildRating      *int    `json:"child_rating"`
-	AgeRange         *string `json:"age_range"`
-	Series           *string `json:"series"`
+	ChildRating       *int    `json:"child_rating"`
+	DeweyDecimalClass *string `json:"dewey_decimal_class"`
+	AgeRange          *string `json:"age_range"`
+	Series            *string `json:"series"`
 }
 
 // UpdateBookRequest represents a book update request body
@@ -201,10 +205,11 @@ type UpdateBookRequest struct {
 	Quantity         *int    `json:"quantity"`
 	ReadCount        *int    `json:"read_count"`
 	LastReadDate     *string `json:"last_read_date"`
-	CoverImageURL    *string `json:"cover_image_url"`
-	CoverSource      *string `json:"cover_source"`
-	AgeRange         *string `json:"age_range"`
-	Series           *string `json:"series"`
+	CoverImageURL     *string `json:"cover_image_url"`
+	CoverSource       *string `json:"cover_source"`
+	DeweyDecimalClass *string `json:"dewey_decimal_class"`
+	AgeRange          *string `json:"age_range"`
+	Series            *string `json:"series"`
 }
 
 // CreateWishlistItemRequest represents a wishlist item creation request
