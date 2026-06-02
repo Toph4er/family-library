@@ -132,6 +132,15 @@ func (b *Book) FilterForGuest() {
 	if !visibility["language"] {
 		b.Language = nil
 	}
+	if !visibility["subject_places"] {
+		b.SubjectPlaces = nil
+	}
+	if !visibility["subject_people"] {
+		b.SubjectPeople = nil
+	}
+	if !visibility["subject_times"] {
+		b.SubjectTimes = nil
+	}
 }
 
 // WishlistItem represents a book on the wishlist
@@ -184,6 +193,9 @@ type CreateBookRequest struct {
 	AgeRange          *string `json:"age_range"`
 	Series            *string `json:"series"`
 	Language          *string `json:"language"`
+	SubjectPlaces     *string `json:"subject_places"`
+	SubjectPeople     *string `json:"subject_people"`
+	SubjectTimes      *string `json:"subject_times"`
 }
 
 // UpdateBookRequest represents a book update request body
@@ -218,6 +230,9 @@ type UpdateBookRequest struct {
 	AgeRange          *string `json:"age_range"`
 	Series            *string `json:"series"`
 	Language          *string `json:"language"`
+	SubjectPlaces     *string `json:"subject_places"`
+	SubjectPeople     *string `json:"subject_people"`
+	SubjectTimes      *string `json:"subject_times"`
 }
 
 // CreateWishlistItemRequest represents a wishlist item creation request

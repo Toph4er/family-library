@@ -222,6 +222,39 @@
           {{end}}
         </dd>
       </div>
+
+      <div>
+        <dt class="text-sm font-medium text-text-light/60">Subject Places</dt>
+        <dd class="flex flex-wrap gap-2 mt-1">
+          {{range (split .Book.SubjectPlaces)}}
+            <a href="/books?q={{.}}" class="mushroom-tag bg-primary/10 text-primary hover:bg-primary/20 no-underline transition-colors" title="Find books set in: {{.}}">{{.}}</a>
+          {{else}}
+            <span class="text-text-light/40 text-sm">—</span>
+          {{end}}
+        </dd>
+      </div>
+
+      <div>
+        <dt class="text-sm font-medium text-text-light/60">Subject People</dt>
+        <dd class="flex flex-wrap gap-2 mt-1">
+          {{range (split .Book.SubjectPeople)}}
+            <a href="/books?q={{.}}" class="mushroom-tag bg-secondary/10 text-secondary hover:bg-secondary/20 no-underline transition-colors" title="Find books about: {{.}}">{{.}}</a>
+          {{else}}
+            <span class="text-text-light/40 text-sm">—</span>
+          {{end}}
+        </dd>
+      </div>
+
+      <div>
+        <dt class="text-sm font-medium text-text-light/60">Subject Times</dt>
+        <dd class="flex flex-wrap gap-2 mt-1">
+          {{range (split .Book.SubjectTimes)}}
+            <a href="/books?q={{.}}" class="mushroom-tag bg-accent/20 text-accent hover:bg-accent/30 no-underline transition-colors" title="Find books from period: {{.}}">{{.}}</a>
+          {{else}}
+            <span class="text-text-light/40 text-sm">—</span>
+          {{end}}
+        </dd>
+      </div>
     </div>
 
     <!-- Description / About This Book -->
