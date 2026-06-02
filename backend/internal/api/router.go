@@ -210,6 +210,9 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 				r.Get("/lookup-isbn", func(w http.ResponseWriter, r *http.Request) {
 					authSvc.RequireAdmin(http.HandlerFunc(handlers.LookupISBNHandler(database))).ServeHTTP(w, r)
 				})
+				r.Get("/search-ol", func(w http.ResponseWriter, r *http.Request) {
+					authSvc.RequireAuth(http.HandlerFunc(handlers.SearchOpenLibraryHandler(database))).ServeHTTP(w, r)
+				})
 				r.Get("/{id}", handlers.GetBookHandler(database))
 
 				// POST routes
