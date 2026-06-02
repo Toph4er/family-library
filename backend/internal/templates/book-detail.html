@@ -167,6 +167,10 @@
         <dt class="text-text-light/60">Condition</dt>
         <dd class="text-text mt-1">{{if .Book.Condition}}{{.Book.Condition}}{{else}}—{{end}}</dd>
       </div>
+      <div>
+        <dt class="text-text-light/60">Dewey Decimal</dt>
+        <dd class="text-text mt-1">{{if .Book.DeweyDecimalClass}}{{.Book.DeweyDecimalClass}}{{else}}—{{end}}</dd>
+      </div>
     </dl>
 
     <!-- Tag sections: Genres, Themes, Awards, Reading Levels -->
