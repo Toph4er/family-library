@@ -1386,30 +1386,58 @@ func resolveOpenLibraryAuthorKeys(raw []interface{}) []string {
 
 // fetchOpenLibraryAuthorName fetches the name of a single author by their OL key.
 func fetchOpenLibraryAuthorName(key string) string {
-	waitOLRateLimit()
+	maxRetries := 2
+	var body []byte
+	var resp *http.Response
+	var lastErr error
 
-	u := fmt.Sprintf("%s%s.json", olConfig.BaseURL, key)
-	req, err := http.NewRequest("GET", u, nil)
-	if err != nil {
-		slog.Warn("failed to build Open Library author request", "key", key, "error", err)
-		return ""
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		if attempt > 0 {
+			backoff := time.Duration(attempt) * time.Second
+			time.Sleep(backoff)
+			slog.Info("retrying Open Library author request", "key", key, "attempt", attempt+1, "backoff", backoff)
+		}
+
+		waitOLRateLimit()
+
+		u := fmt.Sprintf("%s%s.json", olConfig.BaseURL, key)
+		req, err := http.NewRequest("GET", u, nil)
+		if err != nil {
+			slog.Warn("failed to build Open Library author request", "key", key, "error", err)
+			return ""
+		}
+		req.Header.Set("User-Agent", olConfig.UserAgent)
+
+		resp, err = apiHTTPClient.Do(req)
+		if err != nil {
+			lastErr = fmt.Errorf("Open Library author HTTP request: %w", err)
+			continue
+		}
+
+		body, err = io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			lastErr = fmt.Errorf("reading Open Library author response: %w", err)
+			continue
+		}
+
+		if resp.StatusCode == http.StatusOK {
+			break // success
+		}
+
+		lastErr = fmt.Errorf("Open Library author returned status %d", resp.StatusCode)
 	}
-	req.Header.Set("User-Agent", olConfig.UserAgent)
 
-	resp, err := apiHTTPClient.Do(req)
-	if err != nil {
-		slog.Warn("Open Library author HTTP request failed", "key", key, "error", err)
-		return ""
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		slog.Warn("Open Library author request returned non-OK status", "key", key, "status", resp.StatusCode)
+	if resp == nil || resp.StatusCode != http.StatusOK {
+		if lastErr == nil {
+			lastErr = fmt.Errorf("Open Library author request failed after %d attempts", maxRetries+1)
+		}
+		slog.Warn("Open Library author request failed after retries", "key", key, "error", lastErr)
 		return ""
 	}
 
 	var data map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+	if err := json.Unmarshal(body, &data); err != nil {
 		slog.Warn("failed to parse Open Library author response", "key", key, "error", err)
 		return ""
 	}
