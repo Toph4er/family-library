@@ -129,6 +129,9 @@ func (b *Book) FilterForGuest() {
 	if !visibility["description"] {
 		b.Description = nil
 	}
+	if !visibility["language"] {
+		b.Language = nil
+	}
 }
 
 // WishlistItem represents a book on the wishlist
@@ -180,6 +183,7 @@ type CreateBookRequest struct {
 	DeweyDecimalClass *string `json:"dewey_decimal_class"`
 	AgeRange          *string `json:"age_range"`
 	Series            *string `json:"series"`
+	Language          *string `json:"language"`
 }
 
 // UpdateBookRequest represents a book update request body
@@ -213,6 +217,7 @@ type UpdateBookRequest struct {
 	DeweyDecimalClass *string `json:"dewey_decimal_class"`
 	AgeRange          *string `json:"age_range"`
 	Series            *string `json:"series"`
+	Language          *string `json:"language"`
 }
 
 // CreateWishlistItemRequest represents a wishlist item creation request

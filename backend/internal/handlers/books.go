@@ -60,6 +60,7 @@ func scanBook(s scanner) (*models.Book, error) {
 	var coverSource sql.NullString
 	var deweyDecimalClass sql.NullString
 	var description sql.NullString
+	var language sql.NullString
 	var readCount sql.NullInt64
 	var guestVisibleFields sql.NullString
 
@@ -92,6 +93,7 @@ func scanBook(s scanner) (*models.Book, error) {
 		&coverSource,
 		&deweyDecimalClass,
 		&description,
+		&language,
 		&guestVisibleFields,
 		&b.CreatedAt,
 		&b.UpdatedAt,
@@ -130,6 +132,7 @@ func scanBook(s scanner) (*models.Book, error) {
 	b.CoverSource = nullStrPtr(coverSource)
 	b.DeweyDecimalClass = nullStrPtr(deweyDecimalClass)
 	b.Description = nullStrPtr(description)
+	b.Language = nullStrPtr(language)
 
 	// read_count defaults to 0 if NULL
 	if readCount.Valid {
@@ -187,7 +190,7 @@ const bookColumns = `
 	gift_from, gift_relationship, date_received,
 	condition, location, notes,
 	child_rating, quantity, read_count, last_read_date,
-	cover_image_url, cover_source, dewey_decimal_class,
+	cover_image_url, cover_source, dewey_decimal_class, description, language,
 	guest_visible_fields, created_at, updated_at
 `
 
@@ -408,8 +411,8 @@ func CreateBookHandler(db *sql.DB) http.HandlerFunc {
 				reading_levels, genres, themes, awards,
 				gift_from, gift_relationship, date_received,
 				condition, location, notes,
-				child_rating, quantity, read_count, last_read_date, cover_image_url, cover_source, dewey_decimal_class, guest_visible_fields
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?, ?, ?, ?)
+				child_rating, quantity, read_count, last_read_date, cover_image_url, cover_source, dewey_decimal_class, language, guest_visible_fields
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?, ?, ?, ?, ?)
 		`
 
 		result, err := db.Exec(query,
@@ -423,6 +426,7 @@ func CreateBookHandler(db *sql.DB) http.HandlerFunc {
 			nil, // cover_image_url
 			coverSource,
 			req.DeweyDecimalClass,
+			req.Language,
 			defaultGuestVisibleFields(),
 		)
 		if err != nil {
@@ -590,6 +594,10 @@ func UpdateBookHandler(db *sql.DB) http.HandlerFunc {
 		if req.DeweyDecimalClass != nil {
 			sets = append(sets, "dewey_decimal_class = ?")
 			args = append(args, ptrIfNonEmpty(*req.DeweyDecimalClass))
+		}
+		if req.Language != nil {
+			sets = append(sets, "language = ?")
+			args = append(args, ptrIfNonEmpty(*req.Language))
 		}
 
 		// Always update the timestamp
@@ -1008,8 +1016,8 @@ func ImportISBNHandler(db *sql.DB) http.HandlerFunc {
 				reading_levels, genres, themes, awards,
 				gift_from, gift_relationship, date_received,
 				condition, location, notes,
-				child_rating, quantity, read_count, cover_image_url, cover_source, dewey_decimal_class, description, guest_visible_fields
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?, ?, ?, ?)
+				child_rating, quantity, read_count, cover_image_url, cover_source, dewey_decimal_class, description, language, guest_visible_fields
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?, ?, ?, ?, ?)
 		`
 
 		result, err := db.Exec(query,
@@ -1037,6 +1045,7 @@ func ImportISBNHandler(db *sql.DB) http.HandlerFunc {
 			coverSource,
 			book.DeweyDecimalClass,
 			book.Description,
+			book.Language,
 			defaultGuestVisibleFields(),
 		)
 		if err != nil {
@@ -1448,6 +1457,7 @@ func defaultGuestVisibleFields() string {
 		"cover_source":       true,
 		"dewey_decimal_class": true,
 		"description":         true,
+		"language":            true,
 		"isbn":               false,
 		"condition":          false,
 		"location":           false,
@@ -1545,8 +1555,8 @@ func HTMLCreateBookHandler(db *sql.DB) http.HandlerFunc {
 				reading_levels, genres, themes, awards,
 				gift_from, gift_relationship, date_received,
 				condition, location, notes,
-				child_rating, quantity, read_count, last_read_date, cover_image_url, cover_source, dewey_decimal_class, guest_visible_fields
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?, ?, ?, ?)
+				child_rating, quantity, read_count, last_read_date, cover_image_url, cover_source, dewey_decimal_class, language, guest_visible_fields
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?, ?, ?, ?, ?)
 		`
 
 		result, err := db.Exec(query,
@@ -1572,6 +1582,7 @@ func HTMLCreateBookHandler(db *sql.DB) http.HandlerFunc {
 			ptrIfNonEmpty(r.FormValue("cover_image_url")),
 			coverSource,
 			ptrIfNonEmpty(r.FormValue("dewey_decimal_class")),
+			ptrIfNonEmpty(r.FormValue("language")),
 			defaultGuestVisibleFields(),
 		)
 		if err != nil {
@@ -1637,6 +1648,7 @@ func HTMLUpdateBookHandler(db *sql.DB) http.HandlerFunc {
 			"notes",
 			"cover_image_url",
 			"dewey_decimal_class",
+			"language",
 		}
 
 		// ISBN - already validated and normalized above; add to update sets
