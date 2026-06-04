@@ -10,7 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"git.rcsmaine.com/chris/library/backend/internal/auth"
+	"git.rcsmaine.com/chris/library/internal/auth"
 )
 
 // userResponse is the user data returned in API responses (without password_hash).

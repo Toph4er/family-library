@@ -16,9 +16,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"git.rcsmaine.com/chris/library/backend/internal/auth"
-	"git.rcsmaine.com/chris/library/backend/internal/db"
-	"git.rcsmaine.com/chris/library/backend/internal/handlers"
+	"git.rcsmaine.com/chris/library/internal/auth"
+	"git.rcsmaine.com/chris/library/internal/db"
+	"git.rcsmaine.com/chris/library/internal/handlers"
 )
 
 const (

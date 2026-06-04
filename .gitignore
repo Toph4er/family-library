@@ -2,11 +2,11 @@
 design-docs/
 
 # Go
-backend/vendor/
-backend/server
+vendor/
+server
 *.test
 *.out
-backend/go.work.sum
+go.work.sum
 .env
 .env.local
 

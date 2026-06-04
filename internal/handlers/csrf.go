@@ -3,8 +3,8 @@ package handlers
 import (
 	"net/http"
 
-	"git.rcsmaine.com/chris/library/backend/internal/auth"
-	"git.rcsmaine.com/chris/library/backend/internal/middleware"
+	"git.rcsmaine.com/chris/library/internal/auth"
+	"git.rcsmaine.com/chris/library/internal/middleware"
 )
 
 // CSRFTokenHandler handles GET /api/v1/csrf by returning the current CSRF

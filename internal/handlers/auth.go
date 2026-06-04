@@ -7,8 +7,8 @@ import (
 	"time"
 	"github.com/gorilla/sessions"
 
-	"git.rcsmaine.com/chris/library/backend/internal/auth"
-	"git.rcsmaine.com/chris/library/backend/internal/middleware"
+	"git.rcsmaine.com/chris/library/internal/auth"
+	"git.rcsmaine.com/chris/library/internal/middleware"
 )
 
 // pageData holds template context for login-related pages.

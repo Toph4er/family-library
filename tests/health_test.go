@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"git.rcsmaine.com/chris/library/backend/internal/handlers"
+	"git.rcsmaine.com/chris/library/internal/handlers"
 )
 
 func TestHealthHandler_OK(t *testing.T) {

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"git.rcsmaine.com/chris/library/backend/internal/handlers"
+	"git.rcsmaine.com/chris/library/internal/handlers"
 )
 
 func TestListSettingsHandler_Success(t *testing.T) {

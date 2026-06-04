@@ -8,7 +8,7 @@ import (
 	"github.com/gorilla/sessions"
 	"golang.org/x/crypto/bcrypt"
 
-	"git.rcsmaine.com/chris/library/backend/internal/middleware"
+	"git.rcsmaine.com/chris/library/internal/middleware"
 )
 
 const (

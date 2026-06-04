@@ -16,8 +16,8 @@ import (
 	"sync"
 	"time"
 
-	"git.rcsmaine.com/chris/library/backend/internal/auth"
-	"git.rcsmaine.com/chris/library/backend/internal/models"
+	"git.rcsmaine.com/chris/library/internal/auth"
+	"git.rcsmaine.com/chris/library/internal/models"
 
 	"github.com/go-chi/chi/v5"
 	"golang.org/x/time/rate"

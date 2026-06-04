@@ -1,10 +1,10 @@
 # Stage 1: Build Go binary
 FROM golang:1.26-alpine AS go-builder
 WORKDIR /app
-COPY backend/go.* ./
+COPY go.* ./
 RUN go mod download
-COPY backend/ ./
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o server ./cmd/
+COPY . ./
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o server ./cmd/library/
 
 # Stage 2: Final image
 FROM alpine:3.21
@@ -12,7 +12,7 @@ RUN apk --no-cache add ca-certificates wget
 WORKDIR /app
 COPY --from=go-builder /app/server ./server
 COPY --from=go-builder /app/migrations ./migrations
-COPY --from=go-builder /app/internal/templates ./internal/templates
+COPY --from=go-builder /app/internal/web ./internal/web
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup && \
     mkdir -p /app/data && chown -R appuser:appgroup /app
 USER appuser

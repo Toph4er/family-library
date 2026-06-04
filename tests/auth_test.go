@@ -9,7 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"git.rcsmaine.com/chris/library/backend/internal/handlers"
+	"git.rcsmaine.com/chris/library/internal/handlers"
 )
 
 func TestLoginHandler_Success(t *testing.T) {

@@ -12,7 +12,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"git.rcsmaine.com/chris/library/backend/internal/models"
+	"git.rcsmaine.com/chris/library/internal/models"
 )
 
 const familyMemberColumns = `id, name, relation, created_at, updated_at`

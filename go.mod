@@ -1,4 +1,4 @@
-module git.rcsmaine.com/chris/library/backend
+module git.rcsmaine.com/chris/library
 
 go 1.26
 

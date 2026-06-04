@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"git.rcsmaine.com/chris/library/backend/internal/models"
+	"git.rcsmaine.com/chris/library/internal/models"
 
 	"github.com/go-chi/chi/v5"
 )

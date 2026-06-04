@@ -12,9 +12,9 @@ import (
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 
-	"git.rcsmaine.com/chris/library/backend/internal/auth"
-	"git.rcsmaine.com/chris/library/backend/internal/handlers"
-	"git.rcsmaine.com/chris/library/backend/internal/middleware"
+	"git.rcsmaine.com/chris/library/internal/auth"
+	"git.rcsmaine.com/chris/library/internal/handlers"
+	"git.rcsmaine.com/chris/library/internal/middleware"
 )
 
 // RouterConfig holds optional dependencies for the router.

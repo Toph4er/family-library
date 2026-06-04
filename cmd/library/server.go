@@ -20,9 +20,9 @@ import (
 
 	"github.com/pressly/goose/v3"
 
-	"git.rcsmaine.com/chris/library/backend/internal/api"
-	"git.rcsmaine.com/chris/library/backend/internal/auth"
-	"git.rcsmaine.com/chris/library/backend/internal/db"
+	"git.rcsmaine.com/chris/library/internal/api"
+	"git.rcsmaine.com/chris/library/internal/auth"
+	"git.rcsmaine.com/chris/library/internal/db"
 )
 
 func main() {
@@ -95,7 +95,7 @@ func main() {
 	}
 
 	// -- Load HTML templates --
-	tmpls, err := loadTemplates("./internal/templates")
+	tmpls, err := loadTemplates("./internal/web")
 	if err != nil {
 		slog.Error("Failed to load templates", "error", err)
 		os.Exit(1)
