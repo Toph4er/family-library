@@ -628,14 +628,24 @@ func RenderBookFormPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 				}
 				return "/books/create"
 			}(),
-			"Title":            derefString(&book.Title),
-			"Subtitle":         derefString(book.Subtitle),
-			"Authors":          derefString(book.Authors),
-			"Illustrators":     derefString(book.Illustrators),
-			"ISBN":             derefString(book.ISBN),
-			"Publisher":        derefString(book.Publisher),
-			"PublicationYear":  func() string { if book.PublicationYear != nil { return strconv.Itoa(*book.PublicationYear) }; return "" }(),
-			"PageCount":        func() string { if book.PageCount != nil { return strconv.Itoa(*book.PageCount) }; return "" }(),
+			"Title":        derefString(&book.Title),
+			"Subtitle":     derefString(book.Subtitle),
+			"Authors":      derefString(book.Authors),
+			"Illustrators": derefString(book.Illustrators),
+			"ISBN":         derefString(book.ISBN),
+			"Publisher":    derefString(book.Publisher),
+			"PublicationYear": func() string {
+				if book.PublicationYear != nil {
+					return strconv.Itoa(*book.PublicationYear)
+				}
+				return ""
+			}(),
+			"PageCount": func() string {
+				if book.PageCount != nil {
+					return strconv.Itoa(*book.PageCount)
+				}
+				return ""
+			}(),
 			"BookType":         derefString(book.BookType),
 			"Condition":        derefString(book.Condition),
 			"Genres":           derefString(book.Genres),
@@ -649,7 +659,12 @@ func RenderBookFormPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 			"CoverImageURL":    derefString(book.CoverImageURL),
 			"Notes":            derefString(book.Notes),
 			"ChildRating":      derefInt(book.ChildRating),
-			"Quantity":         func() int { if book.Quantity > 0 { return book.Quantity }; return 1 }(),
+			"Quantity": func() int {
+				if book.Quantity > 0 {
+					return book.Quantity
+				}
+				return 1
+			}(),
 		}
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
