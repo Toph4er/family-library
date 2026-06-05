@@ -9,21 +9,31 @@
   </td>
   <td class="py-3 px-4 text-text-light/60 text-sm">{{.created_at}}</td>
   <td class="py-3 px-4">
-    <div class="flex gap-1">
+    <div class="flex items-center gap-2">
       <button type="button"
         onclick="openSettingsModal('/settings/users/{{.id}}/edit')"
-        class="text-primary hover:text-text-light text-sm no-underline p-1"
+        class="text-text-light/60 hover:text-primary transition-colors"
         aria-label="Edit user {{.username}}"
-      >✏️</button>
+      >
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+      </button>
       {{if ne .username "current"}}
       <button type="button"
         hx-delete="/settings/users/{{.id}}"
         hx-confirm="Delete user {{.username}}?"
         hx-target="closest tr"
         hx-swap="outerHTML"
-        class="text-error hover:text-error/80 text-sm no-underline p-1"
+        class="text-text-light/60 hover:text-error transition-colors"
         aria-label="Delete user {{.username}}"
-      >🗑️</button>
+      >
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+        </svg>
+      </button>
       {{end}}
     </div>
   </td>
