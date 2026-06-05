@@ -483,25 +483,53 @@ var tagInputs = {};
     if (switchBtn) {
       switchBtn.addEventListener('click', function() {
         if (!html5QrcodeScanner) return;
-        switchBtn.disabled = true;
-        switchBtn.innerHTML = '<span class="flex items-center justify-center gap-2"><svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32"/></svg> Switching...</span>';
 
-        // Toggle facing mode
-        currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+        // Check if scanner is in a running state before trying to switch.
+        // render() is async — the camera may not be ready yet.
+        var state = html5QrcodeScanner.getState();
+        if (state !== 1) { // 1 = Html5QrcodeScannerState.SCANNING
+          switchBtn.disabled = true;
+          switchBtn.innerHTML = '<span class="flex items-center justify-center gap-2"><svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32"/></svg> Switching...</span>';
 
-        // Use applyVideoConstraints to switch cameras without destroying the scanner.
-        // This avoids the deviceId exact-match issue on Chrome Android.
-        html5QrcodeScanner.applyVideoConstraints({ facingMode: currentFacingMode })
-          .then(function() {
+          // Poll until the scanner reaches a running state, then switch.
+          var checkReady = setInterval(function() {
+            var s = html5QrcodeScanner.getState();
+            if (s === 1) {
+              clearInterval(checkReady);
+              doSwitch();
+            }
+          }, 100);
+
+          // Timeout after 10 seconds if the scanner never starts.
+          setTimeout(function() {
+            clearInterval(checkReady);
             restoreSwitchBtn();
-            showStatus('Switched to ' + (currentFacingMode === 'environment' ? 'rear' : 'front') + ' camera.');
-          })
-          .catch(function(err) {
-            console.error('Failed to switch camera:', err);
-            restoreSwitchBtn();
-            showStatus('Failed to switch camera.', true);
-          });
+            showStatus('Camera not ready. Please try again.', true);
+          }, 10000);
+
+          return;
+        }
+
+        doSwitch();
       });
+    }
+
+    function doSwitch() {
+      // Toggle facing mode
+      currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+
+      // Use applyVideoConstraints to switch cameras without destroying the scanner.
+      // This avoids the deviceId exact-match issue on Chrome Android.
+      html5QrcodeScanner.applyVideoConstraints({ facingMode: currentFacingMode })
+        .then(function() {
+          restoreSwitchBtn();
+          showStatus('Switched to ' + (currentFacingMode === 'environment' ? 'rear' : 'front') + ' camera.');
+        })
+        .catch(function(err) {
+          console.error('Failed to switch camera:', err);
+          restoreSwitchBtn();
+          showStatus('Failed to switch camera.', true);
+        });
     }
   }
 
