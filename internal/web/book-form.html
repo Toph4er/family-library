@@ -470,7 +470,7 @@ var tagInputs = {};
         if (lookupBtn) lookupBtn.click();
       }
     }, function(err) {
-      // Scan error (ignoring — continuous scan keeps trying)
+      console.warn('html5-qrcode scan error:', err);
     });
   }
 
