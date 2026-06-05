@@ -492,10 +492,62 @@ var tagInputs = {};
     // Wire up the camera switch button
     var switchBtn = document.getElementById('camera-switch-btn');
     if (switchBtn) {
+      var currentCameraIndex = 0;
       switchBtn.addEventListener('click', function() {
-        if (html5QrcodeScanner) {
-          html5QrcodeScanner.switchCamera();
-        }
+        if (!html5QrcodeScanner) return;
+        switchBtn.disabled = true;
+        switchBtn.textContent = 'Switching...';
+        Html5Qrcode.getCameras().then(function(cameras) {
+          if (!cameras || cameras.length < 2) {
+            switchBtn.disabled = false;
+            switchBtn.innerHTML = '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 16v4a2 2 0 0 1-2 2h-4"/><path d="M14 22l2-2-2-2"/><path d="M4 8V4a2 2 0 0 1 2-2h4"/><path d="M10 2L8 4l2 2"/><path d="M2 16v-4a2 2 0 0 1 2-2h4"/><path d="M2 12h2l2 2"/><path d="M22 8v4a2 2 0 0 1-2 2h-4"/><path d="M18 16h2l2-2"/></svg> Switch Camera';
+            if (statusEl) {
+              statusEl.textContent = 'Only one camera available.';
+              statusEl.className = 'text-center mt-2 text-sm text-text-light/70';
+            }
+            return;
+          }
+          currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
+          var nextCamera = cameras[currentCameraIndex];
+          html5QrcodeScanner.clear().then(function() {
+            html5QrcodeScanner = new Html5QrcodeScanner("scanner-reader", {
+              fps: 10,
+              cameraIdOrConfig: nextCamera.id,
+              qrbox: { width: 250, height: 250 },
+              aspectRatio: 1.0,
+              rememberLastUsedCamera: true,
+              showTorchButtonIfNeeded: true
+            }, false);
+            html5QrcodeScanner.render(function(decodedText) {
+              var isbn = decodedText.replace(/[^0-9Xx]/g, '');
+              if (isbn.length >= 10) {
+                if (isbnInput) isbnInput.value = isbn;
+                closeModal();
+                var lookupBtn = document.getElementById('isbn-lookup-btn');
+                if (lookupBtn) lookupBtn.click();
+              }
+            }, function(err) {
+              console.warn('html5-qrcode scan error:', err);
+            });
+            switchBtn.disabled = false;
+            switchBtn.innerHTML = '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 16v4a2 2 0 0 1-2 2h-4"/><path d="M14 22l2-2-2-2"/><path d="M4 8V4a2 2 0 0 1 2-2h4"/><path d="M10 2L8 4l2 2"/><path d="M2 16v-4a2 2 0 0 1 2-2h4"/><path d="M2 12h2l2 2"/><path d="M22 8v4a2 2 0 0 1-2 2h-4"/><path d="M18 16h2l2-2"/></svg> Switch Camera';
+            if (statusEl) {
+              statusEl.textContent = 'Switched to: ' + nextCamera.label;
+              statusEl.className = 'text-center mt-2 text-sm text-text-light/70';
+              setTimeout(function() {
+                if (statusEl) statusEl.textContent = '';
+              }, 2000);
+            }
+          }).catch(function(err) {
+            console.error('Failed to clear scanner:', err);
+            switchBtn.disabled = false;
+            switchBtn.innerHTML = '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 16v4a2 2 0 0 1-2 2h-4"/><path d="M14 22l2-2-2-2"/><path d="M4 8V4a2 2 0 0 1 2-2h4"/><path d="M10 2L8 4l2 2"/><path d="M2 16v-4a2 2 0 0 1 2-2h4"/><path d="M2 12h2l2 2"/><path d="M22 8v4a2 2 0 0 1-2 2h-4"/><path d="M18 16h2l2-2"/></svg> Switch Camera';
+          });
+        }).catch(function(err) {
+          console.error('Failed to list cameras:', err);
+          switchBtn.disabled = false;
+          switchBtn.innerHTML = '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 16v4a2 2 0 0 1-2 2h-4"/><path d="M14 22l2-2-2-2"/><path d="M4 8V4a2 2 0 0 1 2-2h4"/><path d="M10 2L8 4l2 2"/><path d="M2 16v-4a2 2 0 0 1 2-2h4"/><path d="M2 12h2l2 2"/><path d="M22 8v4a2 2 0 0 1-2 2h-4"/><path d="M18 16h2l2-2"/></svg> Switch Camera';
+        });
       });
     }
   }
