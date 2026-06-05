@@ -486,69 +486,21 @@ var tagInputs = {};
         switchBtn.disabled = true;
         switchBtn.innerHTML = '<span class="flex items-center justify-center gap-2"><svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32"/></svg> Switching...</span>';
 
-        Html5Qrcode.getCameras().then(function(cameras) {
-          if (!cameras || cameras.length === 0) {
+        // Toggle facing mode
+        currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+
+        // Use applyVideoConstraints to switch cameras without destroying the scanner.
+        // This avoids the deviceId exact-match issue on Chrome Android.
+        html5QrcodeScanner.applyVideoConstraints({ facingMode: currentFacingMode })
+          .then(function() {
             restoreSwitchBtn();
-            showStatus('No cameras available.', true);
-            return;
-          }
-
-          // Toggle facing mode
-          currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
-
-          // Find a camera with the desired facing mode by label
-          var targetCamera = cameras.find(function(cam) {
-            var label = (cam.label || '').toLowerCase();
-            if (currentFacingMode === 'environment') {
-              return label.indexOf('back') !== -1 || label.indexOf('rear') !== -1 || label.indexOf('environment') !== -1 || label.indexOf('back') !== -1;
-            } else {
-              return label.indexOf('front') !== -1 || label.indexOf('facing') !== -1 || label.indexOf('user') !== -1;
-            }
-          });
-
-          // Build camera config — use deviceId as object (not string) to avoid { exact: ... } wrapper
-          // Chrome Android ignores the exact wrapper and falls back to front camera
-          var cameraConfig;
-          if (targetCamera) {
-            cameraConfig = { deviceId: targetCamera.id };
-          } else {
-            // Fallback: no labeled match, use facingMode constraint directly
-            cameraConfig = { facingMode: currentFacingMode };
-          }
-
-          html5QrcodeScanner.clear().then(function() {
-            html5QrcodeScanner = new Html5QrcodeScanner("scanner-reader", {
-              fps: 10,
-              cameraIdOrConfig: cameraConfig,
-              qrbox: { width: 250, height: 250 },
-              aspectRatio: 1.0,
-              rememberLastUsedCamera: true,
-              showTorchButtonIfNeeded: true
-            }, false);
-            html5QrcodeScanner.render(function(decodedText) {
-              var isbn = decodedText.replace(/[^0-9Xx]/g, '');
-              if (isbn.length >= 10) {
-                if (isbnInput) isbnInput.value = isbn;
-                closeModal();
-                var lookupBtn = document.getElementById('isbn-lookup-btn');
-                if (lookupBtn) lookupBtn.click();
-              }
-            }, function(err) {
-              console.warn('html5-qrcode scan error:', err);
-            });
-            restoreSwitchBtn();
-            var camName = targetCamera ? (targetCamera.label || 'camera') : currentFacingMode;
             showStatus('Switched to ' + (currentFacingMode === 'environment' ? 'rear' : 'front') + ' camera.');
-          }).catch(function(err) {
-            console.error('Failed to clear scanner:', err);
+          })
+          .catch(function(err) {
+            console.error('Failed to switch camera:', err);
             restoreSwitchBtn();
             showStatus('Failed to switch camera.', true);
           });
-        }).catch(function(err) {
-          console.error('Failed to list cameras:', err);
-          restoreSwitchBtn();
-          showStatus('Failed to list cameras.', true);
-        });
       });
     }
   }
