@@ -253,25 +253,6 @@
     </div>
   </form>
 
-  <!-- Barcode Scanner Modal -->
-  <div id="scanner-modal" class="hidden modal-backdrop" role="dialog" aria-modal="true" aria-label="ISBN barcode scanner">
-    <div class="modal-content modal-md">
-      <div class="flex items-center justify-between p-4 border-b" style="border-color: rgba(139, 69, 19, 0.1);">
-        <h3 class="text-lg font-heading text-primary">Scan ISBN Barcode</h3>
-        <button type="button" id="scanner-close-btn" class="text-text-light/60 hover:text-text transition-colors p-1" aria-label="Close scanner">
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-      </div>
-      <div class="p-4">
-        <div id="scanner-reader" class="w-full rounded-lg overflow-hidden bg-black" style="min-height: 240px;"></div>
-        <p class="text-text-light/60 text-sm text-center mt-3">Point your camera at the ISBN barcode (usually on the back cover)</p>
-        <div id="scanner-status" class="text-center mt-2 text-sm" role="status" aria-live="polite"></div>
-      </div>
-    </div>
-  </div>
-
 </div>
 {{end}}
 
@@ -414,36 +395,58 @@ var tagInputs = {};
 // ISBN Barcode Scanner
 (function() {
   var scanBtn = document.getElementById('isbn-scan-btn');
-  var modal = document.getElementById('scanner-modal');
-  var closeBtn = document.getElementById('scanner-close-btn');
-  var statusEl = document.getElementById('scanner-status');
   var isbnInput = document.getElementById('isbn');
-  if (!scanBtn || !modal) return;
+  if (!scanBtn) return;
 
   var html5QrcodeScanner = null;
+  var modal = null;
+  var statusEl = null;
 
-  scanBtn.addEventListener('click', function() {
-    modal.classList.remove('hidden');
-    statusEl.textContent = 'Starting camera...';
-    statusEl.className = 'text-center mt-2 text-sm text-text-light/70';
+  function openModal() {
+    modal = document.createElement('div');
+    modal.id = 'scanner-modal';
+    modal.className = 'modal-backdrop';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'ISBN barcode scanner');
+    modal.innerHTML = `
+      <div class="modal-content modal-md">
+        <div class="flex items-center justify-between p-4 border-b" style="border-color: rgba(139, 69, 19, 0.1);">
+          <h3 class="text-lg font-heading text-primary">Scan ISBN Barcode</h3>
+          <button type="button" class="text-text-light/60 hover:text-text transition-colors p-1" aria-label="Close scanner" onclick="document.getElementById('scanner-modal').remove()">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div class="p-4">
+          <div id="scanner-reader" class="w-full rounded-lg overflow-hidden bg-black" style="min-height: 240px;"></div>
+          <p class="text-text-light/60 text-sm text-center mt-3">Point your camera at the ISBN barcode (usually on the back cover)</p>
+          <div id="scanner-status" class="text-center mt-2 text-sm" role="status" aria-live="polite"></div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    statusEl = document.getElementById('scanner-status');
 
-    // Dynamically load the html5-qrcode library
-    if (!window.Html5QrcodeScanner) {
-      var script = document.createElement('script');
-      script.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
-      script.onload = function() { initScanner(); };
-      script.onerror = function() {
-        statusEl.textContent = 'Failed to load scanner library.';
-        statusEl.className = 'text-center mt-2 text-sm text-error';
-      };
-      document.head.appendChild(script);
-    } else {
-      initScanner();
+    // Close on backdrop click
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) closeModal();
+    });
+  }
+
+  function closeModal() {
+    if (html5QrcodeScanner) {
+      html5QrcodeScanner.clear().catch(function() {});
+      html5QrcodeScanner = null;
     }
-  });
+    if (modal) {
+      modal.remove();
+      modal = null;
+    }
+  }
 
   function initScanner() {
-    var readerEl = document.getElementById('scanner-reader');
     if (html5QrcodeScanner) {
       html5QrcodeScanner.clear().catch(function() {});
     }
@@ -462,8 +465,6 @@ var tagInputs = {};
       if (isbn.length >= 10) {
         if (isbnInput) isbnInput.value = isbn;
         closeModal();
-        statusEl.textContent = 'ISBN scanned: ' + isbn;
-        statusEl.className = 'text-center mt-2 text-sm text-accent';
         // Trigger lookup
         var lookupBtn = document.getElementById('isbn-lookup-btn');
         if (lookupBtn) lookupBtn.click();
@@ -473,24 +474,33 @@ var tagInputs = {};
     });
   }
 
-  function closeModal() {
-    if (html5QrcodeScanner) {
-      html5QrcodeScanner.clear().catch(function() {});
-      html5QrcodeScanner = null;
+  scanBtn.addEventListener('click', function() {
+    openModal();
+    if (statusEl) {
+      statusEl.textContent = 'Starting camera...';
+      statusEl.className = 'text-center mt-2 text-sm text-text-light/70';
     }
-    modal.classList.add('hidden');
-  }
 
-  closeBtn.addEventListener('click', closeModal);
-
-  // Close on backdrop click
-  modal.addEventListener('click', function(e) {
-    if (e.target === modal) closeModal();
+    // Dynamically load the html5-qrcode library
+    if (!window.Html5QrcodeScanner) {
+      var script = document.createElement('script');
+      script.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
+      script.onload = function() { initScanner(); };
+      script.onerror = function() {
+        if (statusEl) {
+          statusEl.textContent = 'Failed to load scanner library.';
+          statusEl.className = 'text-center mt-2 text-sm text-error';
+        }
+      };
+      document.head.appendChild(script);
+    } else {
+      initScanner();
+    }
   });
 
   // Close on Escape key
   document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+    if (e.key === 'Escape' && modal) {
       closeModal();
     }
   });
