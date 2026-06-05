@@ -278,6 +278,7 @@ function openSettingsModal(url) {
       });
 
       document.body.appendChild(serverBackdrop);
+      htmx.process(serverBackdrop);
     })
     .catch(function(err) {
       console.error('Failed to load modal:', err);
