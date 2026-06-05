@@ -24,6 +24,7 @@ type pageContext struct {
 	CSRFToken              string
 	IsAdmin                bool
 	IsAuthenticated        bool
+	IsGuest                bool
 	Username               string
 	SiteName               string
 	SiteTagline            string
@@ -50,6 +51,7 @@ func buildPageContext(r *http.Request, store *sessions.CookieStore, sessionName 
 	if user := auth.GetUserFromContext(r); user != nil {
 		ctx.IsAuthenticated = true
 		ctx.IsAdmin = !user.IsGuest
+		ctx.IsGuest = user.IsGuest
 		ctx.Username = user.Username
 		if s := middleware.GetSessionFromContext(r); s != nil {
 			if token, ok := s.Values[middleware.CSRFTokenKey].(string); ok && token != "" {
@@ -81,6 +83,7 @@ func buildPageContext(r *http.Request, store *sessions.CookieStore, sessionName 
 	} else if isGuest, ok := session.Values[auth.IsGuestKey].(bool); ok && isGuest {
 		ctx.IsAuthenticated = true
 		ctx.IsAdmin = false
+		ctx.IsGuest = true
 	}
 
 	// Extract CSRF token from session if available.

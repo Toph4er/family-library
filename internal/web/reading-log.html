@@ -18,7 +18,8 @@
   <!-- Vine divider -->
   <div class="vine-divider max-w-md mx-auto" aria-hidden="true"></div>
 
-  <!-- Log Reading button -->
+  <!-- Log Reading button (hidden for Guests) -->
+  {{if not .IsGuest}}
   <div class="flex justify-center">
     <button
       type="button"
@@ -37,6 +38,7 @@
       </span>
     </button>
   </div>
+  {{end}}
 
   <!-- Reading Log Entries -->
   <section aria-label="Reading log entries">
@@ -89,7 +91,8 @@
               <p class="text-sm text-text-light/60 mt-1">{{.Notes}}</p>
               {{end}}
             </div>
-            <!-- Delete button -->
+            <!-- Delete button (hidden for Guests) -->
+            {{if not .IsGuest}}
             <div class="shrink-0">
               <button type="button"
                 hx-delete="/reading-logs/{{.ID}}"
@@ -105,6 +108,7 @@
                 </svg>
               </button>
             </div>
+            {{end}}
           </div>
         </div>
         {{end}}
