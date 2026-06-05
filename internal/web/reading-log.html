@@ -92,7 +92,7 @@
               {{end}}
             </div>
             <!-- Delete button (hidden for Guests) -->
-            {{if not .IsGuest}}
+            {{if not $.IsGuest}}
             <div class="shrink-0">
               <button type="button"
                 hx-delete="/reading-logs/{{.ID}}"
