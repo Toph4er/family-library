@@ -4,7 +4,6 @@ package tests
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -177,11 +176,4 @@ func setURLParam(r *http.Request, key, value string) *http.Request {
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add(key, value)
 	return r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, rctx))
-}
-
-// parseJSONBody decodes the response body into a map.
-func parseJSONBody(rec *httptest.ResponseRecorder) map[string]interface{} {
-	var body map[string]interface{}
-	json.NewDecoder(rec.Body).Decode(&body)
-	return body
 }

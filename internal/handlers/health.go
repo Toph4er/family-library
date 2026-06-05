@@ -36,7 +36,7 @@ func (h *HealthHandler) Check(w http.ResponseWriter, r *http.Request) {
 	// Verify the database is reachable with a lightweight query.
 	if err := h.db.Ping(); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(healthResponse{
+		_ = json.NewEncoder(w).Encode(healthResponse{
 			Status: "error",
 			Detail: "database unreachable",
 		})
@@ -44,5 +44,5 @@ func (h *HealthHandler) Check(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(healthResponse{Status: "ok"})
+	_ = json.NewEncoder(w).Encode(healthResponse{Status: "ok"})
 }

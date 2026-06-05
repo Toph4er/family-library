@@ -451,20 +451,20 @@ func RenderWishlistFormPage(tmpl *template.Template, db *sql.DB, store *sessions
 				}
 				return "/wishlist/create"
 			}(),
-			"Title":         item.Title,
-			"Author":        derefString(item.Author),
-			"ISBN":          derefString(item.ISBN),
-			"Reason":        derefString(item.Reason),
+			"Title":  item.Title,
+			"Author": derefString(item.Author),
+			"ISBN":   derefString(item.ISBN),
+			"Reason": derefString(item.Reason),
 			"Priority": func() int {
 				if isEdit {
 					return item.Priority
 				}
 				return 3
 			}(),
-			"AmazonURL":     derefString(item.AmazonURL),
+			"AmazonURL":      derefString(item.AmazonURL),
 			"ThriftbooksURL": derefString(item.ThriftbooksURL),
-			"CoverImageURL": derefString(item.CoverImageURL),
-			"Notes":         derefString(item.Notes),
+			"CoverImageURL":  derefString(item.CoverImageURL),
+			"Notes":          derefString(item.Notes),
 		}
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -622,34 +622,34 @@ func RenderBookFormPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 			"IsEdit":          isEdit,
 			"BookTitle":       bookTitle,
 			"CancelURL":       cancelURL,
-			"ActionURL":       func() string {
+			"ActionURL": func() string {
 				if isEdit {
 					return "/books/" + strconv.FormatInt(bookID, 10) + "/update"
 				}
 				return "/books/create"
 			}(),
-			"Title":           derefString(&book.Title),
-			"Subtitle":        derefString(book.Subtitle),
-			"Authors":         derefString(book.Authors),
-			"Illustrators":    derefString(book.Illustrators),
-			"ISBN":            derefString(book.ISBN),
-			"Publisher":       derefString(book.Publisher),
-			"PublicationYear": derefInt(book.PublicationYear),
-			"PageCount":       derefInt(book.PageCount),
-			"BookType":        derefString(book.BookType),
-			"Condition":       derefString(book.Condition),
-			"Genres":          derefString(book.Genres),
-			"Themes":          derefString(book.Themes),
-			"Awards":          derefString(book.Awards),
-			"ReadingLevels":   derefString(book.ReadingLevels),
-			"GiftFrom":        derefString(book.GiftFrom),
+			"Title":            derefString(&book.Title),
+			"Subtitle":         derefString(book.Subtitle),
+			"Authors":          derefString(book.Authors),
+			"Illustrators":     derefString(book.Illustrators),
+			"ISBN":             derefString(book.ISBN),
+			"Publisher":        derefString(book.Publisher),
+			"PublicationYear":  derefInt(book.PublicationYear),
+			"PageCount":        derefInt(book.PageCount),
+			"BookType":         derefString(book.BookType),
+			"Condition":        derefString(book.Condition),
+			"Genres":           derefString(book.Genres),
+			"Themes":           derefString(book.Themes),
+			"Awards":           derefString(book.Awards),
+			"ReadingLevels":    derefString(book.ReadingLevels),
+			"GiftFrom":         derefString(book.GiftFrom),
 			"GiftRelationship": derefString(book.GiftRelationship),
-			"DateReceived":    derefString(book.DateReceived),
-			"Location":        derefString(book.Location),
-			"CoverImageURL":   derefString(book.CoverImageURL),
-			"Notes":           derefString(book.Notes),
-			"ChildRating":     derefInt(book.ChildRating),
-			"Quantity":        book.Quantity,
+			"DateReceived":     derefString(book.DateReceived),
+			"Location":         derefString(book.Location),
+			"CoverImageURL":    derefString(book.CoverImageURL),
+			"Notes":            derefString(book.Notes),
+			"ChildRating":      derefInt(book.ChildRating),
+			"Quantity":         book.Quantity,
 		}
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -681,4 +681,3 @@ func BuildPageContextForTest(r *http.Request, store *sessions.CookieStore, sessi
 		Username:        ctx.Username,
 	}
 }
-

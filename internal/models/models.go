@@ -3,45 +3,44 @@ package models
 import "encoding/json"
 
 // Book represents a book in the collection
-//
 type Book struct {
-	ID                  int64     `json:"id"`
-	ISBN                *string   `json:"isbn,omitempty"`
-	Title               string    `json:"title"`
-	Subtitle            *string   `json:"subtitle,omitempty"`
-	Authors             *string   `json:"authors,omitempty"`       // JSON array
-	Illustrators        *string   `json:"illustrators,omitempty"`  // JSON array
-	Publisher           *string   `json:"publisher,omitempty"`
-	PublicationYear     *int      `json:"publication_year,omitempty"`
-	PageCount           *int      `json:"page_count,omitempty"`
-	BookType            *string   `json:"book_type,omitempty"`
-	ReadingLevels       *string   `json:"reading_levels,omitempty"`  // JSON array
-	Genres              *string   `json:"genres,omitempty"`          // JSON array
-	Themes              *string   `json:"themes,omitempty"`          // JSON array
-	Awards              *string   `json:"awards,omitempty"`          // JSON array
-	GiftFrom            *string   `json:"gift_from,omitempty"`
-	GiftRelationship    *string   `json:"gift_relationship,omitempty"`
-	DateReceived        *string   `json:"date_received,omitempty"`
-	Condition           *string   `json:"condition,omitempty"`
-	Location            *string   `json:"location,omitempty"`
-	Notes               *string   `json:"notes,omitempty"`
-	ChildRating         *int      `json:"child_rating,omitempty"`
-	Quantity            int       `json:"quantity"`
-	ReadCount           int       `json:"read_count"`
-	LastReadDate        *string   `json:"last_read_date,omitempty"`
-	CoverImageURL       *string   `json:"cover_image_url,omitempty"`
-	CoverSource         *string   `json:"cover_source,omitempty"`
-	DeweyDecimalClass   *string   `json:"dewey_decimal_class,omitempty"`
-	Description         *string   `json:"description,omitempty"`
-	Language            *string   `json:"language,omitempty"`
-	SubjectPlaces       *string   `json:"subject_places,omitempty"`  // JSON array
-	SubjectPeople       *string   `json:"subject_people,omitempty"`  // JSON array
-	SubjectTimes        *string   `json:"subject_times,omitempty"`   // JSON array
-	AgeRange            *string   `json:"age_range,omitempty"`
-	Series              *string   `json:"series,omitempty"`
-	GuestVisibleFields  string    `json:"-"`
-	CreatedAt           string    `json:"created_at"`
-	UpdatedAt           string    `json:"updated_at"`
+	ID                 int64   `json:"id"`
+	ISBN               *string `json:"isbn,omitempty"`
+	Title              string  `json:"title"`
+	Subtitle           *string `json:"subtitle,omitempty"`
+	Authors            *string `json:"authors,omitempty"`      // JSON array
+	Illustrators       *string `json:"illustrators,omitempty"` // JSON array
+	Publisher          *string `json:"publisher,omitempty"`
+	PublicationYear    *int    `json:"publication_year,omitempty"`
+	PageCount          *int    `json:"page_count,omitempty"`
+	BookType           *string `json:"book_type,omitempty"`
+	ReadingLevels      *string `json:"reading_levels,omitempty"` // JSON array
+	Genres             *string `json:"genres,omitempty"`         // JSON array
+	Themes             *string `json:"themes,omitempty"`         // JSON array
+	Awards             *string `json:"awards,omitempty"`         // JSON array
+	GiftFrom           *string `json:"gift_from,omitempty"`
+	GiftRelationship   *string `json:"gift_relationship,omitempty"`
+	DateReceived       *string `json:"date_received,omitempty"`
+	Condition          *string `json:"condition,omitempty"`
+	Location           *string `json:"location,omitempty"`
+	Notes              *string `json:"notes,omitempty"`
+	ChildRating        *int    `json:"child_rating,omitempty"`
+	Quantity           int     `json:"quantity"`
+	ReadCount          int     `json:"read_count"`
+	LastReadDate       *string `json:"last_read_date,omitempty"`
+	CoverImageURL      *string `json:"cover_image_url,omitempty"`
+	CoverSource        *string `json:"cover_source,omitempty"`
+	DeweyDecimalClass  *string `json:"dewey_decimal_class,omitempty"`
+	Description        *string `json:"description,omitempty"`
+	Language           *string `json:"language,omitempty"`
+	SubjectPlaces      *string `json:"subject_places,omitempty"` // JSON array
+	SubjectPeople      *string `json:"subject_people,omitempty"` // JSON array
+	SubjectTimes       *string `json:"subject_times,omitempty"`  // JSON array
+	AgeRange           *string `json:"age_range,omitempty"`
+	Series             *string `json:"series,omitempty"`
+	GuestVisibleFields string  `json:"-"`
+	CreatedAt          string  `json:"created_at"`
+	UpdatedAt          string  `json:"updated_at"`
 }
 
 // FilterForGuest nils out fields that are not visible to guests, based on the
@@ -150,50 +149,48 @@ func (b *Book) FilterForGuest() {
 }
 
 // WishlistItem represents a book on the wishlist
-//
 type WishlistItem struct {
-	ID             int64    `json:"id"`
-	Title          string   `json:"title"`
-	Author         *string  `json:"author,omitempty"`
-	ISBN           *string  `json:"isbn,omitempty"`
-	Reason         *string  `json:"reason,omitempty"`
-	Priority       int      `json:"priority"`
-	AmazonURL      *string  `json:"amazon_url,omitempty"`
-	ThriftbooksURL *string  `json:"thriftbooks_url,omitempty"`
-	OtherURLs      *string  `json:"other_urls,omitempty"`  // JSON array
-	CoverImageURL  *string  `json:"cover_image_url,omitempty"`
-	RequestedBy    *string  `json:"requested_by,omitempty"`
-	RequestedAt    string   `json:"requested_at"`
-	Fulfilled      bool     `json:"fulfilled"`
-	FulfilledAt    *string  `json:"fulfilled_at,omitempty"`
-	Notes          *string  `json:"notes,omitempty"`
+	ID             int64   `json:"id"`
+	Title          string  `json:"title"`
+	Author         *string `json:"author,omitempty"`
+	ISBN           *string `json:"isbn,omitempty"`
+	Reason         *string `json:"reason,omitempty"`
+	Priority       int     `json:"priority"`
+	AmazonURL      *string `json:"amazon_url,omitempty"`
+	ThriftbooksURL *string `json:"thriftbooks_url,omitempty"`
+	OtherURLs      *string `json:"other_urls,omitempty"` // JSON array
+	CoverImageURL  *string `json:"cover_image_url,omitempty"`
+	RequestedBy    *string `json:"requested_by,omitempty"`
+	RequestedAt    string  `json:"requested_at"`
+	Fulfilled      bool    `json:"fulfilled"`
+	FulfilledAt    *string `json:"fulfilled_at,omitempty"`
+	Notes          *string `json:"notes,omitempty"`
 	// IsAdmin is set by page handlers for template conditionals. It is not
 	// serialized to JSON (json:"-" omitempty).
 	IsAdmin bool `json:"-"`
 }
 
 // CreateBookRequest represents a book creation request body
-//
 type CreateBookRequest struct {
-	ISBN             *string `json:"isbn"`
-	Title            string  `json:"title" validate:"required"`
-	Subtitle         *string `json:"subtitle"`
-	Authors          *string `json:"authors"`
-	Illustrators     *string `json:"illustrators"`
-	Publisher        *string `json:"publisher"`
-	PublicationYear  *int    `json:"publication_year"`
-	PageCount        *int    `json:"page_count"`
-	BookType         *string `json:"book_type"`
-	ReadingLevels    *string `json:"reading_levels"`
-	Genres           *string `json:"genres"`
-	Themes           *string `json:"themes"`
-	Awards           *string `json:"awards"`
-	GiftFrom         *string `json:"gift_from"`
-	GiftRelationship *string `json:"gift_relationship"`
-	DateReceived     *string `json:"date_received"`
-	Condition        *string `json:"condition"`
-	Location         *string `json:"location"`
-	Notes            *string `json:"notes"`
+	ISBN              *string `json:"isbn"`
+	Title             string  `json:"title" validate:"required"`
+	Subtitle          *string `json:"subtitle"`
+	Authors           *string `json:"authors"`
+	Illustrators      *string `json:"illustrators"`
+	Publisher         *string `json:"publisher"`
+	PublicationYear   *int    `json:"publication_year"`
+	PageCount         *int    `json:"page_count"`
+	BookType          *string `json:"book_type"`
+	ReadingLevels     *string `json:"reading_levels"`
+	Genres            *string `json:"genres"`
+	Themes            *string `json:"themes"`
+	Awards            *string `json:"awards"`
+	GiftFrom          *string `json:"gift_from"`
+	GiftRelationship  *string `json:"gift_relationship"`
+	DateReceived      *string `json:"date_received"`
+	Condition         *string `json:"condition"`
+	Location          *string `json:"location"`
+	Notes             *string `json:"notes"`
 	ChildRating       *int    `json:"child_rating"`
 	DeweyDecimalClass *string `json:"dewey_decimal_class"`
 	AgeRange          *string `json:"age_range"`
@@ -205,31 +202,30 @@ type CreateBookRequest struct {
 }
 
 // UpdateBookRequest represents a book update request body
-//
 type UpdateBookRequest struct {
-	ISBN             *string `json:"isbn"`
-	Title            *string `json:"title"`
-	Subtitle         *string `json:"subtitle"`
-	Authors          *string `json:"authors"`
-	Illustrators     *string `json:"illustrators"`
-	Publisher        *string `json:"publisher"`
-	PublicationYear  *int    `json:"publication_year"`
-	PageCount        *int    `json:"page_count"`
-	BookType         *string `json:"book_type"`
-	ReadingLevels    *string `json:"reading_levels"`
-	Genres           *string `json:"genres"`
-	Themes           *string `json:"themes"`
-	Awards           *string `json:"awards"`
-	GiftFrom         *string `json:"gift_from"`
-	GiftRelationship *string `json:"gift_relationship"`
-	DateReceived     *string `json:"date_received"`
-	Condition        *string `json:"condition"`
-	Location         *string `json:"location"`
-	Notes            *string `json:"notes"`
-	ChildRating      *int    `json:"child_rating"`
-	Quantity         *int    `json:"quantity"`
-	ReadCount        *int    `json:"read_count"`
-	LastReadDate     *string `json:"last_read_date"`
+	ISBN              *string `json:"isbn"`
+	Title             *string `json:"title"`
+	Subtitle          *string `json:"subtitle"`
+	Authors           *string `json:"authors"`
+	Illustrators      *string `json:"illustrators"`
+	Publisher         *string `json:"publisher"`
+	PublicationYear   *int    `json:"publication_year"`
+	PageCount         *int    `json:"page_count"`
+	BookType          *string `json:"book_type"`
+	ReadingLevels     *string `json:"reading_levels"`
+	Genres            *string `json:"genres"`
+	Themes            *string `json:"themes"`
+	Awards            *string `json:"awards"`
+	GiftFrom          *string `json:"gift_from"`
+	GiftRelationship  *string `json:"gift_relationship"`
+	DateReceived      *string `json:"date_received"`
+	Condition         *string `json:"condition"`
+	Location          *string `json:"location"`
+	Notes             *string `json:"notes"`
+	ChildRating       *int    `json:"child_rating"`
+	Quantity          *int    `json:"quantity"`
+	ReadCount         *int    `json:"read_count"`
+	LastReadDate      *string `json:"last_read_date"`
 	CoverImageURL     *string `json:"cover_image_url"`
 	CoverSource       *string `json:"cover_source"`
 	DeweyDecimalClass *string `json:"dewey_decimal_class"`
@@ -242,7 +238,6 @@ type UpdateBookRequest struct {
 }
 
 // CreateWishlistItemRequest represents a wishlist item creation request
-//
 type CreateWishlistItemRequest struct {
 	Title          string  `json:"title" validate:"required"`
 	Author         *string `json:"author"`
@@ -256,7 +251,6 @@ type CreateWishlistItemRequest struct {
 }
 
 // UpdateWishlistItemRequest represents a wishlist item update request
-//
 type UpdateWishlistItemRequest struct {
 	Title          *string `json:"title"`
 	Author         *string `json:"author"`
@@ -272,7 +266,6 @@ type UpdateWishlistItemRequest struct {
 }
 
 // FamilyMember represents a family member
-//
 type FamilyMember struct {
 	ID        int64  `json:"id"`
 	Name      string `json:"name"`
@@ -282,21 +275,18 @@ type FamilyMember struct {
 }
 
 // CreateFamilyMemberRequest represents a family member creation request
-//
 type CreateFamilyMemberRequest struct {
 	Name     string `json:"name" validate:"required"`
 	Relation string `json:"relation" validate:"required"`
 }
 
 // UpdateFamilyMemberRequest represents a family member update request
-//
 type UpdateFamilyMemberRequest struct {
 	Name     *string `json:"name"`
 	Relation *string `json:"relation"`
 }
 
 // ReadingLog represents a reading session entry
-//
 type ReadingLog struct {
 	ID         int64   `json:"id"`
 	BookID     int64   `json:"book_id"`
@@ -312,7 +302,6 @@ type ReadingLog struct {
 }
 
 // CreateReadingLogRequest represents a reading log creation request
-//
 type CreateReadingLogRequest struct {
 	BookID     int64   `json:"book_id" validate:"required"`
 	StartPage  *int    `json:"start_page"`
@@ -324,7 +313,6 @@ type CreateReadingLogRequest struct {
 }
 
 // UpdateReadingLogRequest represents a reading log update request
-//
 type UpdateReadingLogRequest struct {
 	StartPage  *int    `json:"start_page"`
 	EndPage    *int    `json:"end_page"`

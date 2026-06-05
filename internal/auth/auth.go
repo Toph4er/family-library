@@ -20,14 +20,12 @@ const (
 )
 
 // Auth handles authentication operations
-//
 type Auth struct {
 	db    *sql.DB
 	store *sessions.CookieStore
 }
 
 // New creates a new Auth instance
-//
 func New(db *sql.DB, sessionSecret []byte) *Auth {
 	key := make([]byte, 32)
 	copy(key, sessionSecret)
@@ -46,7 +44,6 @@ func New(db *sql.DB, sessionSecret []byte) *Auth {
 }
 
 // Store returns the session store
-//
 func (a *Auth) Store() *sessions.CookieStore {
 	return a.store
 }
@@ -63,21 +60,18 @@ func (a *Auth) getSession(r *http.Request) (*sessions.Session, error) {
 }
 
 // HashPassword hashes a password using bcrypt
-//
 func HashPassword(password string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	return string(hash), err
 }
 
 // CheckPassword compares a password with a hash
-//
 func CheckPassword(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
 }
 
 // Login authenticates an admin user and creates a session
-//
 func (a *Auth) Login(w http.ResponseWriter, r *http.Request, username, password string) (*User, error) {
 	var user User
 	err := a.db.QueryRow(
@@ -122,7 +116,6 @@ func (a *Auth) Login(w http.ResponseWriter, r *http.Request, username, password 
 }
 
 // GuestLogin authenticates a guest user with shared password
-//
 func (a *Auth) GuestLogin(w http.ResponseWriter, r *http.Request, password string) error {
 	// Get stored guest password hash from settings
 	var guestHash string
@@ -153,7 +146,6 @@ func (a *Auth) GuestLogin(w http.ResponseWriter, r *http.Request, password strin
 }
 
 // Logout destroys the session
-//
 func (a *Auth) Logout(w http.ResponseWriter, r *http.Request) error {
 	session, err := a.store.Get(r, SessionID)
 	if err != nil {
@@ -165,7 +157,6 @@ func (a *Auth) Logout(w http.ResponseWriter, r *http.Request) error {
 }
 
 // GetUserFromSession retrieves the current user from the session
-//
 func (a *Auth) GetUserFromSession(r *http.Request) (*SessionUser, bool) {
 	session, err := a.store.Get(r, SessionID)
 	if err != nil {
@@ -195,7 +186,6 @@ func (a *Auth) GetUserFromSession(r *http.Request) (*SessionUser, bool) {
 }
 
 // SessionUser represents a user from session data
-//
 type SessionUser struct {
 	ID       int64  `json:"id"`
 	Username string `json:"username"`
@@ -204,15 +194,14 @@ type SessionUser struct {
 }
 
 // User represents a user from the database
-//
 type User struct {
-	ID           int64  `json:"id"`
-	Username     string `json:"username"`
-	PasswordHash string `json:"-"`
-	Role         string `json:"role"`
+	ID           int64   `json:"id"`
+	Username     string  `json:"username"`
+	PasswordHash string  `json:"-"`
+	Role         string  `json:"role"`
 	DisplayName  *string `json:"display_name"`
-	CreatedAt    string `json:"created_at"`
-	UpdatedAt    string `json:"updated_at"`
+	CreatedAt    string  `json:"created_at"`
+	UpdatedAt    string  `json:"updated_at"`
 }
 
 // Errors
@@ -224,7 +213,6 @@ var (
 )
 
 // APIError represents an API error
-//
 type APIError struct {
 	Code    int    `json:"-"`
 	Message string `json:"error"`
@@ -235,7 +223,6 @@ func (e *APIError) Error() string {
 }
 
 // SeedAdminUser creates the initial admin user if none exists
-//
 func (a *Auth) SeedAdminUser(username, password string) error {
 	var count int
 	err := a.db.QueryRow("SELECT COUNT(*) FROM users").Scan(&count)
@@ -259,7 +246,6 @@ func (a *Auth) SeedAdminUser(username, password string) error {
 }
 
 // SeedGuestPassword sets the initial guest password
-//
 func (a *Auth) SeedGuestPassword(password string) error {
 	hash, err := HashPassword(password)
 	if err != nil {
@@ -273,7 +259,6 @@ func (a *Auth) SeedGuestPassword(password string) error {
 }
 
 // UpdateGuestPassword updates the guest password
-//
 func (a *Auth) UpdateGuestPassword(password string) error {
 	hash, err := HashPassword(password)
 	if err != nil {

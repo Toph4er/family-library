@@ -86,11 +86,11 @@ func TestUpdateSettingHandler_Success(t *testing.T) {
 	env := setupTestEnv(t)
 
 	// Ensure required settings exist before running update tests
-								env.db.Exec("DELETE FROM settings WHERE key = ?", "cover_image_provider")
-								_, err := env.db.Exec("INSERT INTO settings (key, value) VALUES (?, ?)", "cover_image_provider", "initial_value")
-			if err != nil {
-				t.Fatalf("failed to pre-seed cover_image_provider: %v", err)
-			}
+	env.db.Exec("DELETE FROM settings WHERE key = ?", "cover_image_provider")
+	_, err := env.db.Exec("INSERT INTO settings (key, value) VALUES (?, ?)", "cover_image_provider", "initial_value")
+	if err != nil {
+		t.Fatalf("failed to pre-seed cover_image_provider: %v", err)
+	}
 
 	body := `{"value":"amazon"}`
 	handler := handlers.UpdateSettingHandler(env.db)
@@ -121,7 +121,7 @@ func TestUpdateSettingHandler_Success(t *testing.T) {
 
 	// Verify the update persisted in the database
 	var value string
-			err = env.db.QueryRow("SELECT value FROM settings WHERE key = ?", "cover_image_provider").Scan(&value)
+	err = env.db.QueryRow("SELECT value FROM settings WHERE key = ?", "cover_image_provider").Scan(&value)
 	if err != nil {
 		t.Fatalf("failed to query updated setting: %v", err)
 	}
@@ -184,11 +184,11 @@ func TestUpdateSettingHandler_SiteNameUpdate(t *testing.T) {
 	env := setupTestEnv(t)
 
 	// Ensure required settings exist before running update tests
-								env.db.Exec("DELETE FROM settings WHERE key = ?", "site_name")
-								_, err := env.db.Exec("INSERT INTO settings (key, value) VALUES (?, ?)", "site_name", "initial_value")
-			if err != nil {
-				t.Fatalf("failed to pre-seed site_name: %v", err)
-			}
+	env.db.Exec("DELETE FROM settings WHERE key = ?", "site_name")
+	_, err := env.db.Exec("INSERT INTO settings (key, value) VALUES (?, ?)", "site_name", "initial_value")
+	if err != nil {
+		t.Fatalf("failed to pre-seed site_name: %v", err)
+	}
 
 	newName := "New Library Name"
 	body := fmt.Sprintf(`{"value":"%s"}`, newName)
@@ -205,7 +205,7 @@ func TestUpdateSettingHandler_SiteNameUpdate(t *testing.T) {
 
 	// Verify it persisted
 	var value string
-			err = env.db.QueryRow("SELECT value FROM settings WHERE key = ?", "site_name").Scan(&value)
+	err = env.db.QueryRow("SELECT value FROM settings WHERE key = ?", "site_name").Scan(&value)
 	if err != nil {
 		t.Fatalf("failed to query updated setting: %v", err)
 	}

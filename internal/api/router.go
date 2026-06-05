@@ -65,44 +65,44 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 	r.Post("/auth/login", handlers.HTMLLoginHandler(authSvc))
 	r.Post("/auth/guest-login", handlers.HTMLGuestLoginHandler(authSvc))
 	r.Put("/settings/update/{key}", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLUpdateSettingHandler(database))).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLUpdateSettingHandler(database)).ServeHTTP(w, r)
 	})
 	r.Post("/settings/guest-visibility/update", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLUpdateGuestVisibilityHandler(database))).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLUpdateGuestVisibilityHandler(database)).ServeHTTP(w, r)
 	})
 
 	// User management (HTMX, under /settings)
 	r.Get("/settings/users/new-form", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLUserFormHandler(database))).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLUserFormHandler(database)).ServeHTTP(w, r)
 	})
 	r.Get("/settings/users/{id}/edit", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLUserFormHandler(database))).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLUserFormHandler(database)).ServeHTTP(w, r)
 	})
 	r.Post("/settings/users", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLCreateUserHandler(database))).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLCreateUserHandler(database)).ServeHTTP(w, r)
 	})
 	r.Put("/settings/users/{id}", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLUpdateUserHandler(database))).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLUpdateUserHandler(database)).ServeHTTP(w, r)
 	})
 	r.Delete("/settings/users/{id}", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLDeleteUserHandler(database))).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLDeleteUserHandler(database)).ServeHTTP(w, r)
 	})
 
 	// Family member management (HTMX, under /settings)
 	r.Get("/settings/family-members/new-form", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLFamilyMemberFormHandler(database))).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLFamilyMemberFormHandler(database)).ServeHTTP(w, r)
 	})
 	r.Get("/settings/family-members/{id}/edit", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLFamilyMemberFormHandler(database))).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLFamilyMemberFormHandler(database)).ServeHTTP(w, r)
 	})
 	r.Post("/settings/family-members", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLCreateFamilyMemberHandler(database))).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLCreateFamilyMemberHandler(database)).ServeHTTP(w, r)
 	})
 	r.Put("/settings/family-members/{id}", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLUpdateFamilyMemberHandler(database))).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLUpdateFamilyMemberHandler(database)).ServeHTTP(w, r)
 	})
 	r.Delete("/settings/family-members/{id}", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLDeleteFamilyMemberHandler(database))).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLDeleteFamilyMemberHandler(database)).ServeHTTP(w, r)
 	})
 
 	// / — public landing page; authenticated users are redirected to /books
@@ -110,14 +110,14 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 
 	// Protected page routes use HTML-aware middleware (redirects instead of JSON)
 	r.Get("/books", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAuthHTML(http.HandlerFunc(handlers.RenderBooksPage(cfg.Templates["books"], database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
+		authSvc.RequireAuthHTML(handlers.RenderBooksPage(cfg.Templates["books"], database, authSvc.Store(), auth.SessionID)).ServeHTTP(w, r)
 	})
 	r.Get("/books/{id}", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAuthHTML(http.HandlerFunc(handlers.RenderBookDetailPage(cfg.Templates["book-detail"], database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
+		authSvc.RequireAuthHTML(handlers.RenderBookDetailPage(cfg.Templates["book-detail"], database, authSvc.Store(), auth.SessionID)).ServeHTTP(w, r)
 	})
 	// Standalone book form pages (admin only)
 	r.Get("/books/add-book", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.RenderBookFormPage(cfg.Templates["book-form"], database, authSvc.Store(), auth.SessionID, false, 0))).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.RenderBookFormPage(cfg.Templates["book-form"], database, authSvc.Store(), auth.SessionID, false, 0)).ServeHTTP(w, r)
 	})
 	r.Get("/books/{id}/edit-book", func(w http.ResponseWriter, r *http.Request) {
 		authSvc.RequireAdminHTML(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -133,15 +133,15 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 
 	// Book form POST handlers (admin only)
 	r.Post("/books/create", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLCreateBookHandler(database))).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLCreateBookHandler(database)).ServeHTTP(w, r)
 	})
 	r.Post("/books/{id}/update", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLUpdateBookHandler(database))).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLUpdateBookHandler(database)).ServeHTTP(w, r)
 	})
 	// Wishlist (open to guests for viewing; admin-only for management)
 	r.Get("/wishlist", handlers.RenderWishlistPage(cfg.Templates["wishlist"], database, authSvc.Store(), auth.SessionID))
 	r.Get("/wishlist/add", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.RenderWishlistFormPage(cfg.Templates["wishlist-form"], database, authSvc.Store(), auth.SessionID, false, 0))).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.RenderWishlistFormPage(cfg.Templates["wishlist-form"], database, authSvc.Store(), auth.SessionID, false, 0)).ServeHTTP(w, r)
 	})
 	r.Get("/wishlist/{id}/edit", func(w http.ResponseWriter, r *http.Request) {
 		authSvc.RequireAdminHTML(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -155,27 +155,27 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 		})).ServeHTTP(w, r)
 	})
 	r.Post("/wishlist/create", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLCreateWishlistItemHandler(database))).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLCreateWishlistItemHandler(database)).ServeHTTP(w, r)
 	})
 	r.Post("/wishlist/{id}/update", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.HTMLUpdateWishlistItemHandler(database))).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLUpdateWishlistItemHandler(database)).ServeHTTP(w, r)
 	})
 	r.Get("/settings", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(http.HandlerFunc(handlers.RenderSettingsPage(cfg.Templates["settings"], database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.RenderSettingsPage(cfg.Templates["settings"], database, authSvc.Store(), auth.SessionID)).ServeHTTP(w, r)
 	})
 
 	// Reading log (authenticated users)
 	r.Get("/reading-log", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAuthHTML(http.HandlerFunc(handlers.RenderReadingLogPage(cfg.Templates["reading-log"], database, authSvc.Store(), auth.SessionID))).ServeHTTP(w, r)
+		authSvc.RequireAuthHTML(handlers.RenderReadingLogPage(cfg.Templates["reading-log"], database, authSvc.Store(), auth.SessionID)).ServeHTTP(w, r)
 	})
 	r.Get("/reading-logs/{book_id}/new-form", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAuthHTML(http.HandlerFunc(handlers.HTMLReadingLogFormHandler(database))).ServeHTTP(w, r)
+		authSvc.RequireAuthHTML(handlers.HTMLReadingLogFormHandler(database)).ServeHTTP(w, r)
 	})
 	r.Post("/reading-logs", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAuthHTML(http.HandlerFunc(handlers.HTMLCreateReadingLogHandler(database))).ServeHTTP(w, r)
+		authSvc.RequireAuthHTML(handlers.HTMLCreateReadingLogHandler(database)).ServeHTTP(w, r)
 	})
 	r.Delete("/reading-logs/{id}", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAuthHTML(http.HandlerFunc(handlers.HTMLDeleteReadingLogHandler(database))).ServeHTTP(w, r)
+		authSvc.RequireAuthHTML(handlers.HTMLDeleteReadingLogHandler(database)).ServeHTTP(w, r)
 	})
 
 	// -- API routes --
@@ -191,10 +191,10 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 
 			// Authentication (protected endpoints)
 			r.Post("/auth/logout", func(w http.ResponseWriter, r *http.Request) {
-				authSvc.RequireAuth(http.HandlerFunc(handlers.LogoutHandler(authSvc))).ServeHTTP(w, r)
+				authSvc.RequireAuth(handlers.LogoutHandler(authSvc)).ServeHTTP(w, r)
 			})
 			r.Get("/auth/me", func(w http.ResponseWriter, r *http.Request) {
-				authSvc.RequireAuth(http.HandlerFunc(handlers.MeHandler(authSvc))).ServeHTTP(w, r)
+				authSvc.RequireAuth(handlers.MeHandler(authSvc)).ServeHTTP(w, r)
 			})
 
 			// Books (all require auth)
@@ -205,36 +205,36 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 				r.Get("/", handlers.ListBooksHandler(database))
 				r.Get("/search", handlers.SearchBooksHandler(database))
 				r.Get("/tags", func(w http.ResponseWriter, r *http.Request) {
-					authSvc.RequireAdmin(http.HandlerFunc(handlers.GetTagsHandler(database))).ServeHTTP(w, r)
+					authSvc.RequireAdmin(handlers.GetTagsHandler(database)).ServeHTTP(w, r)
 				})
 				r.Get("/lookup-isbn", func(w http.ResponseWriter, r *http.Request) {
-					authSvc.RequireAdmin(http.HandlerFunc(handlers.LookupISBNHandler(database))).ServeHTTP(w, r)
+					authSvc.RequireAdmin(handlers.LookupISBNHandler(database)).ServeHTTP(w, r)
 				})
 				r.Get("/search-ol", func(w http.ResponseWriter, r *http.Request) {
-					authSvc.RequireAuth(http.HandlerFunc(handlers.SearchOpenLibraryHandler(database))).ServeHTTP(w, r)
+					authSvc.RequireAuth(handlers.SearchOpenLibraryHandler(database)).ServeHTTP(w, r)
 				})
 				r.Get("/{id}", handlers.GetBookHandler(database))
 
 				// POST routes
 				r.Post("/", func(w http.ResponseWriter, r *http.Request) {
-					authSvc.RequireAdmin(http.HandlerFunc(handlers.CreateBookHandler(database))).ServeHTTP(w, r)
+					authSvc.RequireAdmin(handlers.CreateBookHandler(database)).ServeHTTP(w, r)
 				})
 				r.Post("/import-isbn", func(w http.ResponseWriter, r *http.Request) {
-					authSvc.RequireAdmin(http.HandlerFunc(handlers.ImportISBNHandler(database))).ServeHTTP(w, r)
+					authSvc.RequireAdmin(handlers.ImportISBNHandler(database)).ServeHTTP(w, r)
 				})
 
 				// Parameterized PUT/DELETE
 				r.Put("/{id}", func(w http.ResponseWriter, r *http.Request) {
-					authSvc.RequireAdmin(http.HandlerFunc(handlers.UpdateBookHandler(database))).ServeHTTP(w, r)
+					authSvc.RequireAdmin(handlers.UpdateBookHandler(database)).ServeHTTP(w, r)
 				})
 				r.Delete("/{id}", func(w http.ResponseWriter, r *http.Request) {
-					authSvc.RequireAdmin(http.HandlerFunc(handlers.DeleteBookHandler(database))).ServeHTTP(w, r)
+					authSvc.RequireAdmin(handlers.DeleteBookHandler(database)).ServeHTTP(w, r)
 				})
 			})
 
 			// Author works (Open Library series inference, auth required)
 			r.Get("/authors/works", func(w http.ResponseWriter, r *http.Request) {
-				authSvc.RequireAuth(http.HandlerFunc(handlers.AuthorWorksHandler(database))).ServeHTTP(w, r)
+				authSvc.RequireAuth(handlers.AuthorWorksHandler(database)).ServeHTTP(w, r)
 			})
 
 			// Wishlist (all require auth)
@@ -242,16 +242,16 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 				r.Use(authSvc.RequireAuth)
 				r.Get("/", handlers.ListWishlistHandler(database))
 				r.Post("/", func(w http.ResponseWriter, r *http.Request) {
-					authSvc.RequireAdmin(http.HandlerFunc(handlers.CreateWishlistItemHandler(database))).ServeHTTP(w, r)
+					authSvc.RequireAdmin(handlers.CreateWishlistItemHandler(database)).ServeHTTP(w, r)
 				})
 				r.Put("/{id}", func(w http.ResponseWriter, r *http.Request) {
-					authSvc.RequireAdmin(http.HandlerFunc(handlers.UpdateWishlistItemHandler(database))).ServeHTTP(w, r)
+					authSvc.RequireAdmin(handlers.UpdateWishlistItemHandler(database)).ServeHTTP(w, r)
 				})
 				r.Delete("/{id}", func(w http.ResponseWriter, r *http.Request) {
-					authSvc.RequireAdmin(http.HandlerFunc(handlers.DeleteWishlistItemHandler(database))).ServeHTTP(w, r)
+					authSvc.RequireAdmin(handlers.DeleteWishlistItemHandler(database)).ServeHTTP(w, r)
 				})
 				r.Post("/{id}/fulfill", func(w http.ResponseWriter, r *http.Request) {
-					authSvc.RequireAdmin(http.HandlerFunc(handlers.FulfillWishlistItemHandler(database))).ServeHTTP(w, r)
+					authSvc.RequireAdmin(handlers.FulfillWishlistItemHandler(database)).ServeHTTP(w, r)
 				})
 			})
 

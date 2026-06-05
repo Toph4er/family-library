@@ -26,15 +26,6 @@ func buildAdminHTMLRouter(t *testing.T, env *testEnv, method, path string, handl
 	return r
 }
 
-// buildAuthHTMLRouter creates a chi router that wraps the given handler with
-// RequireAuthHTML middleware.
-func buildAuthHTMLRouter(t *testing.T, env *testEnv, method, path string, handler http.HandlerFunc) *chi.Mux {
-	t.Helper()
-	r := chi.NewRouter()
-	r.Handle(path, env.auth.RequireAuthHTML(handler))
-	return r
-}
-
 // ---------- HTML Login Handler ----------
 
 func TestHTMLLoginHandler_Success(t *testing.T) {
@@ -580,7 +571,7 @@ func TestPtrIfNonEmpty(t *testing.T) {
 	id, _ := result.LastInsertId()
 
 	// Update with empty string for requested_by — should set to NULL
-	body := fmt.Sprintf(`{"requested_by":""}`)
+	body := `{"requested_by":""}`
 	req := httptest.NewRequest("PUT", "/wishlist/1", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	req = setURLParam(req, "id", fmt.Sprintf("%d", id))

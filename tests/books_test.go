@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/go-chi/chi/v5"
 	"git.rcsmaine.com/chris/library/internal/handlers"
+	"github.com/go-chi/chi/v5"
 )
 
 // buildAuthRouter creates a chi router that wraps the given handler with

@@ -19,18 +19,6 @@ import (
 
 const readingLogColumns = `rl.id, rl.book_id, rl.start_page, rl.end_page, rl.total_pages, rl.entire_book, rl.read_at, rl.reader_name, rl.notes, rl.created_at`
 
-// scanReadingLog scans a row into a ReadingLog struct.
-func scanReadingLog(s scanner) (*models.ReadingLog, error) {
-	var rl models.ReadingLog
-	var entireBook int
-	err := s.Scan(&rl.ID, &rl.BookID, &rl.StartPage, &rl.EndPage, &rl.TotalPages, &entireBook, &rl.ReadAt, &rl.ReaderName, &rl.Notes, &rl.CreatedAt)
-	if err != nil {
-		return nil, err
-	}
-	rl.EntireBook = entireBook != 0
-	return &rl, nil
-}
-
 // --- JSON API Handlers ---
 
 // ListReadingLogsHandler returns all reading log entries.

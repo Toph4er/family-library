@@ -1153,7 +1153,7 @@ var olRateLimiter = rate.NewLimiter(rate.Every(time.Second/time.Duration(olConfi
 // waitOLRateLimit blocks until a token is available from the Open Library
 // rate limiter. Call this before every outgoing OL request.
 func waitOLRateLimit() {
-	olRateLimiter.Wait(context.Background())
+	_ = olRateLimiter.Wait(context.Background())
 }
 
 // yearRe matches a 4-digit year at the start of a string.
@@ -1288,9 +1288,9 @@ func AuthorWorksHandler(db *sql.DB) http.HandlerFunc {
 		}
 
 		JSONResponse(w, http.StatusOK, map[string]interface{}{
-			"author_key": key,
+			"author_key":  key,
 			"total_works": len(works),
-			"works":      works,
+			"works":       works,
 		})
 	}
 }
@@ -1774,25 +1774,25 @@ func toString(v interface{}) string {
 // Most fields are visible except isbn, condition, location, notes, date_received, last_read_date.
 func defaultGuestVisibleFields() string {
 	fields := map[string]bool{
-		"title":              true,
-		"subtitle":           true,
-		"authors":            true,
-		"illustrators":       true,
-		"publisher":          true,
-		"publication_year":   true,
-		"page_count":         true,
-		"quantity":           true,
-		"book_type":          true,
-		"reading_levels":     true,
-		"genres":             true,
-		"themes":             true,
-		"awards":             true,
-		"gift_from":          true,
-		"gift_relationship":  true,
-		"child_rating":       true,
-		"read_count":         true,
-		"cover_image_url":    true,
-		"cover_source":       true,
+		"title":               true,
+		"subtitle":            true,
+		"authors":             true,
+		"illustrators":        true,
+		"publisher":           true,
+		"publication_year":    true,
+		"page_count":          true,
+		"quantity":            true,
+		"book_type":           true,
+		"reading_levels":      true,
+		"genres":              true,
+		"themes":              true,
+		"awards":              true,
+		"gift_from":           true,
+		"gift_relationship":   true,
+		"child_rating":        true,
+		"read_count":          true,
+		"cover_image_url":     true,
+		"cover_source":        true,
 		"dewey_decimal_class": true,
 		"description":         true,
 		"language":            true,
@@ -1801,12 +1801,12 @@ func defaultGuestVisibleFields() string {
 		"subject_times":       true,
 		"series":              true,
 		"age_range":           true,
-		"isbn":               false,
-		"condition":          false,
-		"location":           false,
-		"notes":              false,
-		"date_received":      false,
-		"last_read_date":     false,
+		"isbn":                false,
+		"condition":           false,
+		"location":            false,
+		"notes":               false,
+		"date_received":       false,
+		"last_read_date":      false,
 	}
 	b, _ := json.Marshal(fields)
 	return string(b)
@@ -1845,8 +1845,6 @@ func filterBooksForGuest(r *http.Request, books []models.Book) {
 		books[i].FilterForGuest()
 	}
 }
-
-
 
 // HTMLCreateBookHandler handles POST /books/create (form submission from the add-book page).
 func HTMLCreateBookHandler(db *sql.DB) http.HandlerFunc {
