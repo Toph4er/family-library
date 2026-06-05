@@ -94,8 +94,11 @@ deploy:
   variables:
     DOCKER_HOST: unix:///var/run/docker.sock
   needs:
+    - backend-test
+    - docker-build
     - trivy-scan
     - gosec
+    - golangci-lint
   before_script:
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
   script:
