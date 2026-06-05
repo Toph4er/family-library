@@ -166,6 +166,7 @@ func GetThemeByID(id string) Theme {
 // CSSOverrideBlock returns a <style> block that overrides Tailwind's @theme
 // variables and custom component styles for this theme. Used in base.html.
 func (t Theme) CSSOverrideBlock() template.HTML {
+	// #nosec G203 -- interpolated values are application-controlled theme settings, not user input
 	return template.HTML(fmt.Sprintf(`
 <style>
 :root {
