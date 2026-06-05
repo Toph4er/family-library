@@ -1,6 +1,9 @@
 package theme
 
-import "fmt"
+import (
+	"fmt"
+	"html/template"
+)
 
 // Theme represents a complete visual theme for the library application.
 type Theme struct {
@@ -162,8 +165,8 @@ func GetThemeByID(id string) Theme {
 
 // CSSOverrideBlock returns a <style> block that overrides Tailwind's @theme
 // variables and custom component styles for this theme. Used in base.html.
-func (t Theme) CSSOverrideBlock() string {
-	return fmt.Sprintf(`
+func (t Theme) CSSOverrideBlock() template.HTML {
+	return template.HTML(fmt.Sprintf(`
 <style>
 :root {
   --color-primary: %s;
@@ -208,5 +211,5 @@ body::before { background-image: url("%s") !important; }
 		t.Primary,
 		t.ScrollbarThumb, t.ScrollbarThumb,
 		t.BackgroundSVG,
-		t.SelectionBG, t.Text)
+		t.SelectionBG, t.Text))
 }

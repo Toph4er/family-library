@@ -94,6 +94,8 @@ func buildPageContext(r *http.Request, store *sessions.CookieStore, sessionName 
 		ctx.CSRFToken = token
 	}
 
+	ctx.ActiveTheme = loadActiveTheme(db)
+
 	return ctx
 }
 
@@ -157,7 +159,6 @@ func RenderLandingPage(tmpl *template.Template, db *sql.DB, store *sessions.Cook
 
 		ctx.SiteName = siteName
 		ctx.SiteTagline = siteTagline
-		ctx.ActiveTheme = loadActiveTheme(db)
 
 		renderPage(w, r, tmpl, "landing.html", ctx)
 	}
