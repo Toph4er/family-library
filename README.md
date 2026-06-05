@@ -1,89 +1,110 @@
 # Library Book Collection
 
-A self-hosted web application for tracking and managing a child's book collection. This version represents a major architectural modernization, transitioning from complex client-side frameworks (like React) to a robust, performant, and delightful server-driven architecture powered by HTMX.
-
-## Architectural Shift: Embracing Server-Driven UI with HTMX
-
-We are thrilled to announce the completion of our migration from client-side rendering frameworks (React) to a pure, server-driven architecture using **HTMX**. This modernization effort significantly improves development speed, reduces complexity, and enhances performance by keeping the entire application logic within the Go backend.
-
-**Why this change?**
-*   **Simplicity & Reliability:** By eliminating large JavaScript build pipelines and complex state management layers (common in React setups), we have drastically simplified our stack. The whole system runs on Go templates and HTTP requests, making it easier to maintain and debug.
-*   **Performance Focus:** HTMX allows us to achieve dynamic, modern user experiences—like partial page updates, AJAX forms, and interactive components—without writing a single line of complex JavaScript state logic. We get the best of both worlds: the power of client-side interactivity with the reliability of server-side rendering.
-*   **Developer Experience (DX):** The entire stack is now Go-centric. This means fewer context switches for developers and faster iteration cycles, allowing us to focus purely on book metadata and user experience rather than framework plumbing.
-
-This transition allows us to deliver a highly responsive application while maintaining the simplicity and robustness that Go excels at.
+A self-hosted web application for tracking and managing a child's book collection.
 
 ## Features
-- Woodland fairy tale themed interface
-- Admin and guest authentication
-- Comprehensive book metadata (ISBN, authors, reading levels, genres, themes, awards)
-- ISBN-based book import with cover image fetching (Google Books API → Open Library fallback)
-- Wishlist management with purchase links (Amazon, ThriftBooks)
-- Per-field guest visibility control
-- Search and filter by author, type, level, tags, and more
+
+- **Book collection management** — Add, edit, search, and filter books with comprehensive metadata (ISBN, authors, reading levels, genres, themes, awards)
+- **ISBN scanning & import** — Look up books by ISBN via Google Books API with Open Library fallback; cached results for repeat lookups
+- **Wishlist management** — Track desired books with purchase links (Amazon, ThriftBooks) and mark items as fulfilled
+- **Reading log** — Record reading sessions with page ranges, reader name, and notes
+- **HTMX-powered UI** — Dynamic, partial-page updates without a full SPA framework
+- **Alpine.js** — Lightweight interactivity for modals, dropdowns, and form validation
+- **Tailwind CSS** — Utility-first styling with a woodland fairy tale theme
+- **Admin & guest authentication** — Role-based access with bcrypt-hashed passwords and cookie sessions
+- **Per-field guest visibility** — Control which book fields guests can see
+- **Family member management** — Track who gifted books (name and relationship)
+- **RESTful API** — Full JSON API under `/api/v1` for programmatic access
+- **Security** — CSRF protection, rate limiting, HSTS, CSP, and per-IP request throttling
 
 ## Tech Stack
+
 - **Backend:** Go 1.26 + chi router + SQLite
-- **Frontend:** Go html/templates + HTMX + Alpine.js
-- **Database:** SQLite (pure Go driver, no CGO)
+- **Frontend:** Go `html/template` + HTMX + Alpine.js + Tailwind CSS
+- **Database:** SQLite (pure Go driver) with [goose](https://github.com/pressly/goose/v3) migrations
 - **Deployment:** Docker + GitLab CI/CD + nginx reverse proxy
-
-## Quick Start
-
-### Prerequisites
-- Go 1.26+
-- Docker + Docker Compose
-
-### Development
-The entire application is now served by the Go backend. No separate Node.js environment or frontend build step is required for local development.
-
-```bash
-# Backend (run from project root)
-go run .
-```
-
-### Docker
-```bash
-docker compose up -d
-```
-
-## Deployment
-
-1. Create a project at `git.rcsmaine.com/chris/library`
-2. Set CI/CD variables (see below)
-3. Push to `main` branch
-4. Pipeline runs: test → build → deploy
-
-### Required CI/CD Variables
-
-| Variable | Description |
-| :--- | :--- |
-| `ADMIN_USERNAME` | Initial admin username |
-| `ADMIN_PASSWORD` | Initial admin password |
-| `SESSION_SECRET` | Secret key for session signing (32+ random chars) |
-| `GUEST_PASSWORD` | Shared guest password |
-| `LOG_LEVEL` | Logging level (debug/info/warn/error) |
-
-### Optional CI/CD Variables
-
-| Variable | Description |
-| :--- | :--- |
-| `LITESTREAM_AWS_ACCESS_KEY_ID` | S3 access key for Litestream backups |
-| `LITESTREAM_AWS_SECRET_ACCESS_KEY` | S3 secret key for Litestream backups |
-| `LITESTREAM_REPOSITORY` | S3 bucket/path for backups |
 
 ## Project Structure
 
 ```
 library/
-├── backend/          # Go API server logic
-├── internal/         # Private application packages (e.g., models, services)
-│   └── templates/    # Templates directory used by the Go renderer
-├── Dockerfile        # Multi-stage build
-├── compose.yaml      # Docker Compose config
-├── .gitlab-ci.yml    # CI/CD pipeline
-└── design-docs/      # Local design docs (gitignored)
+├── cmd/library/            # Application entry point (server setup, config, migrations)
+├── internal/               # Private application packages
+│   ├── api/                # HTTP router and route registration (chi)
+│   ├── auth/               # Authentication (sessions, login, password hashing)
+│   ├── db/                 # Database connection and initialization
+│   ├── handlers/           # HTTP request handlers (books, auth, settings, wishlist, etc.)
+│   ├── middleware/         # HTTP middleware (security headers, CSRF, rate limiting, logging)
+│   ├── models/             # Data models (Book, WishlistItem, User, ReadingLog, etc.)
+│   └── web/                # HTML templates, CSS, and static assets
+│       ├── partials/       # Reusable template fragments (book cards, pagination, modals, etc.)
+│       ├── styles.css      # Tailwind source CSS
+│       └── tailwind.css    # Compiled CSS (generated by build)
+├── migrations/             # SQL migration files (12 migrations, applied with goose)
+├── design-docs/            # Architecture and design documentation (gitignored)
+├── tests/                  # Integration tests (auth, books, settings, wishlist, HTML handlers)
+├── Dockerfile              # Multi-stage build (CSS builder → Go binary → Alpine runtime)
+├── compose.yaml            # Docker Compose configuration
+├── .gitlab-ci.yml          # CI/CD pipeline (test → build → security scan → deploy)
+├── go.mod                  # Go module dependencies
+├── package.json            # Node dependencies (Tailwind CSS build)
+└── tailwind.config.js      # Tailwind CSS configuration
 ```
+
+## How to Build and Run
+
+### Prerequisites
+
+- Go 1.26+
+- Node.js 20+ (for Tailwind CSS build)
+- Docker + Docker Compose
+
+### Development
+
+```bash
+# Build the CSS (required before running)
+npm run build:css
+
+# Run the server (migrations auto-applied with --migrate flag)
+go run ./cmd/library/ --migrate
+```
+
+The server listens on port `8080` by default. Set `DATABASE_PATH` to change the SQLite file location.
+
+### Docker
+
+```bash
+# Build and run with Docker Compose
+docker compose up -d
+```
+
+The Dockerfile uses a three-stage build:
+1. **CSS builder** — installs Node.js dependencies and compiles Tailwind CSS
+2. **Go builder** — downloads Go modules and compiles a static binary
+3. **Runtime** — minimal Alpine image with the compiled binary, templates, and migrations
+
+### Environment Variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `SESSION_SECRET` | Yes | Secret key for session signing (32+ random chars) |
+| `ADMIN_USERNAME` | No | Initial admin username (seeded on first run) |
+| `ADMIN_PASSWORD` | No | Initial admin password (seeded on first run) |
+| `GUEST_PASSWORD` | No | Shared guest password (stored hashed in settings) |
+| `PORT` | No | Server port (default: `8080`) |
+| `DATABASE_PATH` | No | SQLite database path (default: `/app/data/library.db`) |
+| `LOG_LEVEL` | No | Logging level: `debug`, `info`, `warn`, `error` (default: `info`) |
+| `CORS_ORIGIN` | No | Allowed CORS origin (default: `https://library.rcsmaine.com`) |
+| `ENV` | No | Environment name; set to `development` to allow insecure cookies |
+
+## CI/CD Pipeline
+
+The GitLab CI pipeline runs on pushes to `main` and merge requests:
+
+1. **Test** — `go vet` + `go test` with coverage (15% minimum threshold)
+2. **Build** — Multi-stage Docker build and push to registry
+3. **Security** — Trivy filesystem scan, `gosec` static analysis, `golangci-lint`
+4. **Deploy** — Pull latest image, start container, health check, and automatic rollback on failure
 
 ## License
 

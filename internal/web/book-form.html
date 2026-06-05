@@ -371,6 +371,7 @@ var tagInputs = {};
 
     fetch(action, {
       method: 'POST',
+      headers: { 'X-CSRF-Token': document.querySelector('input[name="csrf_token"]').value },
       body: formData,
       credentials: 'same-origin'
     })
