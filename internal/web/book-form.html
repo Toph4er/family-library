@@ -399,7 +399,17 @@ var tagInputs = {};
   var modal = null;
   var isbnInput = null;
   var statusEl = null;
-  var currentFacingMode = 'user'; // Chrome Android defaults to front camera
+
+  function closeModal() {
+    if (modal) {
+      if (html5QrcodeScanner) {
+        html5QrcodeScanner.clear().catch(function() {});
+        html5QrcodeScanner = null;
+      }
+      modal.remove();
+      modal = null;
+    }
+  }
 
   function openModal() {
     modal = document.createElement('div');
@@ -411,13 +421,7 @@ var tagInputs = {};
           <h2 id="scanner-title" class="text-xl font-heading text-primary">Scan ISBN Barcode</h2>
           <button type="button" onclick="document.getElementById('scanner-modal').remove()" class="text-2xl text-text-light/60 hover:text-error transition-colors" aria-label="Close scanner">&times;</button>
         </div>
-        <div id="scanner-reader" style="min-height: 240px; background: #000; border-radius: 8px;"></div>
-        <button type="button" id="camera-switch-btn" class="mt-3 w-full px-4 py-2 rounded-xl font-medium text-white transition-all duration-200 hover:shadow-md" style="background-color: var(--color-secondary);" onmouseenter="this.style.backgroundColor='var(--color-text-light)'" onmouseleave="this.style.backgroundColor='var(--color-secondary)'">
-          <span class="flex items-center justify-center gap-2">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 16v4a2 2 0 0 1-2 2h-4"/><path d="M14 22l2-2-2-2"/><path d="M4 8V4a2 2 0 0 1 2-2h4"/><path d="M10 2L8 4l2 2"/><path d="M2 16v-4a2 2 0 0 1 2-2h4"/><path d="M2 12h2l2 2"/><path d="M22 8v4a2 2 0 0 1-2 2h-4"/><path d="M18 16h2l2-2"/></svg> Switch Camera
-          </span>
-        </button>
-        <p class="text-text-light/60 text-sm text-center mt-2">Point your camera at the ISBN barcode (usually on the back cover)</p>
+        <div id="scanner-reader" style="min-height: 240px;"></div>
         <div id="scanner-status" class="text-center mt-2 text-sm" role="status" aria-live="polite"></div>
       </div>
     `;
@@ -425,7 +429,7 @@ var tagInputs = {};
 
     // Close on backdrop click
     modal.addEventListener('click', function(e) {
-      if (e.target === modal) modal.remove();
+      if (e.target === modal) closeModal();
     });
 
     // Close on Escape key
@@ -444,29 +448,23 @@ var tagInputs = {};
     }
   }
 
-  function restoreSwitchBtn() {
-    var btn = document.getElementById('camera-switch-btn');
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = '<span class="flex items-center justify-center gap-2"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 16v4a2 2 0 0 1-2 2h-4"/><path d="M14 22l2-2-2-2"/><path d="M4 8V4a2 2 0 0 1 2-2h4"/><path d="M10 2L8 4l2 2"/><path d="M2 16v-4a2 2 0 0 1 2-2h4"/><path d="M2 12h2l2 2"/><path d="M22 8v4a2 2 0 0 1-2 2h-4"/><path d="M18 16h2l2-2"/></svg> Switch Camera</span>';
-    }
-  }
-
   function initScanner() {
     if (html5QrcodeScanner) {
       html5QrcodeScanner.clear().catch(function() {});
     }
 
-    // Don't set facingMode in config — Chrome Android ignores it and picks front
+    // Use the library's built-in UI — it has camera selector, start/stop scanning, and QR detection overlay
     html5QrcodeScanner = new Html5QrcodeScanner("scanner-reader", {
       fps: 10,
       qrbox: { width: 250, height: 250 },
       aspectRatio: 1.0,
       rememberLastUsedCamera: true,
-      showTorchButtonIfNeeded: true
+      showTorchButtonIfNeeded: true,
+      verbose: false
     }, false);
 
     html5QrcodeScanner.render(function(decodedText) {
+      // Barcode detected — populate ISBN and trigger lookup
       var isbn = decodedText.replace(/[^0-9Xx]/g, '');
       if (isbn.length >= 10) {
         if (isbnInput) isbnInput.value = isbn;
@@ -475,70 +473,17 @@ var tagInputs = {};
         if (lookupBtn) lookupBtn.click();
       }
     }, function(err) {
-      console.warn('html5-qrcode scan error:', err);
+      // Scan error — ignore, library keeps trying
     });
-
-    // Wire up the camera switch button
-    var switchBtn = document.getElementById('camera-switch-btn');
-    if (switchBtn) {
-      switchBtn.addEventListener('click', function() {
-        if (!html5QrcodeScanner) return;
-
-        // Check if scanner is in a running state before trying to switch.
-        // render() is async — the camera may not be ready yet.
-        var state = html5QrcodeScanner.getState();
-        if (state !== 1) { // 1 = Html5QrcodeScannerState.SCANNING
-          switchBtn.disabled = true;
-          switchBtn.innerHTML = '<span class="flex items-center justify-center gap-2"><svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32"/></svg> Switching...</span>';
-
-          // Poll until the scanner reaches a running state, then switch.
-          var checkReady = setInterval(function() {
-            var s = html5QrcodeScanner.getState();
-            if (s === 1) {
-              clearInterval(checkReady);
-              doSwitch();
-            }
-          }, 100);
-
-          // Timeout after 10 seconds if the scanner never starts.
-          setTimeout(function() {
-            clearInterval(checkReady);
-            restoreSwitchBtn();
-            showStatus('Camera not ready. Please try again.', true);
-          }, 10000);
-
-          return;
-        }
-
-        doSwitch();
-      });
-    }
-
-    function doSwitch() {
-      // Toggle facing mode
-      currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
-
-      // Use applyVideoConstraints to switch cameras without destroying the scanner.
-      // This avoids the deviceId exact-match issue on Chrome Android.
-      html5QrcodeScanner.applyVideoConstraints({ facingMode: currentFacingMode })
-        .then(function() {
-          restoreSwitchBtn();
-          showStatus('Switched to ' + (currentFacingMode === 'environment' ? 'rear' : 'front') + ' camera.');
-        })
-        .catch(function(err) {
-          console.error('Failed to switch camera:', err);
-          restoreSwitchBtn();
-          showStatus('Failed to switch camera.', true);
-        });
-    }
   }
 
   scanBtn.addEventListener('click', function() {
     isbnInput = document.getElementById('isbn');
     statusEl = document.getElementById('scanner-status');
     openModal();
-    showStatus('Starting camera...');
+    showStatus('');
 
+    // Dynamically load the html5-qrcode library
     if (!window.Html5QrcodeScanner) {
       var script = document.createElement('script');
       script.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
