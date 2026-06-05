@@ -21,7 +21,7 @@
         <!-- Priority badge -->
         {{if gt .Priority 0}}
         <span class="mushroom-tag bg-accent/20 text-accent text-xs whitespace-nowrap" title="Priority: {{.Priority}} out of 5">
-          {{range seq 1 .Priority}}★{{end}}{{range seq (add 1 .Priority) 5}}☆{{end}}
+          {{range seq 1 .Priority}}<svg class="w-3.5 h-3.5 text-accent inline" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>{{end}}{{range seq (add 1 .Priority) 5}}<svg class="w-3.5 h-3.5 text-text-light/30 inline" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>{{end}}
         </span>
         {{end}}
       </div>
@@ -36,13 +36,22 @@
       {{end}}
       <div class="flex flex-wrap gap-2 mt-2">
         {{if .AmazonURL}}
-        <a href="{{.AmazonURL}}" target="_blank" rel="noopener noreferrer" class="text-primary hover:text-text-light text-sm no-underline">📚 Amazon</a>
+        <a href="{{.AmazonURL}}" target="_blank" rel="noopener noreferrer" class="text-primary hover:text-text-light text-sm no-underline inline-flex items-center gap-1">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+          Amazon
+        </a>
         {{end}}
         {{if .ThriftbooksURL}}
-        <a href="{{.ThriftbooksURL}}" target="_blank" rel="noopener noreferrer" class="text-primary hover:text-text-light text-sm no-underline">📖 ThriftBooks</a>
+        <a href="{{.ThriftbooksURL}}" target="_blank" rel="noopener noreferrer" class="text-primary hover:text-text-light text-sm no-underline inline-flex items-center gap-1">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+          ThriftBooks
+        </a>
         {{end}}
         {{if .Fulfilled}}
-        <span class="mushroom-tag bg-success/20 text-success">✓ Fulfilled</span>
+        <span class="mushroom-tag bg-success/20 text-success inline-flex items-center gap-1">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+          Fulfilled
+        </span>
         {{else}}
         <span class="mushroom-tag bg-accent/20 text-text-light">Pending</span>
         {{end}}
@@ -56,7 +65,7 @@
         class="text-text-light hover:text-primary text-sm no-underline p-1"
         aria-label="Edit"
         title="Edit"
-      >✏️</a>
+      ><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></a>
       {{if not .Fulfilled}}
       <button type="button"
         hx-post="/api/v1/wishlist/{{.ID}}/fulfill"
@@ -65,7 +74,7 @@
         hx-swap="outerHTML"
         class="text-success hover:text-success/80 text-sm no-underline p-1"
         aria-label="Mark as fulfilled"
-      >✓</button>
+      ><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></button>
       {{end}}
       <button type="button"
         hx-delete="/api/v1/wishlist/{{.ID}}"
@@ -74,7 +83,7 @@
         hx-swap="outerHTML"
         class="text-error hover:text-error/80 text-sm no-underline p-1"
         aria-label="Delete"
-      >🗑️</button>
+      ><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
     </div>
     {{end}}
   </div>
