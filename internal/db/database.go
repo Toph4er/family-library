@@ -21,14 +21,14 @@ func Open(path string) (*sql.DB, error) {
 
 	// Verify the connection is alive.
 	if err := database.Ping(); err != nil {
-		database.Close()
+		database.Close() // #nosec G104 — cleanup on error path, primary error is returned
 		return nil, err
 	}
 
 	// Enable Write-Ahead Logging for better concurrent read performance
 	// and safer backup behavior.
 	if _, err := database.Exec("PRAGMA journal_mode = WAL"); err != nil {
-		database.Close()
+		database.Close() // #nosec G104 — cleanup on error path, primary error is returned
 		return nil, err
 	}
 
@@ -36,13 +36,13 @@ func Open(path string) (*sql.DB, error) {
 	// before returning a "database is locked" error when another connection
 	// holds a write lock.
 	if _, err := database.Exec("PRAGMA busy_timeout = 10000"); err != nil {
-		database.Close()
+		database.Close() // #nosec G104 — cleanup on error path, primary error is returned
 		return nil, err
 	}
 
 	// Enable foreign key enforcement (disabled by default in SQLite).
 	if _, err := database.Exec("PRAGMA foreign_keys = ON"); err != nil {
-		database.Close()
+		database.Close() // #nosec G104 — cleanup on error path, primary error is returned
 		return nil, err
 	}
 

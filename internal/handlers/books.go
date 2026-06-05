@@ -1159,10 +1159,10 @@ func waitOLRateLimit(ctx context.Context) error {
 
 // olRequestWithRetry performs an HTTP GET request to Open Library with:
 //
-//  - Token-bucket rate limiting (via olRateLimiter).
-//  - Exponential backoff retry (up to maxRetries attempts).
-//  - 429-aware backoff: if OL returns 429 with a Retry-After header, the
-//    backoff is extended to honour the server's request.
+//   - Token-bucket rate limiting (via olRateLimiter).
+//   - Exponential backoff retry (up to maxRetries attempts).
+//   - 429-aware backoff: if OL returns 429 with a Retry-After header, the
+//     backoff is extended to honour the server's request.
 //
 // It returns the response body, the HTTP status code, and any error.
 // A non-2xx status is not an error — the caller inspects statusCode.
@@ -1177,21 +1177,21 @@ func olRequestWithRetry(ctx context.Context, url string, maxRetries int) ([]byte
 			return nil, 0, fmt.Errorf("rate limiter wait: %w", err)
 		}
 
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil) // #nosec G704 — url is an OL API endpoint, not user-controlled
 		if err != nil {
 			return nil, 0, fmt.Errorf("building Open Library request: %w", err)
 		}
 		req.Header.Set("User-Agent", olConfig.UserAgent)
 
-		resp, err := apiHTTPClient.Do(req)
+		resp, err := apiHTTPClient.Do(req) // #nosec G704 — url is an OL API endpoint, not user-controlled
 		if err != nil {
 			lastErr = fmt.Errorf("Open Library HTTP request: %w", err)
 			lastStatus = 0
 			continue
 		}
 
+		defer resp.Body.Close()
 		body, err = io.ReadAll(resp.Body)
-		resp.Body.Close()
 		if err != nil {
 			lastErr = fmt.Errorf("reading Open Library response: %w", err)
 			lastStatus = resp.StatusCode

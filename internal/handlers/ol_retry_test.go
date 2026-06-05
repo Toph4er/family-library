@@ -75,7 +75,7 @@ func TestExponentialBackoff(t *testing.T) {
 		{attempt: 1, expected: 1 * time.Second},
 		{attempt: 2, expected: 2 * time.Second},
 		{attempt: 3, expected: 4 * time.Second},
-		{attempt: 4, expected: 5 * time.Second}, // capped at maxDelay
+		{attempt: 4, expected: 5 * time.Second},  // capped at maxDelay
 		{attempt: 10, expected: 5 * time.Second}, // still capped
 	}
 
