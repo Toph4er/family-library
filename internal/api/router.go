@@ -52,6 +52,9 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 		MaxAge:           300,
 	}))
 
+	// -- Static files --
+	r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("internal/web"))))
+
 	// -- Health check (public) --
 	healthHandler := handlers.NewHealthHandler(database)
 	r.Get("/health", healthHandler.Check)

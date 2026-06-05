@@ -24,3 +24,7 @@ Thumbs.db
 # Build artifacts
 coverage/
 .coverage
+
+# Node
+node_modules/
+internal/web/tailwind.css
