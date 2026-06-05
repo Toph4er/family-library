@@ -7,25 +7,25 @@ type Theme struct {
 	ID              string
 	Name            string
 	Description     string
-	Primary         string  // --color-primary
-	Secondary       string  // --color-secondary
-	Accent          string  // --color-accent
-	Background      string  // --color-background
-	Surface         string  // --color-surface
-	Text            string  // --color-text
-	TextLight       string  // --color-text-light
-	Success         string  // --color-success
-	Warning         string  // --color-warning
-	Error           string  // --color-error
-	FontHeading     string  // --font-heading (Google Fonts name + fallback)
-	FontBody        string  // --font-body
-	FontAccent      string  // --font-accent
-	BackgroundSVG   string  // SVG data URI for body::before pattern
-	SelectionBG     string  // ::selection background
-	ScrollbarThumb  string  // scrollbar thumb color
-	VineDividerGrad string  // gradient for vine-divider pseudo-elements
-	FooterTagline   string  // footer decorative text
-	FooterSVG       string  // small inline SVG for footer
+	Primary         string // --color-primary
+	Secondary       string // --color-secondary
+	Accent          string // --color-accent
+	Background      string // --color-background
+	Surface         string // --color-surface
+	Text            string // --color-text
+	TextLight       string // --color-text-light
+	Success         string // --color-success
+	Warning         string // --color-warning
+	Error           string // --color-error
+	FontHeading     string // --font-heading (Google Fonts name + fallback)
+	FontBody        string // --font-body
+	FontAccent      string // --font-accent
+	BackgroundSVG   string // SVG data URI for body::before pattern
+	SelectionBG     string // ::selection background
+	ScrollbarThumb  string // scrollbar thumb color
+	VineDividerGrad string // gradient for vine-divider pseudo-elements
+	FooterTagline   string // footer decorative text
+	FooterSVG       string // small inline SVG for footer
 }
 
 // WoodlandFairytale returns the default woodland-themed theme.
