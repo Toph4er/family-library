@@ -43,6 +43,47 @@
     </div>
   </section>
 
+  <!-- Theme Selection -->
+  <section aria-label="Theme selection">
+    <h2 class="text-2xl font-heading text-primary mb-4">Theme</h2>
+    <p class="text-text-light/70 text-sm mb-4">Choose a visual theme for your library. This affects colors, fonts, and decorative elements for all users.</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {{range .AvailableThemes}}
+      <label class="relative flex items-center gap-4 p-4 rounded-xl shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 border-2 {{if eq .ID $.ActiveTheme.ID}}border-primary{{else}}border-transparent{{end}}"
+        style="background-color: {{.Surface}}; {{if eq .ID $.ActiveTheme.ID}}border-color: {{.Primary}};{{else}}border-color: rgba(0,0,0,0.08);{{end}}">
+        <input type="radio"
+          name="active_theme"
+          value="{{.ID}}"
+          {{if eq .ID $.ActiveTheme.ID}}checked{{end}}
+          class="w-4 h-4 text-primary focus:ring-primary/20"
+          onchange="fetch('/settings/update/active_theme', {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-Token': '{{$.CSRFToken}}'},
+            body: 'value=' + encodeURIComponent(this.value)
+          }).then(r => {
+            if (r.ok) { showToast('Theme updated! Reloading...' , 'success', 2000); setTimeout(() => location.reload(), 2000); }
+          })">
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-base font-heading text-primary">{{.Name}}</span>
+            {{if eq .ID $.ActiveTheme.ID}}
+            <span class="text-xs px-2 py-0.5 rounded-full text-white" style="background-color: {{.Primary}};">Active</span>
+            {{end}}
+          </div>
+          <p class="text-sm text-text-light/80 mb-3">{{.Description}}</p>
+          <div class="flex items-center gap-1.5">
+            <span class="inline-block w-6 h-6 rounded-full border border-white/20 shadow-sm" style="background-color: {{.Primary}};" title="Primary"></span>
+            <span class="inline-block w-6 h-6 rounded-full border border-white/20 shadow-sm" style="background-color: {{.Secondary}};" title="Secondary"></span>
+            <span class="inline-block w-6 h-6 rounded-full border border-white/20 shadow-sm" style="background-color: {{.Accent}};" title="Accent"></span>
+            <span class="inline-block w-6 h-6 rounded-full border border-white/20 shadow-sm" style="background-color: {{.Background}};" title="Background"></span>
+            <span class="inline-block w-6 h-6 rounded border border-white/20 shadow-sm" style="background-color: {{.Surface}};" title="Surface"></span>
+          </div>
+        </div>
+      </label>
+      {{end}}
+    </div>
+  </section>
+
   <!-- Vine divider -->
   <div class="vine-divider max-w-md mx-auto" aria-hidden="true"></div>
 

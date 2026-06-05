@@ -16,6 +16,7 @@ import (
 	"git.rcsmaine.com/chris/library/internal/auth"
 	"git.rcsmaine.com/chris/library/internal/middleware"
 	"git.rcsmaine.com/chris/library/internal/models"
+	"git.rcsmaine.com/chris/library/internal/theme"
 )
 
 // pageContext holds common template data for all page handlers.
@@ -39,12 +40,14 @@ type pageContext struct {
 	DefaultGuestVisibility map[string]bool
 	CurrentQuery           string
 	TotalResults           int
+	ActiveTheme            theme.Theme
+	AvailableThemes        []theme.Theme
 }
 
 // buildPageContext creates a pageContext for the given request.
 // It first checks the request context (set by auth middleware), then falls
 // back to reading the session directly for routes without that middleware.
-func buildPageContext(r *http.Request, store *sessions.CookieStore, sessionName string) pageContext {
+func buildPageContext(r *http.Request, store *sessions.CookieStore, sessionName string, db *sql.DB) pageContext {
 	ctx := pageContext{Year: time.Now().Year()}
 
 	// Check context first (set by auth middleware on protected routes).
@@ -94,6 +97,17 @@ func buildPageContext(r *http.Request, store *sessions.CookieStore, sessionName 
 	return ctx
 }
 
+// loadActiveTheme reads the active_theme setting and returns the resolved Theme.
+// Falls back to WoodlandFairytale if the setting is missing or unknown.
+func loadActiveTheme(db *sql.DB) theme.Theme {
+	var val string
+	err := db.QueryRow("SELECT value FROM settings WHERE key = ?", "active_theme").Scan(&val)
+	if err != nil || val == "" {
+		return theme.WoodlandFairytale()
+	}
+	return theme.GetThemeByID(val)
+}
+
 // isHTMXRequest checks if the request originated from HTMX.
 func isHTMXRequest(r *http.Request) bool {
 	return r.Header.Get("HX-Request") == "true"
@@ -122,7 +136,7 @@ func renderPage(w http.ResponseWriter, r *http.Request, tmpl *template.Template,
 // Authenticated users are redirected to /books.
 func RenderLandingPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := buildPageContext(r, store, sessionName)
+		ctx := buildPageContext(r, store, sessionName, db)
 
 		// Authenticated users should not see the landing page — send them to books.
 		if ctx.IsAuthenticated {
@@ -143,6 +157,7 @@ func RenderLandingPage(tmpl *template.Template, db *sql.DB, store *sessions.Cook
 
 		ctx.SiteName = siteName
 		ctx.SiteTagline = siteTagline
+		ctx.ActiveTheme = loadActiveTheme(db)
 
 		renderPage(w, r, tmpl, "landing.html", ctx)
 	}
@@ -152,7 +167,7 @@ func RenderLandingPage(tmpl *template.Template, db *sql.DB, store *sessions.Cook
 // Supports ?q= search parameter for filtering books.
 func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := buildPageContext(r, store, sessionName)
+		ctx := buildPageContext(r, store, sessionName, db)
 
 		// Defense-in-depth: reject unauthenticated requests before querying the DB.
 		if !ctx.IsAuthenticated {
@@ -224,7 +239,7 @@ func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 // RenderBookDetailPage renders the book detail page (auth required).
 func RenderBookDetailPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := buildPageContext(r, store, sessionName)
+		ctx := buildPageContext(r, store, sessionName, db)
 
 		// Defense-in-depth: reject unauthenticated requests before querying the DB.
 		if !ctx.IsAuthenticated {
@@ -342,7 +357,7 @@ func RenderBookDetailPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 // RenderWishlistPage renders the wishlist page (open to guests).
 func RenderWishlistPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := buildPageContext(r, store, sessionName)
+		ctx := buildPageContext(r, store, sessionName, db)
 
 		rows, err := db.Query("SELECT id, isbn, title, author, reason, priority, amazon_url, thriftbooks_url, notes, fulfilled, requested_by, requested_at, fulfilled_at, cover_image_url FROM wishlist ORDER BY priority DESC, requested_at DESC")
 		if err != nil {
@@ -412,7 +427,7 @@ func RenderWishlistPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 // RenderWishlistFormPage renders the add/edit wishlist item form as a full page (admin only).
 func RenderWishlistFormPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string, isEdit bool, itemID int64) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := buildPageContext(r, store, sessionName)
+		ctx := buildPageContext(r, store, sessionName, db)
 
 		if !ctx.IsAuthenticated {
 			http.Redirect(w, r, "/login", http.StatusFound)
@@ -481,7 +496,7 @@ func RenderWishlistFormPage(tmpl *template.Template, db *sql.DB, store *sessions
 // RenderSettingsPage renders the settings page (admin required).
 func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := buildPageContext(r, store, sessionName)
+		ctx := buildPageContext(r, store, sessionName, db)
 
 		// Defense-in-depth: reject unauthenticated or non-admin requests before querying the DB.
 		if !ctx.IsAuthenticated {
@@ -582,6 +597,9 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 			_ = json.Unmarshal([]byte(defaultVisibility), &ctx.DefaultGuestVisibility)
 		}
 
+		// Load available themes
+		ctx.AvailableThemes = theme.AvailableThemes()
+
 		renderPage(w, r, tmpl, "settings.html", ctx)
 	}
 }
@@ -589,7 +607,7 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 // RenderBookFormPage renders the add/edit book form as a full page.
 func RenderBookFormPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string, isEdit bool, bookID int64) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := buildPageContext(r, store, sessionName)
+		ctx := buildPageContext(r, store, sessionName, db)
 
 		if !ctx.IsAuthenticated {
 			http.Redirect(w, r, "/login", http.StatusFound)
@@ -691,7 +709,7 @@ type PageContextForTest struct {
 // BuildPageContextForTest calls buildPageContext and returns the fields
 // needed for CSRF token verification in tests.
 func BuildPageContextForTest(r *http.Request, store *sessions.CookieStore, sessionName string) PageContextForTest {
-	ctx := buildPageContext(r, store, sessionName)
+	ctx := buildPageContext(r, store, sessionName, nil)
 	return PageContextForTest{
 		CSRFToken:       ctx.CSRFToken,
 		IsAdmin:         ctx.IsAdmin,

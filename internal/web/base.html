@@ -14,10 +14,11 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;family=Caveat:wght@400;500;600;700&amp;family=Orbitron:wght@400;500;600;700&amp;family=Space+Mono:wght@400;700&amp;family=Bangers&amp;family=Permanent+Marker&amp;family=Cinzel:wght@400;500;600;700&amp;family=Dancing+Script:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
 
 
   {{block "extra-head" .}}{{end}}
+  {{.ActiveTheme.CSSOverrideBlock}}
 </head>
 <body class="min-h-screen flex flex-col">
   <div id="page-wrapper" class="flex flex-col min-h-screen" x-data="{ mobileMenuOpen: false }">
@@ -120,10 +121,10 @@
       <div class="max-w-7xl mx-auto px-4 py-6">
         <div class="flex flex-col md:flex-row items-center justify-between gap-4">
           <p class="text-text-light/60 text-sm">
-            &copy; {{.Year}} Woodland Library. All rights reserved.
+            &amp;copy; {{.Year}} Woodland Library. All rights reserved.
           </p>
           <p class="text-text-light/40 text-xs font-accent text-lg">
-            Where stories grow like ancient trees —
+            {{.ActiveTheme.FooterTagline}} —
             <svg class="w-4 h-4 inline text-primary" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z"/></svg>
           </p>
         </div>
@@ -183,7 +184,7 @@
           showToast(msg, 'error');
         }
         // HTML responses: error fragment is already swapped into the DOM by HTMX.
-      } else if (event.detail.elt && event.detail.elt.getAttribute('hx-confirm-toast')) {
+      } else if (event.detail.elt &amp;&amp; event.detail.elt.getAttribute('hx-confirm-toast')) {
         showToast('Success', 'success');
       }
     });
@@ -225,7 +226,7 @@
           e.preventDefault();
           self.addTag(self.input.value.trim());
         }
-        if (e.key === 'Backspace' && !self.input.value && self.tags.length) {
+        if (e.key === 'Backspace' &amp;&amp; !self.input.value &amp;&amp; self.tags.length) {
           self.removeTag(self.tags.length - 1);
         }
       });
@@ -296,7 +297,7 @@
           btn.className = 'tag-pill-remove';
           btn.setAttribute('data-index', idx);
           btn.setAttribute('aria-label', 'Remove ' + tag);
-          btn.innerHTML = '&#x2715;';
+          btn.innerHTML = '&amp;#x2715;';
           pill.appendChild(btn);
         }
         self.container.insertBefore(pill, self.input);
@@ -321,7 +322,7 @@
 
     document.addEventListener('submit', function(e) {
       var form = e.target;
-      if (form && form.tagName === 'FORM') {
+      if (form &amp;&amp; form.tagName === 'FORM') {
         var containers = form.querySelectorAll('.tag-input-container');
         containers.forEach(function(c) {
           var hidden = c.querySelector('input[type="hidden"]');
