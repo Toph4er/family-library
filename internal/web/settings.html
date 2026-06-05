@@ -75,9 +75,7 @@
       <h2 class="text-2xl font-heading text-primary">Users</h2>
       <button
         type="button"
-        hx-get="/settings/users/new-form"
-        hx-target="#modal-target"
-        hx-swap="innerHTML"
+        onclick="openSettingsModal('/settings/users/new-form')"
         class="px-4 py-2 rounded-xl font-medium text-white shadow-sm text-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
         style="background-color: var(--color-primary);"
         onmouseenter="this.style.backgroundColor='var(--color-text-light)'"
@@ -129,9 +127,7 @@
       <h2 class="text-2xl font-heading text-primary">Family Members</h2>
       <button
         type="button"
-        hx-get="/settings/family-members/new-form"
-        hx-target="#modal-target"
-        hx-swap="innerHTML"
+        onclick="openSettingsModal('/settings/family-members/new-form')"
         class="px-4 py-2 rounded-xl font-medium text-white shadow-sm text-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
         style="background-color: var(--color-primary);"
         onmouseenter="this.style.backgroundColor='var(--color-text-light)'"
@@ -167,9 +163,7 @@
             <td class="py-3 px-4 text-sm">
               <div class="flex items-center gap-2">
                 <button type="button"
-                  hx-get="/settings/family-members/{{.ID}}/edit"
-                  hx-target="#modal-target"
-                  hx-swap="innerHTML"
+                  onclick="openSettingsModal('/settings/family-members/{{.ID}}/edit')"
                   class="text-text-light/60 hover:text-primary transition-colors"
                   aria-label="Edit {{.Name}}"
                 >
@@ -206,8 +200,8 @@
     </div>
   </section>
 
-  <!-- Modal Container -->
-  <div id="modal-target"></div>
+  <!-- Modal Container (placeholder for form error responses) -->
+  <div id="settings-modal-target"></div>
 
 </div>
 {{end}}
@@ -229,6 +223,65 @@ function updateGuestVisibility(field, visible) {
     // reverting behavior — but we leave it as-is for UX.
     console.warn('Failed to update guest visibility for', field);
   });
+}
+
+function openSettingsModal(url) {
+  // Remove any existing settings modal first
+  var existing = document.getElementById('settings-modal-backdrop');
+  if (existing) existing.remove();
+
+  fetch(url, { headers: { 'HX-Request': 'true' } })
+    .then(function(r) { return r.text(); })
+    .then(function(html) {
+      // Server returns: <div id="modal-backdrop" class="modal-backdrop" hx-on::click="...">
+      // Parse it, fix up IDs, and insert into body.
+      var wrapper = document.createElement('div');
+      wrapper.innerHTML = html;
+      var serverBackdrop = wrapper.querySelector('.modal-backdrop');
+      if (!serverBackdrop) {
+        console.error('No modal-backdrop in response');
+        return;
+      }
+
+      // Change the ID so it doesn't conflict with other modals
+      serverBackdrop.id = 'settings-modal-backdrop';
+
+      // Fix all close buttons that reference the old ID
+      serverBackdrop.querySelectorAll('[hx-on::click]').forEach(function(el) {
+        var handler = el.getAttribute('hx-on::click');
+        if (handler && handler.indexOf('modal-backdrop') !== -1) {
+          el.setAttribute('hx-on::click', handler.replace(/modal-backdrop/g, 'settings-modal-backdrop'));
+        }
+      });
+
+      // Fix onclick handlers too
+      serverBackdrop.querySelectorAll('[onclick]').forEach(function(el) {
+        var handler = el.getAttribute('onclick');
+        if (handler && handler.indexOf('modal-backdrop') !== -1) {
+          el.setAttribute('onclick', handler.replace(/modal-backdrop/g, 'settings-modal-backdrop'));
+        }
+      });
+
+      // Fix form's hx-target so error responses go to the error div inside the modal
+      var form = serverBackdrop.querySelector('form');
+      if (form) {
+        var errorDiv = serverBackdrop.querySelector('#user-form-error, #fm-form-error');
+        if (errorDiv) {
+          form.setAttribute('hx-target', '#' + errorDiv.id);
+          form.setAttribute('hx-swap', 'innerHTML');
+        }
+      }
+
+      // Add backdrop click handler (in addition to hx-on::click)
+      serverBackdrop.addEventListener('click', function(e) {
+        if (e.target === serverBackdrop) serverBackdrop.remove();
+      });
+
+      document.body.appendChild(serverBackdrop);
+    })
+    .catch(function(err) {
+      console.error('Failed to load modal:', err);
+    });
 }
 </script>
 {{end}}

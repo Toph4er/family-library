@@ -302,6 +302,7 @@ func HTMLFamilyMemberFormHandler(db *sql.DB) http.HandlerFunc {
           </select>
         </div>
       </div>
+      <div id="fm-form-error" class="mt-4"></div>
       <div class="flex justify-end gap-3 mt-6">
         <button type="button" hx-on::click="document.getElementById('modal-backdrop').remove()" class="px-4 py-2 rounded-lg border text-text-light hover:text-text transition-colors no-underline" style="border-color: var(--color-secondary);">Cancel</button>
         <button type="submit" class="px-4 py-2 rounded-lg font-medium text-white" style="background-color: var(--color-primary);">` + buttonLabel + `</button>

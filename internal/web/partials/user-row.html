@@ -11,9 +11,7 @@
   <td class="py-3 px-4">
     <div class="flex gap-1">
       <button type="button"
-        hx-get="/settings/users/{{.id}}/edit"
-        hx-target="#modal-target"
-        hx-swap="innerHTML"
+        onclick="openSettingsModal('/settings/users/{{.id}}/edit')"
         class="text-primary hover:text-text-light text-sm no-underline p-1"
         aria-label="Edit user {{.username}}"
       >✏️</button>

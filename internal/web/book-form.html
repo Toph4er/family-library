@@ -421,7 +421,22 @@ var tagInputs = {};
         </div>
         <div class="p-4">
           <div id="scanner-reader" class="w-full rounded-lg overflow-hidden bg-black" style="min-height: 240px;"></div>
-          <p class="text-text-light/60 text-sm text-center mt-3">Point your camera at the ISBN barcode (usually on the back cover)</p>
+          <div class="flex justify-center mt-3">
+            <button type="button" id="camera-switch-btn" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md border transition-colors hover:bg-gray-50" style="border-color: rgba(139, 69, 19, 0.15); color: #6b4423;">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M20 16v4a2 2 0 0 1-2 2h-4"/>
+                <path d="M14 22l2-2-2-2"/>
+                <path d="M4 8V4a2 2 0 0 1 2-2h4"/>
+                <path d="M10 2L8 4l2 2"/>
+                <path d="M2 16v-4a2 2 0 0 1 2-2h4"/>
+                <path d="M2 12h2l2 2"/>
+                <path d="M22 8v4a2 2 0 0 1-2 2h-4"/>
+                <path d="M18 16h2l2-2"/>
+              </svg>
+              Switch Camera
+            </button>
+          </div>
+          <p class="text-text-light/60 text-sm text-center mt-2">Point your camera at the ISBN barcode (usually on the back cover)</p>
           <div id="scanner-status" class="text-center mt-2 text-sm" role="status" aria-live="polite"></div>
         </div>
       </div>
@@ -453,8 +468,9 @@ var tagInputs = {};
 
     html5QrcodeScanner = new Html5QrcodeScanner("scanner-reader", {
       fps: 10,
-      qrbox: { width: 250, height: 100 },
-      aspectRatio: 2.0,
+      facingMode: "environment",
+      qrbox: { width: 250, height: 250 },
+      aspectRatio: 1.0,
       rememberLastUsedCamera: true,
       showTorchButtonIfNeeded: true
     }, false);
@@ -472,6 +488,16 @@ var tagInputs = {};
     }, function(err) {
       console.warn('html5-qrcode scan error:', err);
     });
+
+    // Wire up the camera switch button
+    var switchBtn = document.getElementById('camera-switch-btn');
+    if (switchBtn) {
+      switchBtn.addEventListener('click', function() {
+        if (html5QrcodeScanner) {
+          html5QrcodeScanner.switchCamera();
+        }
+      });
+    }
   }
 
   scanBtn.addEventListener('click', function() {
