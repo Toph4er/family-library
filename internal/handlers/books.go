@@ -1151,9 +1151,132 @@ var apiHTTPClient = &http.Client{
 var olRateLimiter = rate.NewLimiter(rate.Every(time.Second/time.Duration(olConfig.RateLimitPerSec)), 1)
 
 // waitOLRateLimit blocks until a token is available from the Open Library
-// rate limiter. Call this before every outgoing OL request.
-func waitOLRateLimit() {
-	_ = olRateLimiter.Wait(context.Background())
+// rate limiter. It respects context cancellation so that a client disconnect
+// doesn't leave a goroutine blocked.
+func waitOLRateLimit(ctx context.Context) error {
+	return olRateLimiter.Wait(ctx)
+}
+
+// olRequestWithRetry performs an HTTP GET request to Open Library with:
+//
+//  - Token-bucket rate limiting (via olRateLimiter).
+//  - Exponential backoff retry (up to maxRetries attempts).
+//  - 429-aware backoff: if OL returns 429 with a Retry-After header, the
+//    backoff is extended to honour the server's request.
+//
+// It returns the response body, the HTTP status code, and any error.
+// A non-2xx status is not an error — the caller inspects statusCode.
+func olRequestWithRetry(ctx context.Context, url string, maxRetries int) ([]byte, int, error) {
+	var body []byte
+	var lastErr error
+	var lastStatus int
+
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		// Wait for rate limiter token (respects context cancellation).
+		if err := waitOLRateLimit(ctx); err != nil {
+			return nil, 0, fmt.Errorf("rate limiter wait: %w", err)
+		}
+
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+		if err != nil {
+			return nil, 0, fmt.Errorf("building Open Library request: %w", err)
+		}
+		req.Header.Set("User-Agent", olConfig.UserAgent)
+
+		resp, err := apiHTTPClient.Do(req)
+		if err != nil {
+			lastErr = fmt.Errorf("Open Library HTTP request: %w", err)
+			lastStatus = 0
+			continue
+		}
+
+		body, err = io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			lastErr = fmt.Errorf("reading Open Library response: %w", err)
+			lastStatus = resp.StatusCode
+			continue
+		}
+
+		lastStatus = resp.StatusCode
+
+		if resp.StatusCode == http.StatusOK {
+			return body, resp.StatusCode, nil
+		}
+
+		// 429 Too Many Requests: honour Retry-After header if present.
+		if resp.StatusCode == http.StatusTooManyRequests {
+			retryAfter := parseRetryAfter(resp.Header.Get("Retry-After"))
+			if retryAfter > 0 {
+				slog.Warn("Open Library rate limit hit, honouring Retry-After",
+					"url", url, "retry_after", retryAfter.String())
+				if err := sleepCtx(ctx, retryAfter); err != nil {
+					return nil, resp.StatusCode, fmt.Errorf("context cancelled during 429 backoff: %w", err)
+				}
+			}
+		}
+
+		lastErr = fmt.Errorf("Open Library returned status %d", resp.StatusCode)
+	}
+
+	// All retries exhausted — apply exponential backoff before giving up.
+	if lastStatus != http.StatusOK {
+		backoff := exponentialBackoff(maxRetries, 500*time.Millisecond, 5*time.Second)
+		slog.Info("Open Library retry backoff before final failure",
+			"url", url, "backoff", backoff.String())
+		_ = sleepCtx(context.Background(), backoff) // don't cancel on final backoff
+	}
+
+	if lastErr == nil {
+		lastErr = fmt.Errorf("Open Library request failed after %d attempts", maxRetries+1)
+	}
+	return body, lastStatus, lastErr
+}
+
+// parseRetryAfter parses a Retry-After header value.
+// Supports both decimal seconds (RFC 7231) and HTTP-date formats.
+func parseRetryAfter(header string) time.Duration {
+	header = strings.TrimSpace(header)
+	if header == "" {
+		return 0
+	}
+	// Try decimal seconds first (most common).
+	if secs, err := strconv.Atoi(header); err == nil && secs > 0 {
+		return time.Duration(secs) * time.Second
+	}
+	// Try HTTP-date format.
+	if t, err := time.Parse(time.RFC1123, header); err == nil {
+		if delay := time.Until(t); delay > 0 {
+			return delay
+		}
+	}
+	return 0
+}
+
+// exponentialBackoff computes an exponential backoff duration with jitter.
+// base is the starting delay, maxDelay caps the growth.
+func exponentialBackoff(attempt int, base, maxDelay time.Duration) time.Duration {
+	delay := base * (1 << uint(attempt)) // base * 2^attempt
+	if delay > maxDelay {
+		delay = maxDelay
+	}
+	return delay
+}
+
+// sleepCtx sleeps for the given duration, but returns immediately if ctx is
+// cancelled. Returns nil on success, or the context's error on cancellation.
+func sleepCtx(ctx context.Context, d time.Duration) error {
+	if d <= 0 {
+		return nil
+	}
+	timer := time.NewTimer(d)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
+	}
 }
 
 // yearRe matches a 4-digit year at the start of a string.
@@ -1172,57 +1295,15 @@ func AuthorWorksHandler(db *sql.DB) http.HandlerFunc {
 
 		u := fmt.Sprintf("%s/authors/%s/works.json", olConfig.BaseURL, url.PathEscape(key))
 
-		maxRetries := 2
-		var body []byte
-		var resp *http.Response
-		var lastErr error
-
-		for attempt := 0; attempt <= maxRetries; attempt++ {
-			if attempt > 0 {
-				backoff := time.Duration(attempt) * time.Second
-				time.Sleep(backoff)
-				slog.Info("retrying Open Library author works request", "key", key, "attempt", attempt+1, "backoff", backoff)
-			}
-
-			waitOLRateLimit()
-
-			// #nosec G704 -- URL domain is configured via OL_BASE_URL (trusted external API);
-			// key is sanitized with url.PathEscape. This is a client-side lookup, not a redirect.
-			req, err := http.NewRequest("GET", u, nil)
-			if err != nil {
-				slog.Error("failed to build Open Library author works request", "key", key, "error", err)
-				JSONError(w, http.StatusInternalServerError, "failed to build request")
-				return
-			}
-			req.Header.Set("User-Agent", olConfig.UserAgent)
-
-			// #nosec G704 -- URL is constructed from configured OL base; key is sanitized
-			resp, err = apiHTTPClient.Do(req)
-			if err != nil {
-				lastErr = fmt.Errorf("Open Library author works HTTP request: %w", err)
-				continue
-			}
-
-			body, err = io.ReadAll(resp.Body)
-			resp.Body.Close()
-			if err != nil {
-				lastErr = fmt.Errorf("reading Open Library author works response: %w", err)
-				continue
-			}
-
-			if resp.StatusCode == http.StatusOK {
-				break
-			}
-
-			lastErr = fmt.Errorf("Open Library author works returned status %d", resp.StatusCode)
+		body, statusCode, err := olRequestWithRetry(r.Context(), u, 2)
+		if err != nil {
+			slog.Error("Open Library author works failed", "key", key, "error", err)
+			JSONError(w, http.StatusBadGateway, fmt.Sprintf("author works unavailable: %v", err))
+			return
 		}
-
-		if resp == nil || resp.StatusCode != http.StatusOK {
-			if lastErr == nil {
-				lastErr = fmt.Errorf("Open Library author works request failed after %d attempts", maxRetries+1)
-			}
-			slog.Error("Open Library author works failed", "key", key, "error", lastErr)
-			JSONError(w, http.StatusBadGateway, fmt.Sprintf("author works unavailable: %v", lastErr))
+		if statusCode != http.StatusOK {
+			slog.Error("Open Library author works failed", "key", key, "status", statusCode)
+			JSONError(w, http.StatusBadGateway, fmt.Sprintf("author works unavailable: status %d", statusCode))
 			return
 		}
 
@@ -1340,54 +1421,15 @@ func SearchOpenLibraryHandler(db *sql.DB) http.HandlerFunc {
 
 		u := fmt.Sprintf("%s/search.json?%s", olConfig.BaseURL, params.Encode())
 
-		maxRetries := 2
-		var body []byte
-		var resp *http.Response
-		var lastErr error
-
-		for attempt := 0; attempt <= maxRetries; attempt++ {
-			if attempt > 0 {
-				backoff := time.Duration(attempt) * time.Second
-				time.Sleep(backoff)
-				slog.Info("retrying Open Library search", "attempt", attempt+1, "backoff", backoff)
-			}
-
-			waitOLRateLimit()
-
-			req, err := http.NewRequest("GET", u, nil)
-			if err != nil {
-				slog.Error("failed to build Open Library search request", "error", err)
-				JSONError(w, http.StatusInternalServerError, "failed to build search request")
-				return
-			}
-			req.Header.Set("User-Agent", olConfig.UserAgent)
-
-			resp, err = apiHTTPClient.Do(req)
-			if err != nil {
-				lastErr = fmt.Errorf("Open Library search HTTP request: %w", err)
-				continue
-			}
-
-			body, err = io.ReadAll(resp.Body)
-			resp.Body.Close()
-			if err != nil {
-				lastErr = fmt.Errorf("reading Open Library search response: %w", err)
-				continue
-			}
-
-			if resp.StatusCode == http.StatusOK {
-				break
-			}
-
-			lastErr = fmt.Errorf("Open Library search returned status %d", resp.StatusCode)
+		body, statusCode, err := olRequestWithRetry(r.Context(), u, 2)
+		if err != nil {
+			slog.Error("Open Library search failed", "error", err)
+			JSONError(w, http.StatusBadGateway, fmt.Sprintf("search unavailable: %v", err))
+			return
 		}
-
-		if resp == nil || resp.StatusCode != http.StatusOK {
-			if lastErr == nil {
-				lastErr = fmt.Errorf("Open Library search request failed after %d attempts", maxRetries+1)
-			}
-			slog.Error("Open Library search failed", "error", lastErr)
-			JSONError(w, http.StatusBadGateway, fmt.Sprintf("search unavailable: %v", lastErr))
+		if statusCode != http.StatusOK {
+			slog.Error("Open Library search failed", "status", statusCode)
+			JSONError(w, http.StatusBadGateway, fmt.Sprintf("search unavailable: status %d", statusCode))
 			return
 		}
 
@@ -1406,59 +1448,17 @@ func SearchOpenLibraryHandler(db *sql.DB) http.HandlerFunc {
 // Returns the populated book, cover source string, and any error.
 // If no results are found, returns (nil, "", nil).
 func fetchFromOpenLibrary(isbn string) (*models.Book, string, error) {
-	maxRetries := 2
-	var body []byte
-	var resp *http.Response
-	var lastErr error
-
-	for attempt := 0; attempt <= maxRetries; attempt++ {
-		if attempt > 0 {
-			backoff := time.Duration(attempt) * time.Second
-			time.Sleep(backoff)
-			slog.Info("retrying Open Library request", "isbn", isbn, "attempt", attempt+1, "backoff", backoff)
-		}
-
-		waitOLRateLimit()
-
-		u := fmt.Sprintf("%s/isbn/%s.json", olConfig.BaseURL, url.PathEscape(isbn))
-		// #nosec G704 -- URL domain is configured via OL_BASE_URL (trusted external API);
-		// isbn is sanitized with url.PathEscape. This is a client-side lookup, not a redirect.
-		req, err := http.NewRequest("GET", u, nil)
-		if err != nil {
-			return nil, "", fmt.Errorf("building Open Library request: %w", err)
-		}
-		// Open Library blocks requests without a User-Agent header.
-		req.Header.Set("User-Agent", olConfig.UserAgent)
-
-		// #nosec G704 -- URL is constructed from configured OL base; isbn is sanitized
-		resp, err = apiHTTPClient.Do(req)
-		if err != nil {
-			lastErr = fmt.Errorf("Open Library HTTP request: %w", err)
-			continue
-		}
-
-		body, err = io.ReadAll(resp.Body)
-		resp.Body.Close()
-		if err != nil {
-			lastErr = fmt.Errorf("reading Open Library response: %w", err)
-			continue
-		}
-
-		if resp.StatusCode == http.StatusNotFound {
-			return nil, "", nil
-		}
-		if resp.StatusCode == http.StatusOK {
-			break // success
-		}
-
-		lastErr = fmt.Errorf("Open Library returned status %d", resp.StatusCode)
+	u := fmt.Sprintf("%s/isbn/%s.json", olConfig.BaseURL, url.PathEscape(isbn))
+	body, statusCode, err := olRequestWithRetry(context.Background(), u, 2)
+	if err != nil {
+		return nil, "", fmt.Errorf("Open Library request failed after retries: %w", err)
 	}
 
-	if resp == nil || resp.StatusCode != http.StatusOK {
-		if lastErr == nil {
-			lastErr = fmt.Errorf("Open Library request failed after %d attempts", maxRetries+1)
-		}
-		return nil, "", fmt.Errorf("Open Library request failed after %d retries: %w", maxRetries+1, lastErr)
+	if statusCode == http.StatusNotFound {
+		return nil, "", nil
+	}
+	if statusCode != http.StatusOK {
+		return nil, "", fmt.Errorf("Open Library returned status %d", statusCode)
 	}
 
 	var olResp map[string]interface{}
@@ -1696,53 +1696,14 @@ func resolveOpenLibraryAuthorKeys(raw []interface{}) []string {
 
 // fetchOpenLibraryAuthorName fetches the name of a single author by their OL key.
 func fetchOpenLibraryAuthorName(key string) string {
-	maxRetries := 2
-	var body []byte
-	var resp *http.Response
-	var lastErr error
-
-	for attempt := 0; attempt <= maxRetries; attempt++ {
-		if attempt > 0 {
-			backoff := time.Duration(attempt) * time.Second
-			time.Sleep(backoff)
-			slog.Info("retrying Open Library author request", "key", key, "attempt", attempt+1, "backoff", backoff)
-		}
-
-		waitOLRateLimit()
-
-		u := fmt.Sprintf("%s%s.json", olConfig.BaseURL, key)
-		req, err := http.NewRequest("GET", u, nil)
-		if err != nil {
-			slog.Warn("failed to build Open Library author request", "key", key, "error", err)
-			return ""
-		}
-		req.Header.Set("User-Agent", olConfig.UserAgent)
-
-		resp, err = apiHTTPClient.Do(req)
-		if err != nil {
-			lastErr = fmt.Errorf("Open Library author HTTP request: %w", err)
-			continue
-		}
-
-		body, err = io.ReadAll(resp.Body)
-		resp.Body.Close()
-		if err != nil {
-			lastErr = fmt.Errorf("reading Open Library author response: %w", err)
-			continue
-		}
-
-		if resp.StatusCode == http.StatusOK {
-			break // success
-		}
-
-		lastErr = fmt.Errorf("Open Library author returned status %d", resp.StatusCode)
+	u := fmt.Sprintf("%s%s.json", olConfig.BaseURL, key)
+	body, statusCode, err := olRequestWithRetry(context.Background(), u, 2)
+	if err != nil {
+		slog.Warn("Open Library author request failed after retries", "key", key, "error", err)
+		return ""
 	}
-
-	if resp == nil || resp.StatusCode != http.StatusOK {
-		if lastErr == nil {
-			lastErr = fmt.Errorf("Open Library author request failed after %d attempts", maxRetries+1)
-		}
-		slog.Warn("Open Library author request failed after retries", "key", key, "error", lastErr)
+	if statusCode != http.StatusOK {
+		slog.Warn("Open Library author request failed", "key", key, "status", statusCode)
 		return ""
 	}
 
