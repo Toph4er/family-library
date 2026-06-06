@@ -10,6 +10,7 @@ import (
 
 	"git.rcsmaine.com/chris/library/internal/auth"
 	"git.rcsmaine.com/chris/library/internal/middleware"
+	"git.rcsmaine.com/chris/library/internal/theme"
 )
 
 // pageData holds template context for login-related pages.
@@ -18,6 +19,7 @@ type pageData struct {
 	CSRFToken       string
 	IsAdmin         bool
 	IsAuthenticated bool
+	ActiveTheme     theme.Theme
 }
 
 // getCSRFToken retrieves or generates a CSRF token for the given request.
@@ -76,8 +78,9 @@ func RenderLoginPage(tmpl *template.Template, store *sessions.CookieStore, sessi
 
 		token := getCSRFToken(w, store, sessionName, r)
 		data := pageData{
-			Year:      time.Now().Year(),
-			CSRFToken: token,
+			Year:        time.Now().Year(),
+			CSRFToken:   token,
+			ActiveTheme: theme.WoodlandFairytale(),
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if isHTMXRequest(r) {
@@ -113,8 +116,9 @@ func RenderGuestLoginPage(tmpl *template.Template, store *sessions.CookieStore, 
 
 		token := getCSRFToken(w, store, sessionName, r)
 		data := pageData{
-			Year:      time.Now().Year(),
-			CSRFToken: token,
+			Year:        time.Now().Year(),
+			CSRFToken:   token,
+			ActiveTheme: theme.WoodlandFairytale(),
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if isHTMXRequest(r) {
@@ -135,7 +139,8 @@ func RenderLogoutSuccess(tmpl *template.Template, authSvc *auth.Auth) http.Handl
 		// Perform the actual logout first
 		_ = authSvc.Logout(w, r)
 		data := pageData{
-			Year: time.Now().Year(),
+			Year:        time.Now().Year(),
+			ActiveTheme: theme.WoodlandFairytale(),
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if isHTMXRequest(r) {
