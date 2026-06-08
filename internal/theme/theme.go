@@ -170,35 +170,35 @@ func (t Theme) CSSOverrideBlock() template.HTML {
 	return template.HTML(fmt.Sprintf(`
 <style>
 :root {
-  --color-primary: %s;
-  --color-secondary: %s;
-  --color-accent: %s;
-  --color-background: %s;
-  --color-surface: %s;
-  --color-text: %s;
-  --color-text-light: %s;
-  --color-success: %s;
-  --color-warning: %s;
-  --color-error: %s;
-  --font-heading: %s;
-  --font-body: %s;
-  --font-accent: %s;
+  --color-primary: %s !important;
+  --color-secondary: %s !important;
+  --color-accent: %s !important;
+  --color-background: %s !important;
+  --color-surface: %s !important;
+  --color-text: %s !important;
+  --color-text-light: %s !important;
+  --color-success: %s !important;
+  --color-warning: %s !important;
+  --color-error: %s !important;
+  --font-heading: %s !important;
+  --font-body: %s !important;
+  --font-accent: %s !important;
 }
 .vine-divider::before, .vine-divider::after {
-  background: %s !important;
+  background: %s;
 }
-.mushroom-tag { background: color-mix(in srgb, %s 10%%, transparent) !important; color: %s !important; }
-.tag-pill { background: color-mix(in srgb, %s 10%%, transparent) !important; color: %s !important; }
-.tag-input-container { background: %s !important; border-color: color-mix(in srgb, %s 20%%, transparent) !important; }
-.modal-content { background: %s !important; }
-.toast-success { background: %s !important; }
-.toast-error { background: %s !important; }
-.toast-info { background: %s !important; }
-.skip-link { background: %s !important; }
-body::-webkit-scrollbar-thumb { background: %s !important; }
-body { scrollbar-color: %s transparent !important; }
+.mushroom-tag { background: color-mix(in srgb, %s 10%%, transparent); color: %s; }
+.tag-pill { background: color-mix(in srgb, %s 10%%, transparent); color: %s; }
+.tag-input-container { background: %s; border-color: color-mix(in srgb, %s 20%%, transparent); }
+.modal-content { background: %s; }
+.toast-success { background: %s; }
+.toast-error { background: %s; }
+.toast-info { background: %s; }
+.skip-link { background: %s; }
+body::-webkit-scrollbar-thumb { background: %s; }
+body { scrollbar-color: %s transparent; }
 body::before { background-image: url("%s") !important; }
-::selection { background: %s !important; color: %s !important; }
+::selection { background: %s; color: %s; }
 
 /* Dark theme support */
 body { background-color: %s !important; color: %s !important; }

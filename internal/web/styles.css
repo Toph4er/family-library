@@ -69,7 +69,7 @@
   content: '';
   flex: 1;
   height: 1px;
-  background: linear-gradient(to right, transparent, rgba(139, 69, 19, 0.3), transparent);
+  background: var(--color-vine-divider-grad, linear-gradient(to right, transparent, color-mix(in srgb, var(--color-secondary) 30%, transparent), transparent));
 }
 
 .mushroom-tag {
@@ -79,8 +79,8 @@
   border-radius: 9999px;
   font-size: 0.75rem;
   font-family: 'Caveat', cursive;
-  background: rgba(45, 80, 22, 0.1);
-  color: #2d5016;
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  color: var(--color-primary);
 }
 
 .tag-input-container {
@@ -88,9 +88,9 @@
   flex-wrap: wrap;
   gap: 4px;
   padding: 4px 8px;
-  border: 1px solid rgba(139, 69, 19, 0.2);
+  border: 1px solid color-mix(in srgb, var(--color-secondary) 20%, transparent);
   border-radius: 8px;
-  background: #faf8f5;
+  background: var(--color-surface);
   min-height: 36px;
 }
 .tag-pill {
@@ -100,8 +100,8 @@
   padding: 2px 8px;
   border-radius: 9999px;
   font-size: 0.75rem;
-  background: rgba(45, 80, 22, 0.1);
-  color: #2d5016;
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  color: var(--color-primary);
 }
 .tag-pill-remove {
   cursor: pointer;
@@ -130,7 +130,7 @@
   z-index: 50;
 }
 .modal-content {
-  background: #faf8f5;
+  background: var(--color-surface);
   border-radius: 12px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
 }
@@ -149,16 +149,16 @@
   z-index: 100;
   animation: fade-in-up 0.3s ease-out;
 }
-.toast-success { background: #457528; color: white; }
-.toast-error { background: #8b2500; color: white; }
-.toast-info { background: #2d5016; color: white; }
+.toast-success { background: var(--color-success); color: var(--color-white, #fff); }
+.toast-error { background: var(--color-error); color: var(--color-white, #fff); }
+.toast-info { background: var(--color-primary); color: var(--color-white, #fff); }
 
 .skip-link {
   position: absolute;
   top: -40px;
   left: 0;
-  background: #2d5016;
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-white, #fff);
   padding: 8px 16px;
   z-index: 100;
   transition: top 0.2s;
@@ -170,11 +170,11 @@
 
 body {
   scrollbar-width: thin;
-  scrollbar-color: rgba(139, 69, 19, 0.3) transparent;
+  scrollbar-color: var(--color-scrollbar-thumb, color-mix(in srgb, var(--color-secondary) 30%, transparent)) transparent;
 }
 body::-webkit-scrollbar { width: 8px; }
 body::-webkit-scrollbar-track { background: transparent; }
-body::-webkit-scrollbar-thumb { background: rgba(139, 69, 19, 0.3); border-radius: 4px; }
+body::-webkit-scrollbar-thumb { background: var(--color-scrollbar-thumb, color-mix(in srgb, var(--color-secondary) 30%, transparent)); border-radius: 4px; }
 
 body::before {
   content: '';
@@ -186,6 +186,6 @@ body::before {
 }
 
 ::selection {
-  background: rgba(45, 80, 22, 0.2);
-  color: #1a2f0a;
+  background: color-mix(in srgb, var(--color-primary) 20%, transparent);
+  color: var(--color-text);
 }
