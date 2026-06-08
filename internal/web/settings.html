@@ -237,6 +237,13 @@
 </div>
 {{end}}
 
+<style>
+.add-user-btn:hover,
+.add-family-member-btn:hover {
+  background-color: var(--color-text-light);
+}
+</style>
+
 {{define "scripts"}}
 <script>
 function updateGuestVisibility(field, visible) {
@@ -322,16 +329,6 @@ document.addEventListener('change', function(e) {
   if (e.target.classList.contains('theme-switch-radio')) {
     switchTheme(e.target.value);
   }
-});
-
-// Hover effect for add buttons via delegation (replaces DOMContentLoaded + querySelectorAll)
-document.addEventListener('mouseenter', function(e) {
-  var btn = e.target.closest('.add-user-btn, .add-family-member-btn');
-  if (btn) btn.style.backgroundColor = 'var(--color-text-light)';
-});
-document.addEventListener('mouseleave', function(e) {
-  var btn = e.target.closest('.add-user-btn, .add-family-member-btn');
-  if (btn) btn.style.backgroundColor = 'var(--color-primary)';
 });
 
 function openSettingsModal(url) {
