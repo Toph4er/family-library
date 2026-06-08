@@ -11,8 +11,8 @@
   <td class="py-3 px-4">
     <div class="flex items-center gap-2">
       <button type="button"
-        onclick="openSettingsModal('/settings/users/{{.id}}/edit')"
-        class="text-text-light/60 hover:text-primary transition-colors"
+        data-modal-url="/settings/users/{{.id}}/edit"
+        class="open-settings-modal-btn text-text-light/60 hover:text-primary transition-colors"
         aria-label="Edit user {{.username}}"
       >
         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

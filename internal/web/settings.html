@@ -93,7 +93,7 @@
             class="w-4 h-4 rounded border-secondary text-primary focus:ring-primary/20"
             style="border-color: var(--color-secondary);"
             {{if index $.DefaultGuestVisibility $field}}checked{{end}}
-            onchange="updateGuestVisibility('{{ $field }}', this.checked)">
+            data-guest-field="{{ $field }}" class="guest-visibility-toggle">
           <span class="text-sm text-text">{{humanizeKey $field}}</span>
         </label>
         {{end}}
@@ -110,11 +110,9 @@
       <h2 class="text-2xl font-heading text-primary">Users</h2>
       <button
         type="button"
-        onclick="openSettingsModal('/settings/users/new-form')"
-        class="px-4 py-2 rounded-xl font-medium text-white shadow-sm text-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+        data-modal-url="/settings/users/new-form"
+        class="add-user-btn px-4 py-2 rounded-xl font-medium text-white shadow-sm text-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
         style="background-color: var(--color-primary);"
-        onmouseenter="this.style.backgroundColor='var(--color-text-light)'"
-        onmouseleave="this.style.backgroundColor='var(--color-primary)'"
         aria-label="Add a new user"
       >
         <span class="flex items-center gap-2">
@@ -162,11 +160,9 @@
       <h2 class="text-2xl font-heading text-primary">Family Members</h2>
       <button
         type="button"
-        onclick="openSettingsModal('/settings/family-members/new-form')"
-        class="px-4 py-2 rounded-xl font-medium text-white shadow-sm text-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+        data-modal-url="/settings/family-members/new-form"
+        class="add-family-member-btn px-4 py-2 rounded-xl font-medium text-white shadow-sm text-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
         style="background-color: var(--color-primary);"
-        onmouseenter="this.style.backgroundColor='var(--color-text-light)'"
-        onmouseleave="this.style.backgroundColor='var(--color-primary)'"
         aria-label="Add a new family member"
       >
         <span class="flex items-center gap-2">
@@ -198,8 +194,8 @@
             <td class="py-3 px-4 text-sm">
               <div class="flex items-center gap-2">
                 <button type="button"
-                  onclick="openSettingsModal('/settings/family-members/{{.ID}}/edit')"
-                  class="text-text-light/60 hover:text-primary transition-colors"
+                  data-modal-url="/settings/family-members/{{.ID}}/edit"
+                  class="open-settings-modal-btn text-text-light/60 hover:text-primary transition-colors"
                   aria-label="Edit {{.Name}}"
                 >
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -291,18 +287,49 @@ function switchTheme(themeId) {
     body: 'value=' + encodeURIComponent(themeId)
   }).then(function(r) {
     if (r.ok) {
-      if (typeof window.showToast === 'function') {
-        window.showToast('Theme updated!', 'success', 2000);
+      try {
+        if (typeof window.showToast === 'function') {
+          window.showToast('Theme updated!', 'success', 2000);
+        }
+      } catch(e) {
+        console.warn('Toast failed:', e);
       }
     }
   });
 }
 
-// Attach event listeners to theme radio buttons after page load
+// Delegated event listeners — no inline JS in template
+
+// Guest visibility toggle via data attribute (replaces inline onchange)
+document.addEventListener('change', function(e) {
+  if (e.target.classList.contains('guest-visibility-toggle')) {
+    updateGuestVisibility(e.target.dataset.guestField, e.target.checked);
+  }
+});
+
+// Modal open via data attribute (replaces inline onclick)
+document.addEventListener('click', function(e) {
+  var btn = e.target.closest('.open-settings-modal-btn');
+  if (btn && btn.dataset.modalUrl) {
+    openSettingsModal(btn.dataset.modalUrl);
+    e.preventDefault();
+  }
+});
+
+// Hover effect for add buttons (replaces inline onmouseenter/onmouseleave)
 document.addEventListener('DOMContentLoaded', function() {
   document.querySelectorAll('.theme-switch-radio').forEach(function(radio) {
     radio.addEventListener('change', function() {
       switchTheme(this.value);
+    });
+  });
+  // Add button hover effects
+  document.querySelectorAll('.add-user-btn, .add-family-member-btn').forEach(function(btn) {
+    btn.addEventListener('mouseenter', function() {
+      this.style.backgroundColor = 'var(--color-text-light)';
+    });
+    btn.addEventListener('mouseleave', function() {
+      this.style.backgroundColor = 'var(--color-primary)';
     });
   });
 });
