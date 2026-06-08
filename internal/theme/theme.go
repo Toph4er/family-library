@@ -197,11 +197,11 @@ func (t Theme) CSSOverrideBlock() template.HTML {
 .skip-link { background: %s; }
 body::-webkit-scrollbar-thumb { background: %s; }
 body { scrollbar-color: %s transparent; }
-body::before { content: ''; background-image: url("%s") !important; }
+body::before { content: ''; background-color: %s !important; background-image: url("%s") !important; }
 ::selection { background: %s; color: %s; }
 
 /* Dark theme support */
-body { background-color: %s !important; color: %s !important; }
+html, body { background-color: %s !important; color: %s !important; }
 input, select, textarea {
 	background-color: %s !important;
 	color: %s !important;
@@ -220,7 +220,7 @@ input, select, textarea {
 		t.Success, t.Error, t.Primary,
 		t.Primary,
 		t.ScrollbarThumb, t.ScrollbarThumb,
-		t.BackgroundSVG,
+		t.Background, t.BackgroundSVG,
 		t.SelectionBG, t.Text,
 		t.Background, t.Text,
 		t.Surface, t.Text, t.Secondary,

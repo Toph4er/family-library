@@ -59,9 +59,9 @@
           class="w-4 h-4 text-primary focus:ring-primary/20 theme-switch-radio">
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2 mb-2">
-            <span class="text-base font-heading text-primary">{{.Name}}</span>
+            <span class="text-base font-heading text-primary theme-name-display">{{.Name}}</span>
             {{if eq .ID $.ActiveTheme.ID}}
-            <span class="text-xs px-2 py-0.5 rounded-full text-white" style="background-color: {{.Primary}};">Active</span>
+            <span class="text-xs px-2 py-0.5 rounded-full text-white active-pill-badge" style="background-color: {{.Primary}};">Active</span>
             {{end}}
           </div>
           <p class="text-sm text-text-light/80 mb-3">{{.Description}}</p>
@@ -279,10 +279,20 @@ function switchTheme(themeId) {
       // Update active theme UI indicators
       document.querySelectorAll('.theme-card').forEach(function(card) {
         card.classList.remove('ring-2', 'ring-primary');
+        var pill = card.querySelector('.active-pill-badge');
+        if (pill) pill.remove();
       });
       var selectedCard = document.querySelector('[data-theme-id="' + themeId + '"]');
       if (selectedCard) {
         selectedCard.classList.add('ring-2', 'ring-primary');
+        // Add Active badge to the newly selected card
+        var nameEl = selectedCard.querySelector('.theme-name-display');
+        if (nameEl && !selectedCard.querySelector('.active-pill-badge')) {
+          var pill = document.createElement('span');
+          pill.className = 'text-xs px-2 py-0.5 rounded-full text-white active-pill-badge';
+          pill.textContent = 'Active';
+          nameEl.appendChild(pill);
+        }
       }
     });
   // Save to server in background
