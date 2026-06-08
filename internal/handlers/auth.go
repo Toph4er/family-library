@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"html/template"
 	"net/http"
@@ -59,7 +60,7 @@ func getCSRFToken(w http.ResponseWriter, store *sessions.CookieStore, sessionNam
 
 // RenderLoginPage renders the admin login page template.
 // Already-authenticated users are redirected to /books.
-func RenderLoginPage(tmpl *template.Template, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
+func RenderLoginPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// If already authenticated, redirect to books
 		if user := auth.GetUserFromContext(r); user != nil {
@@ -80,7 +81,7 @@ func RenderLoginPage(tmpl *template.Template, store *sessions.CookieStore, sessi
 		data := pageData{
 			Year:        time.Now().Year(),
 			CSRFToken:   token,
-			ActiveTheme: theme.WoodlandFairytale(),
+			ActiveTheme: loadActiveTheme(db),
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if isHTMXRequest(r) {
@@ -97,7 +98,7 @@ func RenderLoginPage(tmpl *template.Template, store *sessions.CookieStore, sessi
 
 // RenderGuestLoginPage renders the guest login page template.
 // Already-authenticated users are redirected to /books.
-func RenderGuestLoginPage(tmpl *template.Template, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
+func RenderGuestLoginPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// If already authenticated, redirect to books
 		if user := auth.GetUserFromContext(r); user != nil {
@@ -118,7 +119,7 @@ func RenderGuestLoginPage(tmpl *template.Template, store *sessions.CookieStore, 
 		data := pageData{
 			Year:        time.Now().Year(),
 			CSRFToken:   token,
-			ActiveTheme: theme.WoodlandFairytale(),
+			ActiveTheme: loadActiveTheme(db),
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if isHTMXRequest(r) {
@@ -134,13 +135,13 @@ func RenderGuestLoginPage(tmpl *template.Template, store *sessions.CookieStore, 
 }
 
 // RenderLogoutSuccess renders a simple "logged out" confirmation page.
-func RenderLogoutSuccess(tmpl *template.Template, authSvc *auth.Auth) http.HandlerFunc {
+func RenderLogoutSuccess(tmpl *template.Template, db *sql.DB, authSvc *auth.Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Perform the actual logout first
 		_ = authSvc.Logout(w, r)
 		data := pageData{
 			Year:        time.Now().Year(),
-			ActiveTheme: theme.WoodlandFairytale(),
+			ActiveTheme: loadActiveTheme(db),
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if isHTMXRequest(r) {

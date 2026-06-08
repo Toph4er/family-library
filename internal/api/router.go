@@ -60,9 +60,9 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 	r.Get("/health", healthHandler.Check)
 
 	// -- Page routes (template-rendered) --
-	r.Get("/login", handlers.RenderLoginPage(cfg.Templates["login"], authSvc.Store(), auth.SessionID))
-	r.Get("/guest-login", handlers.RenderGuestLoginPage(cfg.Templates["guest-login"], authSvc.Store(), auth.SessionID))
-	r.Get("/logout", handlers.RenderLogoutSuccess(cfg.Templates["logout"], authSvc))
+	r.Get("/login", handlers.RenderLoginPage(cfg.Templates["login"], database, authSvc.Store(), auth.SessionID))
+	r.Get("/guest-login", handlers.RenderGuestLoginPage(cfg.Templates["guest-login"], database, authSvc.Store(), auth.SessionID))
+	r.Get("/logout", handlers.RenderLogoutSuccess(cfg.Templates["logout"], database, authSvc))
 
 	// -- HTMX UI routes (form-encoded, return HTML fragments or HX-Redirect) --
 	r.Post("/auth/login", handlers.HTMLLoginHandler(authSvc))
