@@ -709,10 +709,11 @@ type PageContextForTest struct {
 	IsAdmin         bool
 	IsAuthenticated bool
 	Username        string
+	ActiveTheme     theme.Theme
 }
 
 // BuildPageContextForTest calls buildPageContext and returns the fields
-// needed for CSRF token verification in tests.
+// needed for CSRF token verification and theme loading in tests.
 func BuildPageContextForTest(r *http.Request, store *sessions.CookieStore, sessionName string) PageContextForTest {
 	ctx := buildPageContext(r, store, sessionName, nil)
 	return PageContextForTest{
@@ -720,5 +721,6 @@ func BuildPageContextForTest(r *http.Request, store *sessions.CookieStore, sessi
 		IsAdmin:         ctx.IsAdmin,
 		IsAuthenticated: ctx.IsAuthenticated,
 		Username:        ctx.Username,
+		ActiveTheme:     ctx.ActiveTheme,
 	}
 }

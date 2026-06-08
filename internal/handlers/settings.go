@@ -174,7 +174,8 @@ func ThemeCSSHandler() http.HandlerFunc {
 		id := chi.URLParam(r, "id")
 		t := theme.GetThemeByID(id)
 		css := string(t.CSSOverrideBlock())
-		// Remove <style> and </style> tags
+		// Trim whitespace, then remove <style> and </style> tags
+		css = strings.TrimSpace(css)
 		css = strings.TrimPrefix(css, "<style>")
 		css = strings.TrimSuffix(css, "</style>")
 		css = strings.TrimSpace(css)
