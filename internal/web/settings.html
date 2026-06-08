@@ -299,6 +299,7 @@ function switchTheme(themeId) {
 }
 
 // Delegated event listeners — no inline JS in template
+// Uses event delegation so HTMX-swapped content gets listeners automatically.
 
 // Guest visibility toggle via data attribute (replaces inline onchange)
 document.addEventListener('change', function(e) {
@@ -316,22 +317,21 @@ document.addEventListener('click', function(e) {
   }
 });
 
-// Hover effect for add buttons (replaces inline onmouseenter/onmouseleave)
-document.addEventListener('DOMContentLoaded', function() {
-  document.querySelectorAll('.theme-switch-radio').forEach(function(radio) {
-    radio.addEventListener('change', function() {
-      switchTheme(this.value);
-    });
-  });
-  // Add button hover effects
-  document.querySelectorAll('.add-user-btn, .add-family-member-btn').forEach(function(btn) {
-    btn.addEventListener('mouseenter', function() {
-      this.style.backgroundColor = 'var(--color-text-light)';
-    });
-    btn.addEventListener('mouseleave', function() {
-      this.style.backgroundColor = 'var(--color-primary)';
-    });
-  });
+// Theme radio change via delegation (replaces DOMContentLoaded + querySelectorAll)
+document.addEventListener('change', function(e) {
+  if (e.target.classList.contains('theme-switch-radio')) {
+    switchTheme(e.target.value);
+  }
+});
+
+// Hover effect for add buttons via delegation (replaces DOMContentLoaded + querySelectorAll)
+document.addEventListener('mouseenter', function(e) {
+  var btn = e.target.closest('.add-user-btn, .add-family-member-btn');
+  if (btn) btn.style.backgroundColor = 'var(--color-text-light)';
+});
+document.addEventListener('mouseleave', function(e) {
+  var btn = e.target.closest('.add-user-btn, .add-family-member-btn');
+  if (btn) btn.style.backgroundColor = 'var(--color-primary)';
 });
 
 function openSettingsModal(url) {

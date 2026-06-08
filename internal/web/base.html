@@ -184,7 +184,7 @@
           showToast(msg, 'error');
         }
         // HTML responses: error fragment is already swapped into the DOM by HTMX.
-      } else if (event.detail.elt &amp;&amp; event.detail.elt.getAttribute('hx-confirm-toast')) {
+      } else if (event.detail.elt && event.detail.elt.getAttribute('hx-confirm-toast')) {
         showToast('Success', 'success');
       }
     });
@@ -226,7 +226,7 @@
           e.preventDefault();
           self.addTag(self.input.value.trim());
         }
-        if (e.key === 'Backspace' &amp;&amp; !self.input.value &amp;&amp; self.tags.length) {
+        if (e.key === 'Backspace' && !self.input.value && self.tags.length) {
           self.removeTag(self.tags.length - 1);
         }
       });
@@ -297,7 +297,7 @@
           btn.className = 'tag-pill-remove';
           btn.setAttribute('data-index', idx);
           btn.setAttribute('aria-label', 'Remove ' + tag);
-          btn.innerHTML = '&amp;#x2715;';
+          btn.innerHTML = '&#x2715;';
           pill.appendChild(btn);
         }
         self.container.insertBefore(pill, self.input);
@@ -322,7 +322,7 @@
 
     document.addEventListener('submit', function(e) {
       var form = e.target;
-      if (form &amp;&amp; form.tagName === 'FORM') {
+      if (form && form.tagName === 'FORM') {
         var containers = form.querySelectorAll('.tag-input-container');
         containers.forEach(function(c) {
           var hidden = c.querySelector('input[type="hidden"]');
