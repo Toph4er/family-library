@@ -182,7 +182,7 @@ body::before {
   inset: 0;
   background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5 L35 15 L30 12 L25 15 Z' fill='rgba(45,80,22,0.03)'/%3E%3Cpath d='M30 25 L33 30 L30 28 L27 30 Z' fill='rgba(45,80,22,0.03)'/%3E%3Cpath d='M30 45 L34 52 L30 50 L26 52 Z' fill='rgba(45,80,22,0.03)'/%3E%3C/svg%3E");
   pointer-events: none;
-  z-index: 0;
+  z-index: -1;
 }
 
 ::selection {
