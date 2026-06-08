@@ -23,7 +23,10 @@
   <div class="flex justify-center">
     <button
       type="button"
-      id="log-reading-trigger"
+      hx-get="/reading-logs/book-selector"
+      hx-target="body"
+      hx-swap="beforeend"
+      hx-on::after-request="htmx.process(document.getElementById('modal-backdrop'))"
       class="px-6 py-3 rounded-xl font-medium text-white shadow-sm text-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
       style="background-color: var(--color-primary);"
       onmouseenter="this.style.backgroundColor='var(--color-text-light)'"
@@ -134,28 +137,7 @@
 
 {{define "scripts"}}
 <script>
-document.getElementById('log-reading-trigger').addEventListener('click', function() {
-  var backdrop = document.createElement('div');
-  backdrop.id = 'modal-backdrop';
-  backdrop.className = 'modal-backdrop';
-  backdrop.setAttribute('hx-on::click', 'if(event.target===this)this.remove()');
-  backdrop.innerHTML = `
-    <div class="modal-content modal-md p-6" role="dialog" aria-modal="true">
-      <div class="flex items-center justify-between mb-4 pb-3 border-b" style="border-color: rgba(139, 69, 19, 0.1);">
-        <h2 class="text-xl font-heading font-semibold text-primary">Select a Book</h2>
-        <button type="button" onclick="document.getElementById('modal-backdrop').remove()" class="text-text-light hover:text-text transition-colors text-2xl no-underline" aria-label="Close modal">×</button>
-      </div>
-      <div class="max-h-96 overflow-y-auto space-y-2">
-        {{range .RecentBooks}}
-        <a href="#" class="block px-4 py-3 rounded-lg hover:bg-background/50 transition-colors text-sm text-text no-underline" onclick="openLogForm({{.ID}}); return false;">{{.Title}}</a>
-        {{else}}
-        <p class="text-text-light/60 text-sm text-center py-4">No books in the library yet.</p>
-        {{end}}
-      </div>
-    </div>
-  `;
-  document.body.appendChild(backdrop);
-});
+// Book selector modal is now server-fetched via HTMX (hx-get on button above)
 
 function openLogForm(bookId) {
   document.getElementById('modal-backdrop').remove();

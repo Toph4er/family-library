@@ -306,6 +306,49 @@ func DeleteReadingLogHandler(db *sql.DB) http.HandlerFunc {
 
 // --- HTMX HTML Handlers ---
 
+// HTMLBookSelectorHandler returns a modal HTML fragment listing recent books for logging a reading session.
+// GET /reading-logs/book-selector
+func HTMLBookSelectorHandler(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		rows, err := db.Query("SELECT id, title FROM books ORDER BY title ASC LIMIT 50")
+		if err != nil {
+			http.Error(w, "database error", http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
+
+		var bookOptions string
+		hasBooks := false
+		for rows.Next() {
+			var id int64
+			var title string
+			if err := rows.Scan(&id, &title); err != nil {
+				continue
+			}
+			hasBooks = true
+			bookOptions += fmt.Sprintf(`<a href="#" class="block px-4 py-3 rounded-lg hover:bg-background/50 transition-colors text-sm text-text no-underline" onclick="openLogForm(%d); this.closest('.modal-backdrop').remove(); return false;">%s</a>`, id, template.HTMLEscapeString(title))
+		}
+
+		if !hasBooks {
+			bookOptions = `<p class="text-text-light/60 text-sm text-center py-4">No books in the library yet.</p>`
+		}
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_, _ = w.Write([]byte(`
+<div id="modal-backdrop" class="modal-backdrop" hx-on::click="if(event.target===this)this.closest('.modal-backdrop').remove()">
+  <div class="modal-content modal-md p-6" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-between mb-4 pb-3 border-b" style="border-color: var(--color-secondary);">
+      <h2 class="text-xl font-heading font-semibold text-primary">Select a Book</h2>
+      <button type="button" onclick="this.closest('.modal-backdrop').remove()" class="text-text-light hover:text-text transition-colors text-2xl no-underline" aria-label="Close modal">×</button>
+    </div>
+    <div class="max-h-96 overflow-y-auto space-y-2">
+      ` + bookOptions +
+			`</div>
+  </div>
+</div>`))
+	}
+}
+
 // HTMLReadingLogFormHandler returns a modal HTML fragment for adding/editing a reading log entry.
 func HTMLReadingLogFormHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

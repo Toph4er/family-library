@@ -197,7 +197,7 @@ func (t Theme) CSSOverrideBlock() template.HTML {
 .skip-link { background: %s; }
 body::-webkit-scrollbar-thumb { background: %s; }
 body { scrollbar-color: %s transparent; }
-body::before { background-image: url("%s") !important; }
+body::before { content: ''; background-image: url("%s") !important; }
 ::selection { background: %s; color: %s; }
 
 /* Dark theme support */

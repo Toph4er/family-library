@@ -171,6 +171,9 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 	r.Get("/reading-log", func(w http.ResponseWriter, r *http.Request) {
 		authSvc.RequireAuthHTML(handlers.RenderReadingLogPage(cfg.Templates["reading-log"], database, authSvc.Store(), auth.SessionID)).ServeHTTP(w, r)
 	})
+	r.Get("/reading-logs/book-selector", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAdminHTML(handlers.HTMLBookSelectorHandler(database)).ServeHTTP(w, r)
+	})
 	r.Get("/reading-logs/{book_id}/new-form", func(w http.ResponseWriter, r *http.Request) {
 		authSvc.RequireAdminHTML(handlers.HTMLReadingLogFormHandler(database)).ServeHTTP(w, r)
 	})
