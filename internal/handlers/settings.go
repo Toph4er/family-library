@@ -179,6 +179,8 @@ func ThemeCSSHandler() http.HandlerFunc {
 		css = strings.TrimSuffix(css, "</style>")
 		css = strings.TrimSpace(css)
 		w.Header().Set("Content-Type", "text/css; charset=utf-8")
+		// #nosec G705 -- css is sanitized: <style> tags stripped,
+		// CSSOverrideBlock() returns static theme CSS, not user input.
 		fmt.Fprint(w, css)
 	}
 }
