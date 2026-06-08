@@ -3,9 +3,12 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+
+	"git.rcsmaine.com/chris/library/internal/theme"
 )
 
 // sensitiveKeys lists setting keys that must never be exposed in list responses.
@@ -158,6 +161,17 @@ func HTMLUpdateSettingHandler(db *sql.DB) http.HandlerFunc {
 		w.Header().Set("HX-Trigger", `{"settingsUpdated": true}`)
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("<span class=\"text-success text-sm ml-2\">✓ Saved</span>"))
+	}
+}
+
+// ThemeCSSHandler returns the CSS override block for a given theme ID.
+// GET /api/v1/theme/:id/css
+func ThemeCSSHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := chi.URLParam(r, "id")
+		t := theme.GetThemeByID(id)
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, t.CSSOverrideBlock())
 	}
 }
 

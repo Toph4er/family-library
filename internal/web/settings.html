@@ -56,12 +56,25 @@
           value="{{.ID}}"
           {{if eq .ID $.ActiveTheme.ID}}checked{{end}}
           class="w-4 h-4 text-primary focus:ring-primary/20"
-          onchange="fetch('/settings/update/active_theme', {
+          onchange="var themeId=this.value;
+          // Apply theme CSS immediately
+          fetch('/api/v1/theme/' + themeId + '/css')
+            .then(function(r) { return r.text(); })
+            .then(function(css) {
+              var existing = document.getElementById('theme-override-style');
+              if (existing) existing.remove();
+              var style = document.createElement('style');
+              style.id = 'theme-override-style';
+              style.textContent = css;
+              document.head.appendChild(style);
+            });
+          // Save to server in background
+          fetch('/settings/update/active_theme', {
             method: 'PUT',
             headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-Token': '{{$.CSRFToken}}'},
-            body: 'value=' + encodeURIComponent(this.value)
-          }).then(r => {
-            if (r.ok) { showToast('Theme updated! Reloading...' , 'success', 2000); setTimeout(() => location.reload(), 2000); }
+            body: 'value=' + encodeURIComponent(themeId)
+          }).then(function(r) {
+            if (r.ok) { showToast('Theme updated!', 'success', 2000); }
           })">
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2 mb-2">

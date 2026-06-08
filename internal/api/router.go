@@ -183,6 +183,11 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 
 	// -- API routes --
 	r.Route("/api/v1", func(r chi.Router) {
+		// Theme (admin only, returns CSS override block for instant theme switching)
+		r.Get("/theme/{id}/css", func(w http.ResponseWriter, r *http.Request) {
+			authSvc.RequireAdmin(handlers.ThemeCSSHandler()).ServeHTTP(w, r)
+		})
+
 		// Public endpoints (no CSRF middleware)
 		r.Get("/csrf", handlers.CSRFTokenHandler(authSvc))
 		r.Post("/auth/login", handlers.LoginHandler(authSvc))
