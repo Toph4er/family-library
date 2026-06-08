@@ -1,7 +1,7 @@
 {{define "partials/modal"}}
 <div id="modal-backdrop" class="modal-backdrop" hx-on::click="if(event.target===this)document.getElementById('modal-backdrop').remove()">
   <div class="modal-content modal-lg p-6" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-    <div class="flex items-center justify-between mb-4 pb-3 border-b" style="border-color: rgba(139, 69, 19, 0.1);">
+    <div class="flex items-center justify-between mb-4 pb-3 border-b" style="border-color: color-mix(in srgb, var(--color-secondary) 10%, transparent);">
       <h2 id="modal-title" class="text-xl font-heading font-semibold text-primary">{{.Title}}</h2>
       <button type="button"
         hx-on::click="document.getElementById('modal-backdrop').remove()"

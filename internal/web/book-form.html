@@ -197,7 +197,7 @@
     </div>
 
     <!-- Additional details -->
-    <div class="space-y-4 pt-4 border-t" style="border-color: rgba(139, 69, 19, 0.1);">
+    <div class="space-y-4 pt-4 border-t" style="border-color: color-mix(in srgb, var(--color-secondary) 10%, transparent);">
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label for="gift_from" class="block text-sm font-medium text-text mb-1">Gift From</label>
@@ -418,7 +418,7 @@ var tagInputs = {};
     modal.className = 'modal-backdrop';
     modal.innerHTML = `
       <div class="modal-content modal-md p-6" role="dialog" aria-modal="true" aria-labelledby="scanner-title">
-        <div class="flex items-center justify-between mb-4 pb-3 border-b" style="border-color: rgba(139, 69, 19, 0.1);">
+        <div class="flex items-center justify-between mb-4 pb-3 border-b" style="border-color: color-mix(in srgb, var(--color-secondary) 10%, transparent);">
           <h2 id="scanner-title" class="text-xl font-heading text-primary">Scan ISBN Barcode</h2>
           <button type="button" onclick="document.getElementById('scanner-modal').remove()" class="text-2xl text-text-light/60 hover:text-error transition-colors" aria-label="Close scanner">&times;</button>
         </div>

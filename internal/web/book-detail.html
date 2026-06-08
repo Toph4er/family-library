@@ -23,7 +23,7 @@
 
     <!-- Left: Cover image -->
     <div class="flex justify-center md:justify-start">
-      <div class="w-full max-w-[280px] rounded-xl overflow-hidden shadow-lg border" style="border-color: rgba(139, 69, 19, 0.1);">
+      <div class="w-full max-w-[280px] rounded-xl overflow-hidden shadow-lg border" style="border-color: color-mix(in srgb, var(--color-secondary) 10%, transparent);">
         {{if .Book.CoverImageURL}}
         <img src="{{.Book.CoverImageURL}}" alt="Cover of {{.Book.Title}}" class="w-full aspect-[2/3] object-cover">
         {{else}}
@@ -134,7 +134,7 @@
   </div>
 
   <!-- Details card: metadata, tags, gift info, timestamps -->
-  <div class="bg-surface rounded-xl border p-6" style="border-color: rgba(139, 69, 19, 0.1);">
+  <div class="bg-surface rounded-xl border p-6" style="border-color: color-mix(in srgb, var(--color-secondary) 10%, transparent);">
     <h2 class="text-lg font-heading text-primary mb-4">Details</h2>
 
     <!-- Metadata grid -->
@@ -297,7 +297,7 @@
     {{end}}
 
     <!-- Divider -->
-    <div class="border-t my-4" style="border-color: rgba(139, 69, 19, 0.1);"></div>
+    <div class="border-t my-4" style="border-color: color-mix(in srgb, var(--color-secondary) 10%, transparent);"></div>
 
     <!-- Gift info, read tracking, timestamps -->
     <dl class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4 text-sm">

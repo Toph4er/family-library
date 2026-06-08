@@ -1,6 +1,6 @@
 {{define "partials/pagination"}}
 {{if gt .TotalPages 1}}
-<div class="flex items-center justify-between mt-6 pt-4 border-t" style="border-color: rgba(139, 69, 19, 0.1);">
+<div class="flex items-center justify-between mt-6 pt-4 border-t" style="border-color: color-mix(in srgb, var(--color-secondary) 10%, transparent);">
   <p class="text-text-light/60 text-sm">
     Showing {{.StartItem}}-{{.EndItem}} of {{.Total}} results
   </p>

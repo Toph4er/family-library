@@ -202,7 +202,8 @@ body::before { content: ''; background-color: %s !important; background-image: u
 
 /* Dark theme support */
 html, body { background-color: %s !important; color: %s !important; }
-input, select, textarea {
+input, select, textarea,
+.bg-surface input, .bg-surface select, .bg-surface textarea {
 	background-color: %s !important;
 	color: %s !important;
 	border-color: %s !important;

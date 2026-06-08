@@ -23,6 +23,20 @@
   (function(){
     var stored = localStorage.getItem('active_theme');
     if (!stored) return;
+    // Apply inline styles immediately for instant visual feedback before CSS fetch completes
+    var themeColors = {
+      woodland:   { bg: '#f5f0e8', text: '#1a2f0a' },
+      space:      { bg: '#0a0e27', text: '#ffffff' },
+      dinosaurs:  { bg: '#f5f0dc', text: '#1a1a0a' },
+      princesses: { bg: '#fdf5f9', text: '#2d1a2e' }
+    };
+    var tc = themeColors[stored];
+    if (tc) {
+      document.documentElement.style.backgroundColor = tc.bg;
+      document.body.style.backgroundColor = tc.bg;
+      document.body.style.color = tc.text;
+    }
+    // Then fetch full CSS for complete override
     fetch('/api/v1/theme/' + encodeURIComponent(stored) + '/css')
       .then(function(r){return r.text();})
       .then(function(css){
@@ -47,7 +61,7 @@
     </a>
 
     <!-- Header / Navigation -->
-    <header class="bg-surface/90 backdrop-blur-sm shadow-md border-b z-50 relative" style="border-color: rgba(139, 69, 19, 0.1);">
+    <header class="bg-surface/90 backdrop-blur-sm shadow-md border-b z-50 relative" style="border-color: color-mix(in srgb, var(--color-secondary) 20%, transparent);">
       <div class="max-w-7xl mx-auto px-4 py-4">
         <div class="flex items-center justify-between">
           <!-- Brand -->
@@ -107,7 +121,7 @@
       x-transition:leave-start="opacity-100 translate-y-0"
       x-transition:leave-end="opacity-0 -translate-y-2"
       class="md:hidden border-t shadow-lg"
-      style="border-color: rgba(139, 69, 19, 0.1); background-color: #faf8f5;"
+      style="border-color: color-mix(in srgb, var(--color-secondary) 20%, transparent); background-color: var(--color-surface);"
       role="menu"
     >
       <div class="max-w-7xl mx-auto px-4 pb-2">
@@ -135,7 +149,7 @@
     </main>
 
     <!-- Footer -->
-    <footer class="border-t" style="border-color: rgba(139, 69, 19, 0.1);">
+    <footer class="border-t" style="border-color: color-mix(in srgb, var(--color-secondary) 20%, transparent);">
       <div class="max-w-7xl mx-auto px-4 py-6">
         <div class="flex flex-col md:flex-row items-center justify-between gap-4">
           <p class="text-text-light/60 text-sm">

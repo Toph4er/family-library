@@ -21,9 +21,9 @@
   <!-- Site Settings -->
   <section aria-label="Site settings">
     <h2 class="text-2xl font-heading text-primary mb-4">Site Settings</h2>
-    <div class="rounded-xl shadow-sm overflow-hidden" style="background-color: var(--color-surface); border: 1px solid rgba(139, 69, 19, 0.1);">
+    <div class="rounded-xl shadow-sm overflow-hidden" style="background-color: var(--color-surface); border: 1px solid color-mix(in srgb, var(--color-secondary) 20%, transparent);">
       {{range $key, $value := .Settings}}
-        <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 py-3 px-4 border-b last:border-b-0" style="border-color: rgba(139, 69, 19, 0.1);">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 py-3 px-4 border-b last:border-b-0" style="border-color: color-mix(in srgb, var(--color-secondary) 20%, transparent);">
           <label for="setting-{{$key}}" class="font-medium text-text text-sm sm:w-48 sm:shrink-0">{{humanizeKey $key}}</label>
           <div class="flex-1 flex items-center gap-2">
             <input type="text"
@@ -62,7 +62,7 @@
           <div class="flex items-center gap-2 mb-2">
             <span class="text-base font-heading text-primary theme-name-display">{{.Name}}</span>
             {{if eq .ID $.ActiveTheme.ID}}
-            <span class="text-xs px-2 py-0.5 rounded-full text-white active-pill-badge" style="background-color: {{.Primary}};">Active</span>
+            <span class="text-xs px-2 py-0.5 rounded-full active-pill-badge" style="background-color: {{.Primary}}; color: #ffffff;">Active</span>
             {{end}}
           </div>
           <p class="text-sm text-text-light/80 mb-3">{{.Description}}</p>
@@ -86,7 +86,7 @@
   <section aria-label="Guest visibility settings">
     <h2 class="text-2xl font-heading text-primary mb-4">Guest Visibility</h2>
     <p class="text-text-light/70 text-sm mb-4">Control which book fields are visible to guest users. Unchecked fields are hidden from guests.</p>
-    <div class="rounded-xl shadow-sm overflow-hidden" style="background-color: var(--color-surface); border: 1px solid rgba(139, 69, 19, 0.1);">
+    <div class="rounded-xl shadow-sm overflow-hidden" style="background-color: var(--color-surface); border: 1px solid color-mix(in srgb, var(--color-secondary) 20%, transparent);">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 p-4">
         {{range $field := guestVisibilityFields}}
         <label class="flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-background/50 cursor-pointer">
@@ -125,11 +125,11 @@
         </span>
       </button>
     </div>
-    <div class="overflow-x-auto rounded-xl shadow-sm" style="background-color: var(--color-surface); border: 1px solid rgba(139, 69, 19, 0.1);">
+    <div class="overflow-x-auto rounded-xl shadow-sm" style="background-color: var(--color-surface); border: 1px solid color-mix(in srgb, var(--color-secondary) 20%, transparent);">
       <table class="w-full" role="table">
         <caption class="sr-only">List of registered library users</caption>
         <thead>
-          <tr class="border-b" style="border-color: rgba(139, 69, 19, 0.1);">
+          <tr class="border-b" style="border-color: color-mix(in srgb, var(--color-secondary) 20%, transparent);">
             <th scope="col" class="text-left py-3 px-4 font-heading text-primary text-sm">Username</th>
             <th scope="col" class="text-left py-3 px-4 font-heading text-primary text-sm">Display Name</th>
             <th scope="col" class="text-left py-3 px-4 font-heading text-primary text-sm">Role</th>
@@ -175,11 +175,11 @@
         </span>
       </button>
     </div>
-    <div class="overflow-x-auto rounded-xl shadow-sm" style="background-color: var(--color-surface); border: 1px solid rgba(139, 69, 19, 0.1);">
+    <div class="overflow-x-auto rounded-xl shadow-sm" style="background-color: var(--color-surface); border: 1px solid color-mix(in srgb, var(--color-secondary) 20%, transparent);">
       <table class="w-full" role="table">
         <caption class="sr-only">List of family members</caption>
         <thead>
-          <tr class="border-b" style="border-color: rgba(139, 69, 19, 0.1);">
+          <tr class="border-b" style="border-color: color-mix(in srgb, var(--color-secondary) 20%, transparent);">
             <th scope="col" class="text-left py-3 px-4 font-heading text-primary text-sm">Name</th>
             <th scope="col" class="text-left py-3 px-4 font-heading text-primary text-sm">Relation</th>
             <th scope="col" class="text-left py-3 px-4 font-heading text-primary text-sm">Added</th>
@@ -188,7 +188,7 @@
         </thead>
         <tbody id="family-members-list">
           {{range .FamilyMembers}}
-          <tr class="border-b" style="border-color: rgba(139, 69, 19, 0.1);" id="family-member-{{.ID}}">
+          <tr class="border-b" style="border-color: color-mix(in srgb, var(--color-secondary) 20%, transparent);" id="family-member-{{.ID}}">
             <td class="py-3 px-4 text-sm font-medium text-text">{{.Name}}</td>
             <td class="py-3 px-4 text-sm text-text-light">{{.Relation}}</td>
             <td class="py-3 px-4 text-sm text-text-light/60 whitespace-nowrap">{{formatTime .CreatedAt}}</td>
@@ -265,12 +265,17 @@ function updateGuestVisibility(field, visible) {
 }
 
 function switchTheme(themeId) {
-  // 1. Persist preference immediately
   localStorage.setItem('active_theme', themeId);
-
   var csrf = '{{.CSRFToken}}';
 
-  // 2. Fetch and inject CSS (Swap textContent instead of removing/adding to avoid flicker/specificity wars)
+  // Theme colors for direct DOM manipulation
+  var themeColors = {
+    woodland:   { bg: '#f5f0e8', text: '#1a2f0a' },
+    space:      { bg: '#0a0e27', text: '#ffffff' },
+    dinosaurs:  { bg: '#f5f0dc', text: '#1a1a0a' },
+    princesses: { bg: '#fdf5f9', text: '#2d1a2e' }
+  };
+
   fetch('/api/v1/theme/' + encodeURIComponent(themeId) + '/css')
     .then(function(r) { return r.text(); })
     .then(function(css) {
@@ -282,7 +287,15 @@ function switchTheme(themeId) {
       }
       styleTag.textContent = css;
 
-      // 3. Update Active Pill UI instantly
+      // Apply critical styles directly for instant visual feedback
+      var tc = themeColors[themeId];
+      if (tc) {
+        document.documentElement.style.backgroundColor = tc.bg;
+        document.body.style.backgroundColor = tc.bg;
+        document.body.style.color = tc.text;
+      }
+
+      // Update Active Pill UI instantly
       var selectedCard = document.querySelector('[data-theme-id="' + themeId + '"]');
 
       // Remove existing pills from all cards
@@ -294,14 +307,14 @@ function switchTheme(themeId) {
       if (selectedCard) {
         selectedCard.classList.add('ring-2', 'ring-primary');
 
-        // Create and append new Active pill with correct background color
+        // Create and append new Active pill with explicit inline styles
         var nameEl = selectedCard.querySelector('.theme-name-display');
         if (nameEl) {
           var pill = document.createElement('span');
-          pill.className = 'text-xs px-2 py-0.5 rounded-full text-white active-pill-badge font-medium ml-1';
-          // Get primary color from the card's data attribute or inline style, fallback to theme variable
-          var primaryColor = selectedCard.getAttribute('data-primary-color') || getComputedStyle(selectedCard).getPropertyValue('--color-primary');
+          pill.className = 'text-xs px-2 py-0.5 rounded-full active-pill-badge font-medium ml-1';
+          var primaryColor = selectedCard.getAttribute('data-primary-color') || (getComputedStyle(document.documentElement).getPropertyValue('--color-secondary').trim() || '#8b4513');
           pill.style.backgroundColor = primaryColor;
+          pill.style.color = '#ffffff';
           pill.textContent = 'Active';
           nameEl.appendChild(pill);
         }
