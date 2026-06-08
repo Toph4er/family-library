@@ -55,27 +55,7 @@
           name="active_theme"
           value="{{.ID}}"
           {{if eq .ID $.ActiveTheme.ID}}checked{{end}}
-          class="w-4 h-4 text-primary focus:ring-primary/20"
-          onchange="var themeId=this.value;
-          // Apply theme CSS immediately
-          fetch('/api/v1/theme/' + themeId + '/css')
-            .then(function(r) { return r.text(); })
-            .then(function(css) {
-              var existing = document.getElementById('theme-override-style');
-              if (existing) existing.remove();
-              var style = document.createElement('style');
-              style.id = 'theme-override-style';
-              style.textContent = css;
-              document.head.appendChild(style);
-            });
-          // Save to server in background
-          fetch('/settings/update/active_theme', {
-            method: 'PUT',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-Token': '{{$.CSRFToken}}'},
-            body: 'value=' + encodeURIComponent(themeId)
-          }).then(function(r) {
-            if (r.ok) { showToast('Theme updated!', 'success', 2000); }
-          })">
+          class="w-4 h-4 text-primary focus:ring-primary/20 theme-switch-radio">
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2 mb-2">
             <span class="text-base font-heading text-primary">{{.Name}}</span>
@@ -279,6 +259,41 @@ function updateGuestVisibility(field, visible) {
   });
 }
 
+function switchTheme(themeId) {
+  var csrf = '{{.CSRFToken}}';
+  // Apply theme CSS immediately
+  fetch('/api/v1/theme/' + themeId + '/css')
+    .then(function(r) { return r.text(); })
+    .then(function(css) {
+      var existing = document.getElementById('theme-override-style');
+      if (existing) existing.remove();
+      var style = document.createElement('style');
+      style.id = 'theme-override-style';
+      style.textContent = css;
+      document.head.appendChild(style);
+    });
+  // Save to server in background
+  fetch('/settings/update/active_theme', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-CSRF-Token': csrf
+    },
+    body: 'value=' + encodeURIComponent(themeId)
+  }).then(function(r) {
+    if (r.ok) { showToast('Theme updated!', 'success', 2000); }
+  });
+}
+
+// Attach event listeners to theme radio buttons after page load
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.theme-switch-radio').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+      switchTheme(this.value);
+    });
+  });
+});
+
 function openSettingsModal(url) {
   // Remove any existing settings modal first
   var existing = document.getElementById('settings-modal-backdrop');
@@ -300,13 +315,21 @@ function openSettingsModal(url) {
       // Change the ID so it doesn't conflict with other modals
       serverBackdrop.id = 'settings-modal-backdrop';
 
-      // Fix all close buttons that reference the old ID
-      serverBackdrop.querySelectorAll('[hx-on::click]').forEach(function(el) {
-        var handler = el.getAttribute('hx-on::click');
-        if (handler && handler.indexOf('modal-backdrop') !== -1) {
-          el.setAttribute('hx-on::click', handler.replace(/modal-backdrop/g, 'settings-modal-backdrop'));
+      // Fix hx-on:* attributes (HTMX v2 uses colons in attribute names)
+      var allEls = serverBackdrop.querySelectorAll('*');
+      for (var i = 0; i < allEls.length; i++) {
+        var el = allEls[i];
+        var attrs = el.getAttributeNames();
+        for (var j = 0; j < attrs.length; j++) {
+          var attrName = attrs[j];
+          if (attrName.indexOf('hx-on:') === 0) {
+            var handler = el.getAttribute(attrName);
+            if (handler && handler.indexOf('modal-backdrop') !== -1) {
+              el.setAttribute(attrName, handler.replace(/modal-backdrop/g, 'settings-modal-backdrop'));
+            }
+          }
         }
-      });
+      }
 
       // Fix onclick handlers too
       serverBackdrop.querySelectorAll('[onclick]').forEach(function(el) {
