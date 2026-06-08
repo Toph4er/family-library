@@ -68,17 +68,17 @@ func Space() Theme {
 		Primary:         "#5b5bd6",
 		Secondary:       "#7b68ee",
 		Accent:          "#ffd700",
-		Background:      "#0d0d2b",
-		Surface:         "#1a1a3e",
+		Background:      "#0a0e27",
+		Surface:         "#151b3d",
 		Text:            "#ffffff",
-		TextLight:       "#c0c0e0",
+		TextLight:       "#c8d6f0",
 		Success:         "#2dd4a8",
 		Warning:         "#f0a030",
 		Error:           "#e04040",
 		FontHeading:     "'Orbitron', sans-serif",
 		FontBody:        "'Inter', sans-serif",
 		FontAccent:      "'Space Mono', monospace",
-		BackgroundSVG:   "data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='1' fill='rgba(240,192,64,0.15)'/%3E%3Ccircle cx='40' cy='25' r='1.5' fill='rgba(240,192,64,0.12)'/%3E%3Ccircle cx='25' cy='45' r='1' fill='rgba(240,192,64,0.1)'/%3E%3Ccircle cx='50' cy='50' r='0.8' fill='rgba(240,192,64,0.15)'/%3E%3C/svg%3E",
+		BackgroundSVG:   "data:image/svg+xml,%3Csvg%20width%3D%2760%27%20height%3D%2760%27%20viewBox%3D%270%200%2060%2060%27%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%3E%0A%20%20%3Ccircle%20cx%3D%278%27%20cy%3D%278%27%20r%3D%271%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.4%29%27%2F%3E%0A%20%20%3Ccircle%20cx%3D%2722%27%20cy%3D%275%27%20r%3D%270.8%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.3%29%27%2F%3E%0A%20%20%3Ccircle%20cx%3D%2745%27%20cy%3D%2712%27%20r%3D%271.2%27%20fill%3D%27rgba%28240%2C192%2C64%2C0.5%29%27%2F%3E%0A%20%20%3Ccircle%20cx%3D%2755%27%20cy%3D%2720%27%20r%3D%270.6%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.35%29%27%2F%3E%0A%20%20%3Ccircle%20cx%3D%2715%27%20cy%3D%2722%27%20r%3D%271%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.25%29%27%2F%3E%0A%20%20%3Ccircle%20cx%3D%2735%27%20cy%3D%2730%27%20r%3D%271.5%27%20fill%3D%27rgba%28240%2C192%2C64%2C0.45%29%27%2F%3E%0A%20%20%3Ccircle%20cx%3D%275%27%20cy%3D%2735%27%20r%3D%270.8%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.3%29%27%2F%3E%0A%20%20%3Ccircle%20cx%3D%2728%27%20cy%3D%2742%27%20r%3D%271%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.35%29%27%2F%3E%0A%20%20%3Ccircle%20cx%3D%2748%27%20cy%3D%2748%27%20r%3D%271.2%27%20fill%3D%27rgba%28240%2C192%2C64%2C0.4%29%27%2F%3E%0A%20%20%3Ccircle%20cx%3D%2752%27%20cy%3D%2755%27%20r%3D%270.7%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.3%29%27%2F%3E%0A%20%20%3Ccircle%20cx%3D%2712%27%20cy%3D%2752%27%20r%3D%270.9%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.25%29%27%2F%3E%0A%20%20%3Ccircle%20cx%3D%2738%27%20cy%3D%2755%27%20r%3D%270.6%27%20fill%3D%27rgba%28240%2C192%2C64%2C0.35%29%27%2F%3E%0A%3C%2Fsvg%3E",
 		SelectionBG:     "rgba(240, 192, 64, 0.25)",
 		ScrollbarThumb:  "rgba(74, 63, 138, 0.5)",
 		VineDividerGrad: "linear-gradient(to right, transparent, rgba(240, 192, 64, 0.3), transparent)",
@@ -199,6 +199,15 @@ body::-webkit-scrollbar-thumb { background: %s !important; }
 body { scrollbar-color: %s transparent !important; }
 body::before { background-image: url("%s") !important; }
 ::selection { background: %s !important; color: %s !important; }
+
+/* Dark theme support */
+body { background-color: %s !important; color: %s !important; }
+input, select, textarea {
+	background-color: %s !important;
+	color: %s !important;
+	border-color: %s !important;
+}
+.bg-surface { background-color: %s !important; }
 </style>
 `, t.Primary, t.Secondary, t.Accent, t.Background, t.Surface, t.Text, t.TextLight,
 		t.Success, t.Warning, t.Error,
@@ -212,5 +221,8 @@ body::before { background-image: url("%s") !important; }
 		t.Primary,
 		t.ScrollbarThumb, t.ScrollbarThumb,
 		t.BackgroundSVG,
-		t.SelectionBG, t.Text))
+		t.SelectionBG, t.Text,
+		t.Background, t.Text,
+		t.Surface, t.Text, t.Secondary,
+		t.Surface))
 }
