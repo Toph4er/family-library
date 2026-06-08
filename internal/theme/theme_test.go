@@ -27,8 +27,8 @@ func TestAvailableThemes(t *testing.T) {
 
 func TestGetThemeByID_valid(t *testing.T) {
 	tests := []struct {
-		id         string
-		wantName   string
+		id          string
+		wantName    string
 		wantPrimary string
 	}{
 		{"woodland", "Woodland Fairytale", "#2d5016"},
