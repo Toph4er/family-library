@@ -15,7 +15,12 @@ backend-test:
   before_script:
     - apk add --no-cache git curl bc
   script:
-    - go mod download
+    - | # Retry go mod download to handle transient proxy.golang.org errors
+      for i in 1 2 3; do
+        go mod download && break
+        echo "go mod download attempt $i failed, retrying..."
+        sleep $((i * 5))
+      done
     - go vet ./...
     - go test -coverpkg=git.rcsmaine.com/chris/library/... ./... -coverprofile=coverage.out
     - go tool cover -func=coverage.out
@@ -67,7 +72,12 @@ gosec:
     - apk add --no-cache git
     - go install github.com/securego/gosec/v2/cmd/gosec@v2.26.1
   script:
-    - go mod download
+    - | # Retry go mod download to handle transient proxy.golang.org errors
+      for i in 1 2 3; do
+        go mod download && break
+        echo "go mod download attempt $i failed, retrying..."
+        sleep $((i * 5))
+      done
     - gosec -exclude-generated -exclude=G104 ./...
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
@@ -80,7 +90,12 @@ golangci-lint:
     - apk add --no-cache git
     - go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
   script:
-    - go mod download
+    - | # Retry go mod download to handle transient proxy.golang.org errors
+      for i in 1 2 3; do
+        go mod download && break
+        echo "go mod download attempt $i failed, retrying..."
+        sleep $((i * 5))
+      done
     - golangci-lint run ./...
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
