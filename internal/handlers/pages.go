@@ -69,6 +69,7 @@ func buildPageContext(r *http.Request, store *sessions.CookieStore, sessionName 
 				}
 			}
 		}
+		ctx.ActiveTheme = loadActiveTheme(db)
 		return ctx
 	}
 
@@ -100,8 +101,11 @@ func buildPageContext(r *http.Request, store *sessions.CookieStore, sessionName 
 }
 
 // loadActiveTheme reads the active_theme setting and returns the resolved Theme.
-// Falls back to WoodlandFairytale if the setting is missing or unknown.
+// Falls back to WoodlandFairytale if the setting is missing, unknown, or db is nil.
 func loadActiveTheme(db *sql.DB) theme.Theme {
+	if db == nil {
+		return theme.WoodlandFairytale()
+	}
 	var val string
 	err := db.QueryRow("SELECT value FROM settings WHERE key = ?", "active_theme").Scan(&val)
 	if err != nil || val == "" {
