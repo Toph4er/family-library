@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 
@@ -165,13 +166,20 @@ func HTMLUpdateSettingHandler(db *sql.DB) http.HandlerFunc {
 }
 
 // ThemeCSSHandler returns the CSS override block for a given theme ID.
+// The CSSOverrideBlock returns template.HTML with <style> tags.
+// Strip them so the API returns raw CSS (Content-Type: text/css).
 // GET /api/v1/theme/:id/css
 func ThemeCSSHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := chi.URLParam(r, "id")
 		t := theme.GetThemeByID(id)
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, t.CSSOverrideBlock())
+		css := string(t.CSSOverrideBlock())
+		// Remove <style> and </style> tags
+		css = strings.TrimPrefix(css, "<style>")
+		css = strings.TrimSuffix(css, "</style>")
+		css = strings.TrimSpace(css)
+		w.Header().Set("Content-Type", "text/css; charset=utf-8")
+		fmt.Fprint(w, css)
 	}
 }
 
