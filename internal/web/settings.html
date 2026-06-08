@@ -51,6 +51,7 @@
       {{range .AvailableThemes}}
       <label class="relative flex items-center gap-4 p-4 rounded-xl shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 border-2 {{if eq .ID $.ActiveTheme.ID}}border-primary{{else}}border-transparent{{end}} theme-card"
         data-theme-id="{{.ID}}"
+        data-primary-color="{{.Primary}}"
         style="background-color: {{.Surface}}; {{if eq .ID $.ActiveTheme.ID}}border-color: {{.Primary}};{{else}}border-color: rgba(0,0,0,0.08);{{end}}">
         <input type="radio"
           name="active_theme"
@@ -264,38 +265,50 @@ function updateGuestVisibility(field, visible) {
 }
 
 function switchTheme(themeId) {
+  // 1. Persist preference immediately
   localStorage.setItem('active_theme', themeId);
+
   var csrf = '{{.CSRFToken}}';
-  // Apply theme CSS immediately
-  fetch('/api/v1/theme/' + themeId + '/css')
+
+  // 2. Fetch and inject CSS (Swap textContent instead of removing/adding to avoid flicker/specificity wars)
+  fetch('/api/v1/theme/' + encodeURIComponent(themeId) + '/css')
     .then(function(r) { return r.text(); })
     .then(function(css) {
-      var existing = document.getElementById('theme-override-style');
-      if (existing) existing.remove();
-      var style = document.createElement('style');
-      style.id = 'theme-override-style';
-      style.textContent = css;
-      document.head.appendChild(style);
-      // Update active theme UI indicators
+      var styleTag = document.getElementById('theme-override-style');
+      if (!styleTag) {
+        styleTag = document.createElement('style');
+        styleTag.id = 'theme-override-style';
+        document.head.appendChild(styleTag);
+      }
+      styleTag.textContent = css;
+
+      // 3. Update Active Pill UI instantly
+      var selectedCard = document.querySelector('[data-theme-id="' + themeId + '"]');
+
+      // Remove existing pills from all cards
+      document.querySelectorAll('.active-pill-badge').forEach(function(p) { p.remove(); });
       document.querySelectorAll('.theme-card').forEach(function(card) {
         card.classList.remove('ring-2', 'ring-primary');
-        var pill = card.querySelector('.active-pill-badge');
-        if (pill) pill.remove();
       });
-      var selectedCard = document.querySelector('[data-theme-id="' + themeId + '"]');
+
       if (selectedCard) {
         selectedCard.classList.add('ring-2', 'ring-primary');
-        // Add Active badge to the newly selected card
+
+        // Create and append new Active pill with correct background color
         var nameEl = selectedCard.querySelector('.theme-name-display');
-        if (nameEl && !selectedCard.querySelector('.active-pill-badge')) {
+        if (nameEl) {
           var pill = document.createElement('span');
-          pill.className = 'text-xs px-2 py-0.5 rounded-full text-white active-pill-badge';
+          pill.className = 'text-xs px-2 py-0.5 rounded-full text-white active-pill-badge font-medium ml-1';
+          // Get primary color from the card's data attribute or inline style, fallback to theme variable
+          var primaryColor = selectedCard.getAttribute('data-primary-color') || getComputedStyle(selectedCard).getPropertyValue('--color-primary');
+          pill.style.backgroundColor = primaryColor;
           pill.textContent = 'Active';
           nameEl.appendChild(pill);
         }
       }
     });
-  // Save to server in background
+
+  // 4. Save to server in background
   fetch('/settings/update/active_theme', {
     method: 'PUT',
     headers: {
@@ -304,14 +317,8 @@ function switchTheme(themeId) {
     },
     body: 'value=' + encodeURIComponent(themeId)
   }).then(function(r) {
-    if (r.ok) {
-      try {
-        if (typeof window.showToast === 'function') {
-          window.showToast('Theme updated!', 'success', 2000);
-        }
-      } catch(e) {
-        console.warn('Toast failed:', e);
-      }
+    if (r.ok && typeof window.showToast === 'function') {
+      window.showToast('Theme updated!', 'success', 2000);
     }
   });
 }

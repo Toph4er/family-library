@@ -26,12 +26,13 @@
     fetch('/api/v1/theme/' + encodeURIComponent(stored) + '/css')
       .then(function(r){return r.text();})
       .then(function(css){
-        var existing = document.getElementById('theme-override-style');
-        if (existing) existing.remove();
-        var s = document.createElement('style');
-        s.id = 'theme-override-style';
-        s.textContent = css;
-        document.head.appendChild(s);
+        var styleTag = document.getElementById('theme-override-style');
+        if (!styleTag) {
+          styleTag = document.createElement('style');
+          styleTag.id = 'theme-override-style';
+          document.head.appendChild(styleTag);
+        }
+        styleTag.textContent = css;
       })
       .catch(function(){});
   })();
