@@ -44,38 +44,38 @@ type pageContext struct {
 	AvailableThemes        []theme.Theme
 
 	// Form page fields
-	Title             string
-	IsEdit            bool
-	CancelURL         string
-	ActionURL         string
-	BookTitle         string
-	ItemTitle         string
-	Subtitle          string
-	Authors           string
-	Illustrators      string
-	ISBN              string
-	Publisher         string
-	PublicationYear   string
-	PageCount         string
-	BookType          string
-	Condition         string
-	Genres            string
-	Themes            string
-	Awards            string
-	ReadingLevels     string
-	GiftFrom          string
-	GiftRelationship  string
-	DateReceived      string
-	Location          string
-	CoverImageURL     string
-	Notes             string
-	ChildRating       int
-	Quantity          int
-	Author            string // for wishlist
-	Reason            string // for wishlist
-	Priority          int    // for wishlist
-	AmazonURL         string // for wishlist
-	ThriftbooksURL    string // for wishlist
+	Title            string
+	IsEdit           bool
+	CancelURL        string
+	ActionURL        string
+	BookTitle        string
+	ItemTitle        string
+	Subtitle         string
+	Authors          string
+	Illustrators     string
+	ISBN             string
+	Publisher        string
+	PublicationYear  string
+	PageCount        string
+	BookType         string
+	Condition        string
+	Genres           string
+	Themes           string
+	Awards           string
+	ReadingLevels    string
+	GiftFrom         string
+	GiftRelationship string
+	DateReceived     string
+	Location         string
+	CoverImageURL    string
+	Notes            string
+	ChildRating      int
+	Quantity         int
+	Author           string // for wishlist
+	Reason           string // for wishlist
+	Priority         int    // for wishlist
+	AmazonURL        string // for wishlist
+	ThriftbooksURL   string // for wishlist
 }
 
 // buildPageContext creates a pageContext for the given request.
@@ -512,10 +512,10 @@ func RenderWishlistFormPage(tmpl *template.Template, db *sql.DB, store *sessions
 				}
 				return "/wishlist/create"
 			}(),
-			Title:      item.Title,
-			Author:     derefString(item.Author),
-			ISBN:       derefString(item.ISBN),
-			Reason:     derefString(item.Reason),
+			Title:  item.Title,
+			Author: derefString(item.Author),
+			ISBN:   derefString(item.ISBN),
+			Reason: derefString(item.Reason),
 			Priority: func() int {
 				if isEdit {
 					return item.Priority
@@ -696,12 +696,12 @@ func RenderBookFormPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 				}
 				return "/books/create"
 			}(),
-			Title:           derefString(&book.Title),
-			Subtitle:        derefString(book.Subtitle),
-			Authors:         derefString(book.Authors),
-			Illustrators:    derefString(book.Illustrators),
-			ISBN:            derefString(book.ISBN),
-			Publisher:       derefString(book.Publisher),
+			Title:        derefString(&book.Title),
+			Subtitle:     derefString(book.Subtitle),
+			Authors:      derefString(book.Authors),
+			Illustrators: derefString(book.Illustrators),
+			ISBN:         derefString(book.ISBN),
+			Publisher:    derefString(book.Publisher),
 			PublicationYear: func() string {
 				if book.PublicationYear != nil {
 					return strconv.Itoa(*book.PublicationYear)

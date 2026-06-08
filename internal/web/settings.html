@@ -264,6 +264,7 @@ function updateGuestVisibility(field, visible) {
 }
 
 function switchTheme(themeId) {
+  localStorage.setItem('active_theme', themeId);
   var csrf = '{{.CSRFToken}}';
   // Apply theme CSS immediately
   fetch('/api/v1/theme/' + themeId + '/css')

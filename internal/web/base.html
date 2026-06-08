@@ -19,6 +19,23 @@
 
   {{block "extra-head" .}}{{end}}
   {{.ActiveTheme.CSSOverrideBlock}}
+  <script>
+  (function(){
+    var stored = localStorage.getItem('active_theme');
+    if (!stored) return;
+    fetch('/api/v1/theme/' + encodeURIComponent(stored) + '/css')
+      .then(function(r){return r.text();})
+      .then(function(css){
+        var existing = document.getElementById('theme-override-style');
+        if (existing) existing.remove();
+        var s = document.createElement('style');
+        s.id = 'theme-override-style';
+        s.textContent = css;
+        document.head.appendChild(s);
+      })
+      .catch(function(){});
+  })();
+  </script>
 </head>
 <body class="min-h-screen flex flex-col">
   <div id="page-wrapper" class="flex flex-col min-h-screen" x-data="{ mobileMenuOpen: false }">
