@@ -67,6 +67,7 @@ type pageContext struct {
 	GiftRelationship string
 	DateReceived     string
 	Location         string
+	AgeRange         string
 	CoverImageURL    string
 	Notes            string
 	ChildRating      int
@@ -724,6 +725,7 @@ func RenderBookFormPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 			GiftRelationship: derefString(book.GiftRelationship),
 			DateReceived:     derefString(book.DateReceived),
 			Location:         derefString(book.Location),
+			AgeRange:         derefString(book.AgeRange),
 			CoverImageURL:    derefString(book.CoverImageURL),
 			Notes:            derefString(book.Notes),
 			ChildRating:      derefInt(book.ChildRating),
