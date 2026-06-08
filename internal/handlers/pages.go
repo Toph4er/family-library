@@ -42,6 +42,40 @@ type pageContext struct {
 	TotalResults           int
 	ActiveTheme            theme.Theme
 	AvailableThemes        []theme.Theme
+
+	// Form page fields
+	Title             string
+	IsEdit            bool
+	CancelURL         string
+	ActionURL         string
+	BookTitle         string
+	ItemTitle         string
+	Subtitle          string
+	Authors           string
+	Illustrators      string
+	ISBN              string
+	Publisher         string
+	PublicationYear   string
+	PageCount         string
+	BookType          string
+	Condition         string
+	Genres            string
+	Themes            string
+	Awards            string
+	ReadingLevels     string
+	GiftFrom          string
+	GiftRelationship  string
+	DateReceived      string
+	Location          string
+	CoverImageURL     string
+	Notes             string
+	ChildRating       int
+	Quantity          int
+	Author            string // for wishlist
+	Reason            string // for wishlist
+	Priority          int    // for wishlist
+	AmazonURL         string // for wishlist
+	ThriftbooksURL    string // for wishlist
 }
 
 // buildPageContext creates a pageContext for the given request.
@@ -459,36 +493,39 @@ func RenderWishlistFormPage(tmpl *template.Template, db *sql.DB, store *sessions
 			cancelURL = "/wishlist"
 		}
 
-		data := map[string]interface{}{
-			"Year":            ctx.Year,
-			"CSRFToken":       ctx.CSRFToken,
-			"IsAdmin":         ctx.IsAdmin,
-			"IsAuthenticated": ctx.IsAuthenticated,
-			"Username":        ctx.Username,
-			"ActiveTheme":     ctx.ActiveTheme,
-			"IsEdit":          isEdit,
-			"ItemTitle":       itemTitle,
-			"CancelURL":       cancelURL,
-			"ActionURL": func() string {
+		data := pageContext{
+			Year:            ctx.Year,
+			CSRFToken:       ctx.CSRFToken,
+			IsAdmin:         ctx.IsAdmin,
+			IsAuthenticated: ctx.IsAuthenticated,
+			Username:        ctx.Username,
+			ActiveTheme:     ctx.ActiveTheme,
+			SiteName:        ctx.SiteName,
+			SiteTagline:     ctx.SiteTagline,
+			AvailableThemes: ctx.AvailableThemes,
+			IsEdit:          isEdit,
+			ItemTitle:       itemTitle,
+			CancelURL:       cancelURL,
+			ActionURL: func() string {
 				if isEdit {
 					return "/wishlist/" + strconv.FormatInt(itemID, 10) + "/update"
 				}
 				return "/wishlist/create"
 			}(),
-			"Title":  item.Title,
-			"Author": derefString(item.Author),
-			"ISBN":   derefString(item.ISBN),
-			"Reason": derefString(item.Reason),
-			"Priority": func() int {
+			Title:      item.Title,
+			Author:     derefString(item.Author),
+			ISBN:       derefString(item.ISBN),
+			Reason:     derefString(item.Reason),
+			Priority: func() int {
 				if isEdit {
 					return item.Priority
 				}
 				return 3
 			}(),
-			"AmazonURL":      derefString(item.AmazonURL),
-			"ThriftbooksURL": derefString(item.ThriftbooksURL),
-			"CoverImageURL":  derefString(item.CoverImageURL),
-			"Notes":          derefString(item.Notes),
+			AmazonURL:      derefString(item.AmazonURL),
+			ThriftbooksURL: derefString(item.ThriftbooksURL),
+			CoverImageURL:  derefString(item.CoverImageURL),
+			Notes:          derefString(item.Notes),
 		}
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -640,54 +677,57 @@ func RenderBookFormPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 			cancelURL = "/books/" + strconv.FormatInt(bookID, 10)
 		}
 
-		data := map[string]interface{}{
-			"Year":            ctx.Year,
-			"CSRFToken":       ctx.CSRFToken,
-			"IsAdmin":         ctx.IsAdmin,
-			"IsAuthenticated": ctx.IsAuthenticated,
-			"Username":        ctx.Username,
-			"ActiveTheme":     ctx.ActiveTheme,
-			"IsEdit":          isEdit,
-			"BookTitle":       bookTitle,
-			"CancelURL":       cancelURL,
-			"ActionURL": func() string {
+		data := pageContext{
+			Year:            ctx.Year,
+			CSRFToken:       ctx.CSRFToken,
+			IsAdmin:         ctx.IsAdmin,
+			IsAuthenticated: ctx.IsAuthenticated,
+			Username:        ctx.Username,
+			ActiveTheme:     ctx.ActiveTheme,
+			SiteName:        ctx.SiteName,
+			SiteTagline:     ctx.SiteTagline,
+			AvailableThemes: ctx.AvailableThemes,
+			IsEdit:          isEdit,
+			BookTitle:       bookTitle,
+			CancelURL:       cancelURL,
+			ActionURL: func() string {
 				if isEdit {
 					return "/books/" + strconv.FormatInt(bookID, 10) + "/update"
 				}
 				return "/books/create"
 			}(),
-			"Title":        derefString(&book.Title),
-			"Subtitle":     derefString(book.Subtitle),
-			"Authors":      derefString(book.Authors),
-			"Illustrators": derefString(book.Illustrators),
-			"ISBN":         derefString(book.ISBN),
-			"Publisher":    derefString(book.Publisher),
-			"PublicationYear": func() string {
+			Title:           derefString(&book.Title),
+			Subtitle:        derefString(book.Subtitle),
+			Authors:         derefString(book.Authors),
+			Illustrators:    derefString(book.Illustrators),
+			ISBN:            derefString(book.ISBN),
+			Publisher:       derefString(book.Publisher),
+			PublicationYear: func() string {
 				if book.PublicationYear != nil {
 					return strconv.Itoa(*book.PublicationYear)
 				}
 				return ""
 			}(),
-			"PageCount": func() string {
+			PageCount: func() string {
 				if book.PageCount != nil {
 					return strconv.Itoa(*book.PageCount)
 				}
 				return ""
 			}(),
-			"BookType":         derefString(book.BookType),
-			"Condition":        derefString(book.Condition),
-			"Genres":           derefString(book.Genres),
-			"Themes":           derefString(book.Themes),
-			"Awards":           derefString(book.Awards),
-			"ReadingLevels":    derefString(book.ReadingLevels),
-			"GiftFrom":         derefString(book.GiftFrom),
-			"GiftRelationship": derefString(book.GiftRelationship),
-			"DateReceived":     derefString(book.DateReceived),
-			"Location":         derefString(book.Location),
-			"CoverImageURL":    derefString(book.CoverImageURL),
-			"Notes":            derefString(book.Notes),
-			"ChildRating":      derefInt(book.ChildRating),
-			"Quantity": func() int {
+			BookType:         derefString(book.BookType),
+			Condition:        derefString(book.Condition),
+			Genres:           derefString(book.Genres),
+			Themes:           derefString(book.Themes),
+			Awards:           derefString(book.Awards),
+			ReadingLevels:    derefString(book.ReadingLevels),
+			GiftFrom:         derefString(book.GiftFrom),
+			GiftRelationship: derefString(book.GiftRelationship),
+			DateReceived:     derefString(book.DateReceived),
+			Location:         derefString(book.Location),
+			CoverImageURL:    derefString(book.CoverImageURL),
+			Notes:            derefString(book.Notes),
+			ChildRating:      derefInt(book.ChildRating),
+			Quantity: func() int {
 				if book.Quantity > 0 {
 					return book.Quantity
 				}
