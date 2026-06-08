@@ -283,13 +283,13 @@ func HTMLFamilyMemberFormHandler(db *sql.DB) http.HandlerFunc {
 
 		// #nosec G705 -- All interpolated values are escaped via template.HTMLEscapeString()
 		_, _ = w.Write([]byte(`
-<div id="modal-backdrop" class="modal-backdrop" hx-on::click="if(event.target===this)document.getElementById('modal-backdrop').remove()">
+<div class="modal-backdrop" onclick="if(event.target===this)this.remove()">
   <div class="modal-content modal-sm p-6" role="dialog" aria-modal="true">
     <div class="flex items-center justify-between mb-4 pb-3 border-b" style="border-color: rgba(139, 69, 19, 0.1);">
       <h2 class="text-xl font-heading font-semibold text-primary">` + titleLabel + ` Family Member</h2>
-      <button type="button" hx-on::click="document.getElementById('modal-backdrop').remove()" class="text-text-light hover:text-text transition-colors text-2xl no-underline" aria-label="Close modal">×</button>
+      <button type="button" onclick="this.closest('.modal-backdrop').remove()" class="text-text-light hover:text-text transition-colors text-2xl no-underline" aria-label="Close modal">×</button>
     </div>
-    <form hx-` + hxVerb + `="` + actionURL + `" hx-target="#modal-target" hx-swap="outerHTML">
+    <form hx-` + hxVerb + `="` + actionURL + `" hx-target="#fm-form-error" hx-swap="innerHTML">
       <div class="space-y-4">
         <div>
           <label for="fm-name" class="block text-sm font-medium text-text mb-1">Name <span class="text-error">*</span></label>
@@ -304,7 +304,7 @@ func HTMLFamilyMemberFormHandler(db *sql.DB) http.HandlerFunc {
       </div>
       <div id="fm-form-error" class="mt-4"></div>
       <div class="flex justify-end gap-3 mt-6">
-        <button type="button" hx-on::click="document.getElementById('modal-backdrop').remove()" class="px-4 py-2 rounded-lg border text-text-light hover:text-text transition-colors no-underline" style="border-color: var(--color-secondary);">Cancel</button>
+        <button type="button" onclick="this.closest('.modal-backdrop').remove()" class="px-4 py-2 rounded-lg border text-text-light hover:text-text transition-colors no-underline" style="border-color: var(--color-secondary);">Cancel</button>
         <button type="submit" class="px-4 py-2 rounded-lg font-medium text-white" style="background-color: var(--color-primary);">` + buttonLabel + `</button>
       </div>
     </form>

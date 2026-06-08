@@ -302,8 +302,6 @@ function openSettingsModal(url) {
   fetch(url, { headers: { 'HX-Request': 'true' } })
     .then(function(r) { return r.text(); })
     .then(function(html) {
-      // Server returns: <div id="modal-backdrop" class="modal-backdrop" hx-on::click="...">
-      // Parse it, fix up IDs, and insert into body.
       var wrapper = document.createElement('div');
       wrapper.innerHTML = html;
       var serverBackdrop = wrapper.querySelector('.modal-backdrop');
@@ -311,49 +309,8 @@ function openSettingsModal(url) {
         console.error('No modal-backdrop in response');
         return;
       }
-
-      // Change the ID so it doesn't conflict with other modals
+      // Give it a unique ID to avoid conflicts with other modals
       serverBackdrop.id = 'settings-modal-backdrop';
-
-      // Fix hx-on:* attributes (HTMX v2 uses colons in attribute names)
-      var allEls = serverBackdrop.querySelectorAll('*');
-      for (var i = 0; i < allEls.length; i++) {
-        var el = allEls[i];
-        var attrs = el.getAttributeNames();
-        for (var j = 0; j < attrs.length; j++) {
-          var attrName = attrs[j];
-          if (attrName.indexOf('hx-on:') === 0) {
-            var handler = el.getAttribute(attrName);
-            if (handler && handler.indexOf('modal-backdrop') !== -1) {
-              el.setAttribute(attrName, handler.replace(/modal-backdrop/g, 'settings-modal-backdrop'));
-            }
-          }
-        }
-      }
-
-      // Fix onclick handlers too
-      serverBackdrop.querySelectorAll('[onclick]').forEach(function(el) {
-        var handler = el.getAttribute('onclick');
-        if (handler && handler.indexOf('modal-backdrop') !== -1) {
-          el.setAttribute('onclick', handler.replace(/modal-backdrop/g, 'settings-modal-backdrop'));
-        }
-      });
-
-      // Fix form's hx-target so error responses go to the error div inside the modal
-      var form = serverBackdrop.querySelector('form');
-      if (form) {
-        var errorDiv = serverBackdrop.querySelector('#user-form-error, #fm-form-error');
-        if (errorDiv) {
-          form.setAttribute('hx-target', '#' + errorDiv.id);
-          form.setAttribute('hx-swap', 'innerHTML');
-        }
-      }
-
-      // Add backdrop click handler (in addition to hx-on::click)
-      serverBackdrop.addEventListener('click', function(e) {
-        if (e.target === serverBackdrop) serverBackdrop.remove();
-      });
-
       document.body.appendChild(serverBackdrop);
       htmx.process(serverBackdrop);
     })
