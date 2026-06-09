@@ -59,10 +59,10 @@
 .stagger-children > *:nth-child(10) { animation-delay: 450ms; }
 
 .vine-divider {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 12px;
-  margin: 24px 0;
+  margin: 24px auto;
 }
 .vine-divider::before,
 .vine-divider::after {
