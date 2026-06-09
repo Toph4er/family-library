@@ -282,7 +282,7 @@ func HTMLUserFormHandler(db *sql.DB) http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		_, _ = w.Write([]byte(`
-<div class="modal-backdrop" onclick="if(event.target===this)this.remove()">
+<div class="modal-backdrop" hx-on::click="if(event.target===this)this.remove()">
   <div class="modal-content modal-sm p-6" role="dialog" aria-modal="true">
     <div class="flex items-center justify-between mb-4 pb-3 border-b" style="border-color: rgba(139, 69, 19, 0.1);">
       <h2 class="text-xl font-heading font-semibold text-primary">` + (func() string {
@@ -291,7 +291,7 @@ func HTMLUserFormHandler(db *sql.DB) http.HandlerFunc {
 			}
 			return "Add User"
 		})() + `</h2>
-      <button type="button" onclick="this.closest('.modal-backdrop').remove()" class="text-text-light hover:text-text transition-colors text-2xl no-underline" aria-label="Close modal">×</button>
+      <button type="button" hx-on::click="document.getElementById('modal-backdrop')?.remove()" class="text-text-light hover:text-text transition-colors text-2xl no-underline" aria-label="Close modal">×</button>
     </div>
     <form hx-` + (func() string {
 			if isEdit {
@@ -340,7 +340,7 @@ func HTMLUserFormHandler(db *sql.DB) http.HandlerFunc {
       </div>
       <div id="user-form-error" class="mt-4"></div>
       <div class="flex justify-end gap-3 mt-6">
-        <button type="button" onclick="this.closest('.modal-backdrop').remove()" class="px-4 py-2 rounded-lg border text-text-light hover:text-text transition-colors no-underline" style="border-color: var(--color-secondary);">Cancel</button>
+        <button type="button" hx-on::click="document.getElementById('modal-backdrop')?.remove()" class="px-4 py-2 rounded-lg border text-text-light hover:text-text transition-colors no-underline" style="border-color: var(--color-secondary);">Cancel</button>
         <button type="submit" class="px-4 py-2 rounded-lg font-medium text-white" style="background-color: var(--color-primary);">` + (func() string {
 			if isEdit {
 				return "Save Changes"

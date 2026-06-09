@@ -111,8 +111,10 @@
       <h2 class="text-2xl font-heading text-primary">Users</h2>
       <button
         type="button"
-        data-modal-url="/settings/users/new-form"
-        class="add-user-btn open-settings-modal-btn px-4 py-2 rounded-xl font-medium text-white shadow-sm text-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+        hx-get="/settings/users/new-form"
+        hx-target="#modal-target"
+        hx-swap="beforeend"
+        class="add-user-btn px-4 py-2 rounded-xl font-medium text-white shadow-sm text-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
         style="background-color: var(--color-primary);"
         aria-label="Add a new user"
       >
@@ -161,8 +163,10 @@
       <h2 class="text-2xl font-heading text-primary">Family Members</h2>
       <button
         type="button"
-        data-modal-url="/settings/family-members/new-form"
-        class="add-family-member-btn open-settings-modal-btn px-4 py-2 rounded-xl font-medium text-white shadow-sm text-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+        hx-get="/settings/family-members/new-form"
+        hx-target="#modal-target"
+        hx-swap="beforeend"
+        class="add-family-member-btn px-4 py-2 rounded-xl font-medium text-white shadow-sm text-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
         style="background-color: var(--color-primary);"
         aria-label="Add a new family member"
       >
@@ -195,8 +199,10 @@
             <td class="py-3 px-4 text-sm">
               <div class="flex items-center gap-2">
                 <button type="button"
-                  data-modal-url="/settings/family-members/{{.ID}}/edit"
-                  class="open-settings-modal-btn text-text-light/60 hover:text-primary transition-colors"
+                  hx-get="/settings/family-members/{{.ID}}/edit"
+                  hx-target="#modal-target"
+                  hx-swap="beforeend"
+                  class="text-text-light/60 hover:text-primary transition-colors"
                   aria-label="Edit {{.Name}}"
                 >
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -232,8 +238,8 @@
     </div>
   </section>
 
-  <!-- Modal Container (placeholder for form error responses) -->
-  <div id="settings-modal-target"></div>
+  <!-- Modal target (HTMX-native modal container) -->
+  <div id="modal-target"></div>
 
 </div>
 {{end}}
@@ -353,45 +359,11 @@ document.addEventListener('change', function(e) {
   }
 });
 
-// Modal open via data attribute (replaces inline onclick)
-document.addEventListener('click', function(e) {
-  var btn = e.target.closest('.open-settings-modal-btn');
-  if (btn && btn.dataset.modalUrl) {
-    openSettingsModal(btn.dataset.modalUrl);
-    e.preventDefault();
-  }
-});
-
 // Theme radio change via delegation (replaces DOMContentLoaded + querySelectorAll)
 document.addEventListener('change', function(e) {
   if (e.target.classList.contains('theme-switch-radio')) {
     switchTheme(e.target.value);
   }
 });
-
-function openSettingsModal(url) {
-  // Remove any existing settings modal first
-  var existing = document.getElementById('settings-modal-backdrop');
-  if (existing) existing.remove();
-
-  fetch(url, { headers: { 'HX-Request': 'true' } })
-    .then(function(r) { return r.text(); })
-    .then(function(html) {
-      var wrapper = document.createElement('div');
-      wrapper.innerHTML = html;
-      var serverBackdrop = wrapper.querySelector('.modal-backdrop');
-      if (!serverBackdrop) {
-        console.error('No modal-backdrop in response');
-        return;
-      }
-      // Give it a unique ID to avoid conflicts with other modals
-      serverBackdrop.id = 'settings-modal-backdrop';
-      document.body.appendChild(serverBackdrop);
-      htmx.process(serverBackdrop);
-    })
-    .catch(function(err) {
-      console.error('Failed to load modal:', err);
-    });
-}
 </script>
 {{end}}
