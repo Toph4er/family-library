@@ -177,8 +177,13 @@ func TestHTMLCreateBookHandler_Success(t *testing.T) {
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusFound {
-		t.Fatalf("expected status 302, got %d: %s", rec.Code, rec.Body.String())
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	// Verify HX-Redirect header is present
+	if loc := rec.Header().Get("HX-Redirect"); loc == "" {
+		t.Fatalf("expected HX-Redirect header, got none: %s", rec.Body.String())
 	}
 
 	// Verify book was created in DB
@@ -299,8 +304,13 @@ func TestHTMLUpdateBookHandler_Success(t *testing.T) {
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusFound {
-		t.Fatalf("expected status 302, got %d: %s", rec.Code, rec.Body.String())
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	// Verify HX-Redirect header is present
+	if loc := rec.Header().Get("HX-Redirect"); loc == "" {
+		t.Fatalf("expected HX-Redirect header, got none: %s", rec.Body.String())
 	}
 
 	// Verify update persisted
@@ -344,8 +354,13 @@ func TestHTMLUpdateBookHandler_ClearFieldToNull(t *testing.T) {
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusFound {
-		t.Fatalf("expected status 302, got %d: %s", rec.Code, rec.Body.String())
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	// Verify HX-Redirect header is present
+	if loc := rec.Header().Get("HX-Redirect"); loc == "" {
+		t.Fatalf("expected HX-Redirect header, got none: %s", rec.Body.String())
 	}
 
 	// Verify notes is NULL

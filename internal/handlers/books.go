@@ -1811,19 +1811,25 @@ func filterBooksForGuest(r *http.Request, books []models.Book) {
 func HTMLCreateBookHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseForm(); err != nil {
-			http.Error(w, "Invalid request", http.StatusBadRequest)
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(w, `<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg" role="alert">Invalid request</div>`)
 			return
 		}
 
 		title := strings.TrimSpace(r.FormValue("title"))
 		if title == "" {
-			http.Error(w, "Title is required", http.StatusBadRequest)
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(w, `<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg" role="alert">Title is required</div>`)
 			return
 		}
 
 		isbn := strings.ReplaceAll(strings.TrimSpace(r.FormValue("isbn")), "-", "")
 		if isbn == "" {
-			http.Error(w, "ISBN is required", http.StatusBadRequest)
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(w, `<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg" role="alert">ISBN is required</div>`)
 			return
 		}
 
@@ -1895,15 +1901,20 @@ func HTMLCreateBookHandler(db *sql.DB) http.HandlerFunc {
 		)
 		if err != nil {
 			if strings.Contains(err.Error(), "UNIQUE constraint failed") {
-				http.Error(w, "A book with this ISBN already exists", http.StatusConflict)
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				w.WriteHeader(http.StatusConflict)
+				fmt.Fprintf(w, `<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg" role="alert">A book with this ISBN already exists</div>`)
 				return
 			}
-			http.Error(w, "Failed to create book", http.StatusInternalServerError)
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, `<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg" role="alert">Failed to create book</div>`)
 			return
 		}
 
 		id, _ := result.LastInsertId()
-		http.Redirect(w, r, "/books/"+strconv.FormatInt(id, 10), http.StatusFound)
+		w.Header().Set("HX-Redirect", "/books/"+strconv.FormatInt(id, 10))
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
@@ -1913,23 +1924,31 @@ func HTMLUpdateBookHandler(db *sql.DB) http.HandlerFunc {
 		idStr := chi.URLParam(r, "id")
 		id, err := strconv.ParseInt(idStr, 10, 64)
 		if err != nil {
-			http.Error(w, "Invalid book ID", http.StatusBadRequest)
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(w, `<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg" role="alert">Invalid book ID</div>`)
 			return
 		}
 
 		if err := r.ParseForm(); err != nil {
-			http.Error(w, "Invalid request", http.StatusBadRequest)
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(w, `<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg" role="alert">Invalid request</div>`)
 			return
 		}
 
 		title := strings.TrimSpace(r.FormValue("title"))
 		if title == "" {
-			http.Error(w, "Title is required", http.StatusBadRequest)
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(w, `<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg" role="alert">Title is required</div>`)
 			return
 		}
 		isbn := strings.ReplaceAll(strings.TrimSpace(r.FormValue("isbn")), "-", "")
 		if isbn == "" {
-			http.Error(w, "ISBN is required", http.StatusBadRequest)
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(w, `<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg" role="alert">ISBN is required</div>`)
 			return
 		}
 
@@ -2041,20 +2060,27 @@ func HTMLUpdateBookHandler(db *sql.DB) http.HandlerFunc {
 		result, err := db.Exec(query, args...)
 		if err != nil {
 			if strings.Contains(err.Error(), "UNIQUE constraint failed") {
-				http.Error(w, "A book with this ISBN already exists", http.StatusConflict)
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				w.WriteHeader(http.StatusConflict)
+				fmt.Fprintf(w, `<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg" role="alert">A book with this ISBN already exists</div>`)
 				return
 			}
-			http.Error(w, "Failed to update book", http.StatusInternalServerError)
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, `<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg" role="alert">Failed to update book</div>`)
 			return
 		}
 
 		rowsAffected, _ := result.RowsAffected()
 		if rowsAffected == 0 {
-			http.NotFound(w, r)
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprintf(w, `<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg" role="alert">Book not found</div>`)
 			return
 		}
 
-		http.Redirect(w, r, "/books/"+strconv.FormatInt(id, 10), http.StatusFound)
+		w.Header().Set("HX-Redirect", "/books/"+strconv.FormatInt(id, 10))
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
