@@ -783,7 +783,7 @@ func buildThemeColorsJSON(themes []theme.Theme) template.HTML {
 		if i > 0 {
 			result += ","
 		}
-		// #nosec G200 -- values come from application-controlled theme definitions
+		// #nosec G203 -- values come from application-controlled theme definitions, not user input
 		result += fmt.Sprintf(`"%s":{"bg":"%s","text":"%s"}`, t.ID, t.Background, t.Text)
 	}
 	result += "}"
