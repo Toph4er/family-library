@@ -43,7 +43,7 @@ type pageContext struct {
 	TotalResults           int
 	ActiveTheme            theme.Theme
 	AvailableThemes        []theme.Theme
-	ThemeColorsJSON        template.JS // JSON map of theme ID → {bg, text} for switchTheme()
+	ThemeColorsJSON        template.HTML // JSON map of theme ID → {bg, text} for switchTheme()
 
 	// Form page fields
 	Title            string
@@ -777,7 +777,7 @@ func BuildPageContextForTest(r *http.Request, store *sessions.CookieStore, sessi
 // buildThemeColorsJSON builds a JSON map of theme ID → {bg, text}
 // from the available themes, for server-side rendering into the
 // switchTheme() JS in settings.html.
-func buildThemeColorsJSON(themes []theme.Theme) template.JS {
+func buildThemeColorsJSON(themes []theme.Theme) template.HTML {
 	result := "{"
 	for i, t := range themes {
 		if i > 0 {
@@ -787,5 +787,5 @@ func buildThemeColorsJSON(themes []theme.Theme) template.JS {
 		result += fmt.Sprintf(`"%s":{"bg":"%s","text":"%s"}`, t.ID, t.Background, t.Text)
 	}
 	result += "}"
-	return template.JS(result)
+	return template.HTML(result)
 }
