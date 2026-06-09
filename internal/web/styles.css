@@ -67,7 +67,8 @@
 .vine-divider::before,
 .vine-divider::after {
   content: '';
-  flex: 1;
+  width: 80px;
+  min-width: 40px;
   height: 1px;
   background: var(--color-vine-divider-grad, linear-gradient(to right, transparent, color-mix(in srgb, var(--color-secondary) 30%, transparent), transparent));
 }
