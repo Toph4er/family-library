@@ -855,8 +855,12 @@ func TestHTMLCreateWishlistItemHandler_Success(t *testing.T) {
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusFound {
-		t.Fatalf("expected status 302, got %d: %s", rec.Code, rec.Body.String())
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	if loc := rec.Header().Get("HX-Redirect"); loc != "/wishlist" {
+		t.Fatalf("expected HX-Redirect=/wishlist, got %q", loc)
 	}
 
 	// Verify item was created in DB with store links
@@ -957,8 +961,12 @@ func TestHTMLUpdateWishlistItemHandler_Success(t *testing.T) {
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusFound {
-		t.Fatalf("expected status 302, got %d: %s", rec.Code, rec.Body.String())
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	if loc := rec.Header().Get("HX-Redirect"); loc != "/wishlist" {
+		t.Fatalf("expected HX-Redirect=/wishlist, got %q", loc)
 	}
 
 	// Verify update persisted

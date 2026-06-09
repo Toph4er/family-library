@@ -401,7 +401,8 @@ func HTMLCreateWishlistItemHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		http.Redirect(w, r, "/wishlist", http.StatusFound)
+		w.Header().Set("HX-Redirect", "/wishlist")
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
@@ -413,7 +414,9 @@ func HTMLUpdateWishlistItemHandler(db *sql.DB) http.HandlerFunc {
 		idStr := chi.URLParam(r, "id")
 		id, err := strconv.ParseInt(idStr, 10, 64)
 		if err != nil {
-			http.NotFound(w, r)
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write([]byte(htmlErrorFragment("Wishlist item not found")))
 			return
 		}
 
@@ -466,10 +469,13 @@ func HTMLUpdateWishlistItemHandler(db *sql.DB) http.HandlerFunc {
 
 		rowsAffected, _ := result.RowsAffected()
 		if rowsAffected == 0 {
-			http.NotFound(w, r)
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write([]byte(htmlErrorFragment("Wishlist item not found")))
 			return
 		}
 
-		http.Redirect(w, r, "/wishlist", http.StatusFound)
+		w.Header().Set("HX-Redirect", "/wishlist")
+		w.WriteHeader(http.StatusOK)
 	}
 }
