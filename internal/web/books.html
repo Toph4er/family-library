@@ -56,7 +56,7 @@
 
     <!-- Book Grid -->
     <section aria-label="Book collection">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 stagger-children">
+      <div id="book-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 stagger-children">
         {{range .Books}}
           {{template "partials/book-card" .}}
         {{else}}
@@ -83,6 +83,9 @@
         {{end}}
       </div>
     </section>
+
+      <!-- Pagination -->
+      {{template "partials/pagination" (dict "Page" .Page "TotalPages" .TotalPages "Total" .TotalResults "StartItem" .PaginationStart "EndItem" .PaginationEnd "CurrentQuery" .CurrentQuery)}}
 
   {{else}}
     <!-- Unauthenticated guard -->

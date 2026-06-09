@@ -6,8 +6,8 @@
   </p>
   <div class="flex gap-2">
     {{if gt .Page 1}}
-    <a href="?page={{sub .Page 1}}"
-      hx-get="?page={{sub .Page 1}}"
+    <a href="?page={{sub .Page 1}}{{if .CurrentQuery}}&q={{.CurrentQuery}}{{end}}"
+      hx-get="?page={{sub .Page 1}}{{if .CurrentQuery}}&q={{.CurrentQuery}}{{end}}"
       hx-target="#book-grid"
       hx-swap="innerHTML"
       class="px-3 py-1.5 rounded-lg border text-primary hover:bg-primary hover:text-white transition-colors no-underline text-sm"
@@ -20,8 +20,8 @@
     {{if eq . $.Page}}
     <span class="px-3 py-1.5 rounded-lg bg-primary text-white text-sm font-medium">{{.}}</span>
     {{else}}
-    <a href="?page={{.}}"
-      hx-get="?page={{.}}"
+    <a href="?page={{.}}{{if $.CurrentQuery}}&q={{$.CurrentQuery}}{{end}}"
+      hx-get="?page={{.}}{{if $.CurrentQuery}}&q={{$.CurrentQuery}}{{end}}"
       hx-target="#book-grid"
       hx-swap="innerHTML"
       class="px-3 py-1.5 rounded-lg border text-primary hover:bg-primary hover:text-white transition-colors no-underline text-sm"
@@ -32,8 +32,8 @@
     {{end}}
     
     {{if lt .Page .TotalPages}}
-    <a href="?page={{add .Page 1}}"
-      hx-get="?page={{add .Page 1}}"
+    <a href="?page={{add .Page 1}}{{if .CurrentQuery}}&q={{.CurrentQuery}}{{end}}"
+      hx-get="?page={{add .Page 1}}{{if .CurrentQuery}}&q={{.CurrentQuery}}{{end}}"
       hx-target="#book-grid"
       hx-swap="innerHTML"
       class="px-3 py-1.5 rounded-lg border text-primary hover:bg-primary hover:text-white transition-colors no-underline text-sm"

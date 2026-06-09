@@ -41,7 +41,13 @@ type pageContext struct {
 	DefaultGuestVisibility map[string]bool
 	CurrentQuery           string
 	TotalResults           int
-	ActiveTheme            theme.Theme
+	// Pagination
+	Page            int
+	PerPage         int
+	TotalPages      int
+	PaginationStart int
+	PaginationEnd   int
+	ActiveTheme     theme.Theme
 	AvailableThemes        []theme.Theme
 	ThemeColorsJSON        template.HTML // JSON map of theme ID → {bg, text} for switchTheme()
 
@@ -211,7 +217,6 @@ func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := buildPageContext(r, store, sessionName, db)
 
-		// Defense-in-depth: reject unauthenticated requests before querying the DB.
 		if !ctx.IsAuthenticated {
 			http.Redirect(w, r, "/login", http.StatusFound)
 			return
@@ -222,25 +227,79 @@ func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 			ctx.CurrentQuery = q
 		}
 
-		var rows *sql.Rows
-		var err error
+		// Pagination params
+		page := 1
+		perPage := 20
+		if p := r.URL.Query().Get("page"); p != "" {
+			if v, err := strconv.Atoi(p); err == nil && v > 0 {
+				page = v
+			}
+		}
+		if p := r.URL.Query().Get("per_page"); p != "" {
+			if v, err := strconv.Atoi(p); err == nil && v > 0 && v <= 100 {
+				perPage = v
+			}
+		}
+		offset := (page - 1) * perPage
 
+		// Count query
+		var total int
 		if q != "" {
 			like := "%" + q + "%"
-			rows, err = db.Query(
-				"SELECT id, title, authors, isbn, cover_image_url, created_at FROM books WHERE title LIKE ? OR authors LIKE ? OR isbn LIKE ? OR genres LIKE ? OR themes LIKE ? OR awards LIKE ? OR reading_levels LIKE ? ORDER BY title ASC",
+			err := db.QueryRow(
+				"SELECT COUNT(*) FROM books WHERE title LIKE ? OR authors LIKE ? OR isbn LIKE ? OR genres LIKE ? OR themes LIKE ? OR awards LIKE ? OR reading_levels LIKE ?",
 				like, like, like, like, like, like, like,
-			)
+			).Scan(&total)
 			if err != nil {
 				http.Error(w, "database error", http.StatusInternalServerError)
 				return
 			}
 		} else {
-			rows, err = db.Query("SELECT id, title, authors, isbn, cover_image_url, created_at FROM books ORDER BY title ASC")
+			err := db.QueryRow("SELECT COUNT(*) FROM books").Scan(&total)
 			if err != nil {
 				http.Error(w, "database error", http.StatusInternalServerError)
 				return
 			}
+		}
+
+		totalPages := (total + perPage - 1) / perPage
+		if totalPages == 0 {
+			totalPages = 1
+		}
+		// Clamp page to valid range
+		if page > totalPages {
+			page = totalPages
+			offset = (page - 1) * perPage
+		}
+
+		startItem := offset + 1
+		endItem := offset + perPage
+		if endItem > total {
+			endItem = total
+		}
+		if total == 0 {
+			startItem = 0
+			endItem = 0
+		}
+
+		// Data query with LIMIT/OFFSET
+		var rows *sql.Rows
+		var err error
+		if q != "" {
+			like := "%" + q + "%"
+			rows, err = db.Query(
+				"SELECT id, title, authors, isbn, cover_image_url, created_at FROM books WHERE title LIKE ? OR authors LIKE ? OR isbn LIKE ? OR genres LIKE ? OR themes LIKE ? OR awards LIKE ? OR reading_levels LIKE ? ORDER BY title ASC LIMIT ? OFFSET ?",
+				like, like, like, like, like, like, like, perPage, offset,
+			)
+		} else {
+			rows, err = db.Query(
+				"SELECT id, title, authors, isbn, cover_image_url, created_at FROM books ORDER BY title ASC LIMIT ? OFFSET ?",
+				perPage, offset,
+			)
+		}
+		if err != nil {
+			http.Error(w, "database error", http.StatusInternalServerError)
+			return
 		}
 		defer rows.Close()
 
@@ -271,7 +330,13 @@ func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 		}
 
 		ctx.Books = books
-		ctx.TotalResults = len(books)
+		ctx.TotalResults = total
+		ctx.Page = page
+		ctx.PerPage = perPage
+		ctx.TotalPages = totalPages
+		ctx.PaginationStart = startItem
+		ctx.PaginationEnd = endItem
+
 		filterBooksForGuest(r, books)
 
 		renderPage(w, r, tmpl, "books.html", ctx)
