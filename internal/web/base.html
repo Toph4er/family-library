@@ -33,8 +33,15 @@
     var tc = themeColors[stored];
     if (tc) {
       document.documentElement.style.backgroundColor = tc.bg;
-      document.body.style.backgroundColor = tc.bg;
-      document.body.style.color = tc.text;
+      var applyBodyStyles = function() {
+        document.body.style.backgroundColor = tc.bg;
+        document.body.style.color = tc.text;
+      };
+      if (document.body) {
+        applyBodyStyles();
+      } else {
+        document.addEventListener('DOMContentLoaded', applyBodyStyles);
+      }
     }
     // Then fetch full CSS for complete override
     fetch('/api/v1/theme/' + encodeURIComponent(stored) + '/css')

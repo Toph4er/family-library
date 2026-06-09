@@ -269,12 +269,7 @@ function switchTheme(themeId) {
   var csrf = '{{.CSRFToken}}';
 
   // Theme colors for direct DOM manipulation
-  var themeColors = {
-    woodland:   { bg: '#f5f0e8', text: '#1a2f0a' },
-    space:      { bg: '#0a0e27', text: '#ffffff' },
-    dinosaurs:  { bg: '#f5f0dc', text: '#1a1a0a' },
-    princesses: { bg: '#fdf5f9', text: '#2d1a2e' }
-  };
+  var themeColors = {{ .ThemeColorsJSON }};
 
   fetch('/api/v1/theme/' + encodeURIComponent(themeId) + '/css')
     .then(function(r) { return r.text(); })
@@ -319,6 +314,18 @@ function switchTheme(themeId) {
           nameEl.appendChild(pill);
         }
       }
+    })
+    .catch(function(err) {
+      console.error('Failed to load theme CSS:', err);
+      if (typeof window.showToast === 'function') {
+        window.showToast('Failed to load theme', 'error');
+      }
+      // Revert radio selection to previously active theme
+      var saved = localStorage.getItem('active_theme');
+      var radios = document.querySelectorAll('input[name="active_theme"]');
+      radios.forEach(function(r) {
+        r.checked = r.value === saved;
+      });
     });
 
   // 4. Save to server in background

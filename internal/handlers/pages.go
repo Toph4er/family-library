@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"log/slog"
 	"net/http"
@@ -42,6 +43,7 @@ type pageContext struct {
 	TotalResults           int
 	ActiveTheme            theme.Theme
 	AvailableThemes        []theme.Theme
+	ThemeColorsJSON        template.JS // JSON map of theme ID → {bg, text} for switchTheme()
 
 	// Form page fields
 	Title            string
@@ -644,6 +646,9 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 		// Load available themes
 		ctx.AvailableThemes = theme.AvailableThemes()
 
+		// Build theme colors map for server-side JS rendering
+		ctx.ThemeColorsJSON = buildThemeColorsJSON(theme.AvailableThemes())
+
 		renderPage(w, r, tmpl, "settings.html", ctx)
 	}
 }
@@ -767,4 +772,20 @@ func BuildPageContextForTest(r *http.Request, store *sessions.CookieStore, sessi
 		Username:        ctx.Username,
 		ActiveTheme:     ctx.ActiveTheme,
 	}
+}
+
+// buildThemeColorsJSON builds a JSON map of theme ID → {bg, text}
+// from the available themes, for server-side rendering into the
+// switchTheme() JS in settings.html.
+func buildThemeColorsJSON(themes []theme.Theme) template.JS {
+	result := "{"
+	for i, t := range themes {
+		if i > 0 {
+			result += ","
+		}
+		// #nosec G200 -- values come from application-controlled theme definitions
+		result += fmt.Sprintf(`"%s":{"bg":"%s","text":"%s"}`, t.ID, t.Background, t.Text)
+	}
+	result += "}"
+	return template.JS(result)
 }
