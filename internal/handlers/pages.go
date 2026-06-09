@@ -48,8 +48,8 @@ type pageContext struct {
 	PaginationStart int
 	PaginationEnd   int
 	ActiveTheme     theme.Theme
-	AvailableThemes        []theme.Theme
-	ThemeColorsJSON        template.HTML // JSON map of theme ID → {bg, text} for switchTheme()
+	AvailableThemes []theme.Theme
+	ThemeColorsJSON template.HTML // JSON map of theme ID → {bg, text} for switchTheme()
 
 	// Form page fields
 	Title            string
