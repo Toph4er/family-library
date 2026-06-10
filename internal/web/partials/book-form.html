@@ -27,7 +27,25 @@
     <div class="grid grid-cols-2 gap-4">
       <div>
         <label for="isbn" class="block text-sm font-medium text-text mb-1">ISBN</label>
-        <input type="text" id="isbn" name="isbn" value="{{.ISBN}}" placeholder="978-0-12345-678-9" class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">
+        <div class="flex gap-2">
+          <input type="text" id="isbn" name="isbn" value="{{.ISBN}}" placeholder="978-0-12345-678-9" class="flex-1 px-3 py-2 rounded-lg border bg-surface border-secondary">
+          <button type="button"
+            hx-post="/api/v1/books/lookup-isbn"
+            hx-vals='{"isbn": $("#isbn").val()}'
+            hx-target="#isbn-lookup-result"
+            hx-swap="innerHTML"
+            class="px-3 py-2 rounded-lg border border-secondary hover:bg-secondary/10 transition-colors shrink-0"
+            aria-label="Lookup ISBN">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </button>
+          <button type="button"
+            onclick="openScannerModal()"
+            class="px-3 py-2 rounded-lg border border-secondary hover:bg-secondary/10 transition-colors shrink-0"
+            aria-label="Scan ISBN">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5v14"/><path d="M8 5v14"/><path d="M12 5v14"/><path d="M17 5v14"/><path d="M21 5v14"/><path d="M3 12h18"/></svg>
+          </button>
+        </div>
+        <div id="isbn-lookup-result" class="mt-1 text-sm"></div>
       </div>
       <div>
         <label for="publisher" class="block text-sm font-medium text-text mb-1">Publisher</label>
@@ -111,32 +129,8 @@
       </div>
     </div>
     
-    <!-- ISBN lookup -->
-    <div>
-      <button type="button"
-        id="isbn-lookup-btn"
-        class="text-primary hover:text-text-light transition-colors font-medium text-sm no-underline"
-        hx-post="/api/v1/books/lookup-isbn"
-        hx-vals='{"isbn": document.getElementById("isbn").value}'
-        hx-target="#isbn-lookup-result"
-        hx-indicator="#isbn-lookup-btn .htmx-indicator"
-      >
-        <svg class="w-4 h-4 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Lookup ISBN
-        <span class="htmx-indicator inline-block ml-2">⟳</span>
-      </button>
-      <div id="isbn-lookup-result" class="mt-1 text-sm text-text-light"></div>
-    </div>
-    
-    <!-- Advanced section -->
-    <div>
-      <button type="button"
-        data-collapse-trigger="advanced-section"
-        aria-expanded="false"
-        class="text-primary hover:text-text-light transition-colors font-medium text-sm no-underline"
-      >
-        Advanced Options ▾
-      </button>
-      <div id="advanced-section" hidden class="mt-4 space-y-4 pt-4 border-t border-secondary/10">
+    <!-- Advanced fields -->
+    <div class="space-y-4">
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label for="gift_from" class="block text-sm font-medium text-text mb-1">Gift From</label>
@@ -167,6 +161,28 @@
     </div>
   </div>
   
+  <!-- Scanner modal (hidden by default) -->
+  <div id="scanner-modal" class="modal-backdrop hidden" onclick="if(event.target===this)this.classList.add('hidden')">
+    <div class="modal-content modal-sm p-6" role="dialog" aria-modal="true">
+      <div class="flex items-center justify-between mb-4 pb-3 border-b border-secondary/10">
+        <h2 class="text-xl font-heading font-semibold text-primary">Scan ISBN</h2>
+        <button type="button" onclick="document.getElementById('scanner-modal').classList.add('hidden')" class="text-text-light hover:text-text transition-colors text-2xl no-underline" aria-label="Close modal">×</button>
+      </div>
+      <div id="scanner-viewfinder" class="w-full h-48 bg-background rounded-lg flex items-center justify-center mb-4">
+        <p class="text-text-light/60 text-sm">Camera not available - enter ISBN manually</p>
+      </div>
+      <div class="flex justify-end gap-3">
+        <button type="button" onclick="document.getElementById('scanner-modal').classList.add('hidden')" class="px-4 py-2 rounded-lg border border-secondary text-text-light hover:text-text transition-colors no-underline">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  function openScannerModal() {
+    document.getElementById('scanner-modal').classList.remove('hidden');
+  }
+  </script>
+
   <div id="error-container" class="mt-4"></div>
   <div id="loading-indicator" class="htmx-indicator mt-4 text-center">
     <span class="animate-gentle-pulse">Saving...</span>
