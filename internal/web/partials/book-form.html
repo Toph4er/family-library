@@ -34,15 +34,15 @@
             hx-vals='{"isbn": $("#isbn").val()}'
             hx-target="#isbn-lookup-result"
             hx-swap="innerHTML"
-            class="px-3 py-2 rounded-lg border border-secondary hover:bg-secondary/10 transition-colors shrink-0"
+            class="bg-primary text-white p-2 rounded-lg hover:opacity-90 transition-opacity shrink-0"
             aria-label="Lookup ISBN">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           </button>
           <button type="button"
             onclick="openScannerModal()"
-            class="px-3 py-2 rounded-lg border border-secondary hover:bg-secondary/10 transition-colors shrink-0"
+            class="bg-secondary text-white p-2 rounded-lg hover:opacity-90 transition-opacity shrink-0"
             aria-label="Scan ISBN">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5v14"/><path d="M8 5v14"/><path d="M12 5v14"/><path d="M17 5v14"/><path d="M21 5v14"/><path d="M3 12h18"/></svg>
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/></svg>
           </button>
         </div>
         <div id="isbn-lookup-result" class="mt-1 text-sm"></div>
@@ -161,25 +161,25 @@
     </div>
   </div>
   
-  <!-- Scanner modal (hidden by default) -->
-  <div id="scanner-modal" class="modal-backdrop hidden" onclick="if(event.target===this)this.classList.add('hidden')">
+  <!-- Scanner modal -->
+  <div id="scanner-modal" class="modal-backdrop" style="display: none" onclick="if(event.target===this)document.getElementById('scanner-modal').style.display='none'">
     <div class="modal-content modal-sm p-6" role="dialog" aria-modal="true">
       <div class="flex items-center justify-between mb-4 pb-3 border-b border-secondary/10">
         <h2 class="text-xl font-heading font-semibold text-primary">Scan ISBN</h2>
-        <button type="button" onclick="document.getElementById('scanner-modal').classList.add('hidden')" class="text-text-light hover:text-text transition-colors text-2xl no-underline" aria-label="Close modal">×</button>
+        <button type="button" onclick="document.getElementById('scanner-modal').style.display='none'" class="text-text-light hover:text-text transition-colors text-2xl no-underline" aria-label="Close modal">×</button>
       </div>
       <div id="scanner-viewfinder" class="w-full h-48 bg-background rounded-lg flex items-center justify-center mb-4">
-        <p class="text-text-light/60 text-sm">Camera not available - enter ISBN manually</p>
+        <p class="text-text-light/60 text-sm">Camera not available — enter ISBN manually</p>
       </div>
       <div class="flex justify-end gap-3">
-        <button type="button" onclick="document.getElementById('scanner-modal').classList.add('hidden')" class="px-4 py-2 rounded-lg border border-secondary text-text-light hover:text-text transition-colors no-underline">Cancel</button>
+        <button type="button" onclick="document.getElementById('scanner-modal').style.display='none'" class="px-4 py-2 rounded-lg border border-secondary text-text-light hover:text-text transition-colors no-underline">Cancel</button>
       </div>
     </div>
   </div>
 
   <script>
   function openScannerModal() {
-    document.getElementById('scanner-modal').classList.remove('hidden');
+    document.getElementById('scanner-modal').style.display = 'flex';
   }
   </script>
 
