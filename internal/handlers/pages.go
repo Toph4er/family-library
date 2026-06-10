@@ -40,17 +40,17 @@ type pageContext struct {
 	BaseContext
 
 	// Data lists
-	Books              []models.Book
-	Book               *models.Book
-	Items              []models.WishlistItem
-	Users              []map[string]interface{}
-	FamilyMembers      []models.FamilyMember
-	ReadingLogs        []models.ReadingLog
-	RecentBooks        interface{} // []bookSelect for reading-log page
-	Settings           map[string]string
+	Books                  []models.Book
+	Book                   *models.Book
+	Items                  []models.WishlistItem
+	Users                  []map[string]interface{}
+	FamilyMembers          []models.FamilyMember
+	ReadingLogs            []models.ReadingLog
+	RecentBooks            interface{} // []bookSelect for reading-log page
+	Settings               map[string]string
 	DefaultGuestVisibility map[string]bool
-	CurrentQuery       string
-	TotalResults       int
+	CurrentQuery           string
+	TotalResults           int
 	// Pagination
 	Page            int
 	PerPage         int
