@@ -624,7 +624,8 @@ func HTMLDeleteReadingLogHandler(db *sql.DB) http.HandlerFunc {
 // RenderReadingLogPage renders the reading log page.
 func RenderReadingLogPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := buildPageContext(r, store, sessionName, db)
+		base := buildBaseContext(r, store, sessionName, db)
+		ctx := pageContext{BaseContext: base}
 
 		if !ctx.IsAuthenticated {
 			http.Redirect(w, r, "/login", http.StatusFound)

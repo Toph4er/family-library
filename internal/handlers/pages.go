@@ -20,36 +20,43 @@ import (
 	"git.rcsmaine.com/chris/library/internal/theme"
 )
 
-// pageContext holds common template data for all page handlers.
+// BaseContext holds common template data shared across all page handlers.
+type BaseContext struct {
+	Year            int
+	CSRFToken       string
+	IsAdmin         bool
+	IsAuthenticated bool
+	IsGuest         bool
+	Username        string
+	SiteName        string
+	SiteTagline     string
+	ActiveTheme     theme.Theme
+	AvailableThemes []theme.Theme
+	ThemeColorsJSON template.HTML
+}
+
+// pageContext holds template data for all page handlers.
 type pageContext struct {
-	Year                   int
-	CSRFToken              string
-	IsAdmin                bool
-	IsAuthenticated        bool
-	IsGuest                bool
-	Username               string
-	SiteName               string
-	SiteTagline            string
-	Books                  []models.Book
-	Book                   *models.Book
-	Items                  []models.WishlistItem
-	Users                  []map[string]interface{}
-	FamilyMembers          []models.FamilyMember
-	ReadingLogs            []models.ReadingLog
-	RecentBooks            interface{} // []bookSelect for reading-log page
-	Settings               map[string]string
+	BaseContext
+
+	// Data lists
+	Books              []models.Book
+	Book               *models.Book
+	Items              []models.WishlistItem
+	Users              []map[string]interface{}
+	FamilyMembers      []models.FamilyMember
+	ReadingLogs        []models.ReadingLog
+	RecentBooks        interface{} // []bookSelect for reading-log page
+	Settings           map[string]string
 	DefaultGuestVisibility map[string]bool
-	CurrentQuery           string
-	TotalResults           int
+	CurrentQuery       string
+	TotalResults       int
 	// Pagination
 	Page            int
 	PerPage         int
 	TotalPages      int
 	PaginationStart int
 	PaginationEnd   int
-	ActiveTheme     theme.Theme
-	AvailableThemes []theme.Theme
-	ThemeColorsJSON template.HTML // JSON map of theme ID → {bg, text} for switchTheme()
 
 	// Form page fields
 	Title            string
@@ -87,11 +94,11 @@ type pageContext struct {
 	ThriftbooksURL   string // for wishlist
 }
 
-// buildPageContext creates a pageContext for the given request.
+// buildBaseContext creates a BaseContext for the given request.
 // It first checks the request context (set by auth middleware), then falls
 // back to reading the session directly for routes without that middleware.
-func buildPageContext(r *http.Request, store *sessions.CookieStore, sessionName string, db *sql.DB) pageContext {
-	ctx := pageContext{Year: time.Now().Year()}
+func buildBaseContext(r *http.Request, store *sessions.CookieStore, sessionName string, db *sql.DB) BaseContext {
+	ctx := BaseContext{Year: time.Now().Year()}
 
 	// Check context first (set by auth middleware on protected routes).
 	if user := auth.GetUserFromContext(r); user != nil {
@@ -133,7 +140,6 @@ func buildPageContext(r *http.Request, store *sessions.CookieStore, sessionName 
 		ctx.IsGuest = true
 	}
 
-	// Extract CSRF token from session if available.
 	if token, ok := session.Values[middleware.CSRFTokenKey].(string); ok && token != "" {
 		ctx.CSRFToken = token
 	}
@@ -185,7 +191,8 @@ func renderPage(w http.ResponseWriter, r *http.Request, tmpl *template.Template,
 // Authenticated users are redirected to /books.
 func RenderLandingPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := buildPageContext(r, store, sessionName, db)
+		base := buildBaseContext(r, store, sessionName, db)
+		ctx := pageContext{BaseContext: base}
 
 		// Authenticated users should not see the landing page — send them to books.
 		if ctx.IsAuthenticated {
@@ -215,7 +222,8 @@ func RenderLandingPage(tmpl *template.Template, db *sql.DB, store *sessions.Cook
 // Supports ?q= search parameter for filtering books.
 func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := buildPageContext(r, store, sessionName, db)
+		base := buildBaseContext(r, store, sessionName, db)
+		ctx := pageContext{BaseContext: base}
 
 		if !ctx.IsAuthenticated {
 			http.Redirect(w, r, "/login", http.StatusFound)
@@ -346,7 +354,8 @@ func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 // RenderBookDetailPage renders the book detail page (auth required).
 func RenderBookDetailPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := buildPageContext(r, store, sessionName, db)
+		base := buildBaseContext(r, store, sessionName, db)
+		ctx := pageContext{BaseContext: base}
 
 		// Defense-in-depth: reject unauthenticated requests before querying the DB.
 		if !ctx.IsAuthenticated {
@@ -464,7 +473,8 @@ func RenderBookDetailPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 // RenderWishlistPage renders the wishlist page (open to guests).
 func RenderWishlistPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := buildPageContext(r, store, sessionName, db)
+		base := buildBaseContext(r, store, sessionName, db)
+		ctx := pageContext{BaseContext: base}
 
 		rows, err := db.Query("SELECT id, isbn, title, author, reason, priority, amazon_url, thriftbooks_url, notes, fulfilled, requested_by, requested_at, fulfilled_at, cover_image_url FROM wishlist ORDER BY priority DESC, requested_at DESC")
 		if err != nil {
@@ -534,7 +544,8 @@ func RenderWishlistPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 // RenderWishlistFormPage renders the add/edit wishlist item form as a full page (admin only).
 func RenderWishlistFormPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string, isEdit bool, itemID int64) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := buildPageContext(r, store, sessionName, db)
+		base := buildBaseContext(r, store, sessionName, db)
+		ctx := pageContext{BaseContext: base}
 
 		if !ctx.IsAuthenticated {
 			http.Redirect(w, r, "/login", http.StatusFound)
@@ -562,18 +573,10 @@ func RenderWishlistFormPage(tmpl *template.Template, db *sql.DB, store *sessions
 		}
 
 		data := pageContext{
-			Year:            ctx.Year,
-			CSRFToken:       ctx.CSRFToken,
-			IsAdmin:         ctx.IsAdmin,
-			IsAuthenticated: ctx.IsAuthenticated,
-			Username:        ctx.Username,
-			ActiveTheme:     ctx.ActiveTheme,
-			SiteName:        ctx.SiteName,
-			SiteTagline:     ctx.SiteTagline,
-			AvailableThemes: ctx.AvailableThemes,
-			IsEdit:          isEdit,
-			ItemTitle:       itemTitle,
-			CancelURL:       cancelURL,
+			BaseContext: ctx.BaseContext,
+			IsEdit:      isEdit,
+			ItemTitle:   itemTitle,
+			CancelURL:   cancelURL,
 			ActionURL: func() string {
 				if isEdit {
 					return "/wishlist/" + strconv.FormatInt(itemID, 10) + "/update"
@@ -607,7 +610,8 @@ func RenderWishlistFormPage(tmpl *template.Template, db *sql.DB, store *sessions
 // RenderSettingsPage renders the settings page (admin required).
 func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := buildPageContext(r, store, sessionName, db)
+		base := buildBaseContext(r, store, sessionName, db)
+		ctx := pageContext{BaseContext: base}
 
 		// Defense-in-depth: reject unauthenticated or non-admin requests before querying the DB.
 		if !ctx.IsAuthenticated {
@@ -721,7 +725,8 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 // RenderBookFormPage renders the add/edit book form as a full page.
 func RenderBookFormPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string, isEdit bool, bookID int64) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := buildPageContext(r, store, sessionName, db)
+		base := buildBaseContext(r, store, sessionName, db)
+		ctx := pageContext{BaseContext: base}
 
 		if !ctx.IsAuthenticated {
 			http.Redirect(w, r, "/login", http.StatusFound)
@@ -749,18 +754,10 @@ func RenderBookFormPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 		}
 
 		data := pageContext{
-			Year:            ctx.Year,
-			CSRFToken:       ctx.CSRFToken,
-			IsAdmin:         ctx.IsAdmin,
-			IsAuthenticated: ctx.IsAuthenticated,
-			Username:        ctx.Username,
-			ActiveTheme:     ctx.ActiveTheme,
-			SiteName:        ctx.SiteName,
-			SiteTagline:     ctx.SiteTagline,
-			AvailableThemes: ctx.AvailableThemes,
-			IsEdit:          isEdit,
-			BookTitle:       bookTitle,
-			CancelURL:       cancelURL,
+			BaseContext: ctx.BaseContext,
+			IsEdit:      isEdit,
+			BookTitle:   bookTitle,
+			CancelURL:   cancelURL,
 			ActionURL: func() string {
 				if isEdit {
 					return "/books/" + strconv.FormatInt(bookID, 10) + "/update"
@@ -817,26 +814,13 @@ func RenderBookFormPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 
 // --- Exported for testing ---
 
-// PageContextForTest is the exported pageContext struct for test access.
-type PageContextForTest struct {
-	CSRFToken       string
-	IsAdmin         bool
-	IsAuthenticated bool
-	Username        string
-	ActiveTheme     theme.Theme
-}
+// PageContextForTest is the exported BaseContext struct for test access.
+type PageContextForTest = BaseContext
 
-// BuildPageContextForTest calls buildPageContext and returns the fields
+// BuildPageContextForTest calls buildBaseContext and returns the context
 // needed for CSRF token verification and theme loading in tests.
 func BuildPageContextForTest(r *http.Request, store *sessions.CookieStore, sessionName string) PageContextForTest {
-	ctx := buildPageContext(r, store, sessionName, nil)
-	return PageContextForTest{
-		CSRFToken:       ctx.CSRFToken,
-		IsAdmin:         ctx.IsAdmin,
-		IsAuthenticated: ctx.IsAuthenticated,
-		Username:        ctx.Username,
-		ActiveTheme:     ctx.ActiveTheme,
-	}
+	return buildBaseContext(r, store, sessionName, nil)
 }
 
 // buildThemeColorsJSON builds a JSON map of theme ID → {bg, text}

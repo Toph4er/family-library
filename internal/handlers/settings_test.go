@@ -87,11 +87,11 @@ func TestThemeCSSHandler_unknownID(t *testing.T) {
 }
 
 func TestBuildPageContext_nilDB_returnsDefaultTheme(t *testing.T) {
-	// BuildPageContextForTest calls buildPageContext with db=nil.
+	// BuildPageContextForTest calls buildBaseContext with db=nil.
 	// It should NOT panic — loadActiveTheme(nil) returns WoodlandFairytale.
 	req := httptest.NewRequest("GET", "/", nil)
 
-	// Create a minimal CookieStore so buildPageContext doesn't panic on store.Get()
+	// Create a minimal CookieStore so buildBaseContext doesn't panic on store.Get()
 	secret := []byte("test-session-secret-that-is-32-bytes!!")
 	store := sessions.NewCookieStore(secret)
 
