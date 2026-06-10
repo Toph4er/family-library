@@ -37,8 +37,7 @@
     {{if .IsAdmin}}
     <div class="flex justify-end">
       <a href="/books/add-book"
-        class="px-5 py-2.5 rounded-xl font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 no-underline"
-        style="background-color: var(--color-primary);"
+        class="px-5 py-2.5 rounded-xl font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 no-underline bg-primary"
         onmouseenter="this.style.backgroundColor='var(--color-text-light)'"
         onmouseleave="this.style.backgroundColor='var(--color-primary)'"
         aria-label="Add a new book to the collection"
@@ -70,7 +69,7 @@
               <p class="text-text-light/70 max-w-sm">
                 No books matched "<span class="font-semibold">{{$.CurrentQuery}}</span>". Try a different search term.
               </p>
-              <a href="/books" class="mt-4 px-5 py-2.5 rounded-xl font-medium text-white shadow-sm no-underline" style="background-color: var(--color-primary);">
+              <a href="/books" class="mt-4 px-5 py-2.5 rounded-xl font-medium text-white shadow-sm no-underline bg-primary">
                 View All Books
               </a>
             {{else}}
@@ -98,7 +97,7 @@
       <p class="text-text-light/70 max-w-sm mb-4">
         You need to be logged in to browse the collection.
       </p>
-      <a href="/login" class="px-5 py-2.5 rounded-xl font-medium text-white shadow-sm no-underline" style="background-color: var(--color-primary);">
+      <a href="/login" class="px-5 py-2.5 rounded-xl font-medium text-white shadow-sm no-underline bg-primary">
         Go to Login
       </a>
     </div>

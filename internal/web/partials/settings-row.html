@@ -1,12 +1,11 @@
 {{define "partials/settings-row"}}
-<div class="flex items-center justify-between py-2 border-b" style="border-color: color-mix(in srgb, var(--color-secondary) 10%, transparent);">
+<div class="flex items-center justify-between py-2 border-b border-secondary/10">
   <label for="setting-{{.Key}}" class="font-medium text-text w-40">{{.Key}}</label>
   <input type="{{.InputType}}"
     id="setting-{{.Key}}"
     name="value"
     value="{{.Value}}"
-    class="flex-1 px-3 py-2 rounded-lg border bg-surface text-right"
-    style="border-color: var(--color-secondary);"
+    class="flex-1 px-3 py-2 rounded-lg border bg-surface text-right border-secondary"
     hx-put="/settings/update/{{.Key}}"
     hx-target="#settings-result-{{.Key}}"
     hx-indicator="#settings-result-{{.Key}} .htmx-indicator"

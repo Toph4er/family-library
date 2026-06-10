@@ -45,33 +45,33 @@
     <div>
       <label for="title" class="block text-sm font-medium text-text mb-1">Title <span class="text-error" aria-hidden="true">*</span></label>
       <input type="text" id="title" name="title" value="{{.Title}}" required
-        class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);"
+        class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary"
         aria-required="true">
     </div>
 
     <div>
       <label for="author" class="block text-sm font-medium text-text mb-1">Author</label>
       <input type="text" id="author" name="author" value="{{.Author}}" placeholder="e.g., J.K. Rowling"
-        class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">
+        class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">
     </div>
 
     <div class="grid grid-cols-2 gap-4">
       <div>
         <label for="isbn" class="block text-sm font-medium text-text mb-1">ISBN</label>
         <input type="text" id="isbn" name="isbn" value="{{.ISBN}}" placeholder="978-0-12345-678-9"
-          class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">
+          class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">
       </div>
       <div>
         <label for="priority" class="block text-sm font-medium text-text mb-1">Priority (1–5)</label>
         <input type="number" id="priority" name="priority" value="{{.Priority}}" min="1" max="5"
-          class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">
+          class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">
       </div>
     </div>
 
     <div>
       <label for="reason" class="block text-sm font-medium text-text mb-1">Reason</label>
       <input type="text" id="reason" name="reason" value="{{.Reason}}" placeholder="Why is this book wanted?"
-        class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">
+        class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">
     </div>
 
     <!-- Store links -->
@@ -79,12 +79,12 @@
       <div>
         <label for="amazon_url" class="block text-sm font-medium text-text mb-1">Amazon URL</label>
         <input type="url" id="amazon_url" name="amazon_url" value="{{.AmazonURL}}" placeholder="https://www.amazon.com/dp/..."
-          class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">
+          class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">
       </div>
       <div>
         <label for="thriftbooks_url" class="block text-sm font-medium text-text mb-1">ThriftBooks URL</label>
         <input type="url" id="thriftbooks_url" name="thriftbooks_url" value="{{.ThriftbooksURL}}" placeholder="https://www.thriftbooks.com/..."
-          class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">
+          class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">
       </div>
     </div>
 
@@ -92,23 +92,21 @@
     <div>
       <label for="cover_image_url" class="block text-sm font-medium text-text mb-1">Cover Image URL</label>
       <input type="url" id="cover_image_url" name="cover_image_url" value="{{.CoverImageURL}}"
-        class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">
+        class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">
     </div>
 
     <div>
       <label for="notes" class="block text-sm font-medium text-text mb-1">Notes</label>
       <textarea id="notes" name="notes" rows="3"
-        class="w-full px-3 py-2 rounded-lg border bg-surface" style="border-color: var(--color-secondary);">{{.Notes}}</textarea>
+        class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">{{.Notes}}</textarea>
     </div>
 
     <!-- Actions -->
     <div class="flex justify-end gap-3 pt-4">
       <a href="{{.CancelURL}}"
-        class="px-5 py-2.5 rounded-lg border text-text-light hover:text-text transition-colors no-underline"
-        style="border-color: var(--color-secondary);">Cancel</a>
+        class="px-5 py-2.5 rounded-lg border text-text-light hover:text-text transition-colors no-underline border-secondary">Cancel</a>
       <button type="submit"
-        class="px-5 py-2.5 rounded-lg font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md"
-        style="background-color: var(--color-primary);">
+        class="px-5 py-2.5 rounded-lg font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md bg-primary">
         {{if .IsEdit}}Save Changes{{else}}Add Item{{end}}
       </button>
     </div>

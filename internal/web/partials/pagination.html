@@ -1,6 +1,6 @@
 {{define "partials/pagination"}}
 {{if gt .TotalPages 1}}
-<div class="flex items-center justify-between mt-6 pt-4 border-t" style="border-color: color-mix(in srgb, var(--color-secondary) 10%, transparent);">
+<div class="flex items-center justify-between mt-6 pt-4 border-t border-secondary/10">
   <p class="text-text-light/60 text-sm">
     Showing {{.StartItem}}-{{.EndItem}} of {{.Total}} results
   </p>
@@ -10,8 +10,7 @@
       hx-get="?page={{sub .Page 1}}{{if .CurrentQuery}}&q={{.CurrentQuery}}{{end}}"
       hx-target="#book-grid"
       hx-swap="innerHTML"
-      class="px-3 py-1.5 rounded-lg border text-primary hover:bg-primary hover:text-white transition-colors no-underline text-sm"
-      style="border-color: var(--color-primary);">
+      class="px-3 py-1.5 rounded-lg border text-primary hover:bg-primary hover:text-white transition-colors no-underline text-sm border-primary">
       ← Prev
     </a>
     {{end}}
@@ -24,8 +23,7 @@
       hx-get="?page={{.}}{{if $.CurrentQuery}}&q={{$.CurrentQuery}}{{end}}"
       hx-target="#book-grid"
       hx-swap="innerHTML"
-      class="px-3 py-1.5 rounded-lg border text-primary hover:bg-primary hover:text-white transition-colors no-underline text-sm"
-      style="border-color: var(--color-primary);">
+      class="px-3 py-1.5 rounded-lg border text-primary hover:bg-primary hover:text-white transition-colors no-underline text-sm border-primary">
       {{.}}
     </a>
     {{end}}
@@ -36,8 +34,7 @@
       hx-get="?page={{add .Page 1}}{{if .CurrentQuery}}&q={{.CurrentQuery}}{{end}}"
       hx-target="#book-grid"
       hx-swap="innerHTML"
-      class="px-3 py-1.5 rounded-lg border text-primary hover:bg-primary hover:text-white transition-colors no-underline text-sm"
-      style="border-color: var(--color-primary);">
+      class="px-3 py-1.5 rounded-lg border text-primary hover:bg-primary hover:text-white transition-colors no-underline text-sm border-primary">
       Next →
     </a>
     {{end}}

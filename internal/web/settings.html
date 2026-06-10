@@ -21,17 +21,16 @@
   <!-- Site Settings -->
   <section aria-label="Site settings">
     <h2 class="text-2xl font-heading text-primary mb-4">Site Settings</h2>
-    <div class="rounded-xl shadow-sm overflow-hidden" style="background-color: var(--color-surface); border: 1px solid color-mix(in srgb, var(--color-secondary) 20%, transparent);">
+    <div class="rounded-xl shadow-sm overflow-hidden bg-surface border-secondary/20">
       {{range $key, $value := .Settings}}
-        <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 py-3 px-4 border-b last:border-b-0" style="border-color: color-mix(in srgb, var(--color-secondary) 20%, transparent);">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 py-3 px-4 border-b last:border-b-0 border-secondary/20">
           <label for="setting-{{$key}}" class="font-medium text-text text-sm sm:w-48 sm:shrink-0">{{humanizeKey $key}}</label>
           <div class="flex-1 flex items-center gap-2">
             <input type="text"
               id="setting-{{$key}}"
               name="value"
               value="{{$value}}"
-              class="flex-1 px-3 py-2 rounded-lg border bg-surface text-sm"
-              style="border-color: var(--color-secondary);"
+              class="flex-1 px-3 py-2 rounded-lg border bg-surface text-sm border-secondary"
               hx-put="/settings/update/{{$key}}"
               hx-target="#settings-result-{{$key}}"
               hx-swap="outerHTML"
@@ -86,13 +85,12 @@
   <section aria-label="Guest visibility settings">
     <h2 class="text-2xl font-heading text-primary mb-4">Guest Visibility</h2>
     <p class="text-text-light/70 text-sm mb-4">Control which book fields are visible to guest users. Unchecked fields are hidden from guests.</p>
-    <div class="rounded-xl shadow-sm overflow-hidden" style="background-color: var(--color-surface); border: 1px solid color-mix(in srgb, var(--color-secondary) 20%, transparent);">
+    <div class="rounded-xl shadow-sm overflow-hidden bg-surface border-secondary/20">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 p-4">
         {{range $field := guestVisibilityFields}}
         <label class="flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-background/50 cursor-pointer">
           <input type="checkbox"
             class="w-4 h-4 rounded border-secondary text-primary focus:ring-primary/20"
-            style="border-color: var(--color-secondary);"
             {{if index $.DefaultGuestVisibility $field}}checked{{end}}
             data-guest-field="{{ $field }}" class="guest-visibility-toggle">
           <span class="text-sm text-text">{{humanizeKey $field}}</span>
@@ -114,8 +112,7 @@
         hx-get="/settings/users/new-form"
         hx-target="#modal-target"
         hx-swap="beforeend"
-        class="add-user-btn px-4 py-2 rounded-xl font-medium text-white shadow-sm text-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
-        style="background-color: var(--color-primary);"
+        class="add-user-btn px-4 py-2 rounded-xl font-medium text-white shadow-sm text-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 bg-primary"
         aria-label="Add a new user"
       >
         <span class="flex items-center gap-2">
@@ -127,11 +124,11 @@
         </span>
       </button>
     </div>
-    <div class="overflow-x-auto rounded-xl shadow-sm" style="background-color: var(--color-surface); border: 1px solid color-mix(in srgb, var(--color-secondary) 20%, transparent);">
+    <div class="overflow-x-auto rounded-xl shadow-sm bg-surface border-secondary/20">
       <table class="w-full" role="table">
         <caption class="sr-only">List of registered library users</caption>
         <thead>
-          <tr class="border-b" style="border-color: color-mix(in srgb, var(--color-secondary) 20%, transparent);">
+          <tr class="border-b border-secondary/20">
             <th scope="col" class="text-left py-3 px-4 font-heading text-primary text-sm">Username</th>
             <th scope="col" class="text-left py-3 px-4 font-heading text-primary text-sm">Display Name</th>
             <th scope="col" class="text-left py-3 px-4 font-heading text-primary text-sm">Role</th>
@@ -166,8 +163,7 @@
         hx-get="/settings/family-members/new-form"
         hx-target="#modal-target"
         hx-swap="beforeend"
-        class="add-family-member-btn px-4 py-2 rounded-xl font-medium text-white shadow-sm text-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
-        style="background-color: var(--color-primary);"
+        class="add-family-member-btn px-4 py-2 rounded-xl font-medium text-white shadow-sm text-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 bg-primary"
         aria-label="Add a new family member"
       >
         <span class="flex items-center gap-2">
@@ -179,11 +175,11 @@
         </span>
       </button>
     </div>
-    <div class="overflow-x-auto rounded-xl shadow-sm" style="background-color: var(--color-surface); border: 1px solid color-mix(in srgb, var(--color-secondary) 20%, transparent);">
+    <div class="overflow-x-auto rounded-xl shadow-sm bg-surface border-secondary/20">
       <table class="w-full" role="table">
         <caption class="sr-only">List of family members</caption>
         <thead>
-          <tr class="border-b" style="border-color: color-mix(in srgb, var(--color-secondary) 20%, transparent);">
+          <tr class="border-b border-secondary/20">
             <th scope="col" class="text-left py-3 px-4 font-heading text-primary text-sm">Name</th>
             <th scope="col" class="text-left py-3 px-4 font-heading text-primary text-sm">Relation</th>
             <th scope="col" class="text-left py-3 px-4 font-heading text-primary text-sm">Added</th>
@@ -192,7 +188,7 @@
         </thead>
         <tbody id="family-members-list">
           {{range .FamilyMembers}}
-          <tr class="border-b" style="border-color: color-mix(in srgb, var(--color-secondary) 20%, transparent);" id="family-member-{{.ID}}">
+          <tr class="border-b border-secondary/20" id="family-member-{{.ID}}">
             <td class="py-3 px-4 text-sm font-medium text-text">{{.Name}}</td>
             <td class="py-3 px-4 text-sm text-text-light">{{.Relation}}</td>
             <td class="py-3 px-4 text-sm text-text-light/60 whitespace-nowrap">{{formatTime .CreatedAt}}</td>
