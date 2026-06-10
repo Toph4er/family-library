@@ -29,11 +29,8 @@
         <label for="isbn" class="block text-sm font-medium text-text mb-1">ISBN</label>
         <div class="flex gap-2">
           <input type="text" id="isbn" name="isbn" value="{{.ISBN}}" placeholder="978-0-12345-678-9" class="flex-1 px-3 py-2 rounded-lg border bg-surface border-secondary">
-          <button type="button"
-            hx-post="/api/v1/books/lookup-isbn"
-            hx-vals='{"isbn": $("#isbn").val()}'
-            hx-target="#isbn-lookup-result"
-            hx-swap="innerHTML"
+          <button type="button" id="isbn-lookup-btn"
+            onclick="lookupISBN()"
             class="bg-primary text-white p-2 rounded-lg hover:opacity-90 transition-opacity shrink-0"
             aria-label="Lookup ISBN">
             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -45,7 +42,7 @@
             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/></svg>
           </button>
         </div>
-        <div id="isbn-lookup-result" class="mt-1 text-sm"></div>
+        <div id="isbn-lookup-status" class="mt-1 text-sm hidden" role="status" aria-live="polite"></div>
       </div>
       <div>
         <label for="publisher" class="block text-sm font-medium text-text mb-1">Publisher</label>
@@ -162,26 +159,20 @@
   </div>
   
   <!-- Scanner modal -->
-  <div id="scanner-modal" class="modal-backdrop" style="display: none" onclick="if(event.target===this)document.getElementById('scanner-modal').style.display='none'">
+  <div id="scanner-modal" class="modal-backdrop" style="display: none" onclick="if(event.target===this)closeScannerModal()">
     <div class="modal-content modal-sm p-6" role="dialog" aria-modal="true">
       <div class="flex items-center justify-between mb-4 pb-3 border-b border-secondary/10">
         <h2 class="text-xl font-heading font-semibold text-primary">Scan ISBN</h2>
-        <button type="button" onclick="document.getElementById('scanner-modal').style.display='none'" class="text-text-light hover:text-text transition-colors text-2xl no-underline" aria-label="Close modal">×</button>
+        <button type="button" onclick="closeScannerModal()" class="text-text-light hover:text-text transition-colors text-2xl no-underline" aria-label="Close modal">×</button>
       </div>
       <div id="scanner-viewfinder" class="w-full h-48 bg-background rounded-lg flex items-center justify-center mb-4">
-        <p class="text-text-light/60 text-sm">Camera not available — enter ISBN manually</p>
+        <p class="text-text-light/60 text-sm">Initializing camera...</p>
       </div>
       <div class="flex justify-end gap-3">
-        <button type="button" onclick="document.getElementById('scanner-modal').style.display='none'" class="px-4 py-2 rounded-lg border border-secondary text-text-light hover:text-text transition-colors no-underline">Cancel</button>
+        <button type="button" onclick="closeScannerModal()" class="px-4 py-2 rounded-lg border border-secondary text-text-light hover:text-text transition-colors no-underline">Cancel</button>
       </div>
     </div>
   </div>
-
-  <script>
-  function openScannerModal() {
-    document.getElementById('scanner-modal').style.display = 'flex';
-  }
-  </script>
 
   <div id="error-container" class="mt-4"></div>
   <div id="loading-indicator" class="htmx-indicator mt-4 text-center">
@@ -195,4 +186,105 @@
     </button>
   </div>
 </form>
+
+<script>
+function showStatus(msg, isError) {
+  var el = document.getElementById('isbn-lookup-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'mt-1 text-sm ' + (isError ? 'text-error' : 'text-success');
+  el.classList.remove('hidden');
+}
+
+function lookupISBN() {
+  var isbn = document.getElementById('isbn').value.trim();
+  if (!isbn) { showStatus('Please enter an ISBN', true); return; }
+  var btn = document.getElementById('isbn-lookup-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<svg class="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>';
+  fetch('/api/v1/books/lookup-isbn?isbn=' + encodeURIComponent(isbn), {
+    headers: { 'X-CSRF-Token': document.querySelector('input[name="csrf_token"]').value }
+  })
+  .then(function(r) {
+    if (!r.ok) return r.json().then(function(e) { throw new Error(e.error || 'Lookup failed'); });
+    return r.json();
+  })
+  .then(function(data) {
+    if (data.success) { populateForm(data); showStatus('Book data loaded!', false); }
+    else { showStatus(data.error || 'Lookup failed', true); }
+  })
+  .catch(function(err) { showStatus(err.message, true); })
+  .finally(function() {
+    btn.disabled = false;
+    btn.innerHTML = '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
+  });
+}
+
+function populateForm(data) {
+  var fields = ['title','subtitle','authors','illustrators','publisher','publication_year','page_count','book_type','genres','themes','cover_image_url'];
+  fields.forEach(function(f) {
+    var el = document.getElementById(f);
+    if (el && data[f] !== undefined && data[f] !== null && data[f] !== '') el.value = data[f];
+  });
+}
+
+var html5QrcodeScanner = null;
+
+function openScannerModal() {
+  document.getElementById('scanner-modal').style.display = 'flex';
+  initScanner();
+}
+
+function closeScannerModal() {
+  document.getElementById('scanner-modal').style.display = 'none';
+  if (html5QrcodeScanner) {
+    html5QrcodeScanner.stop().catch(function(){});
+    html5QrcodeScanner = null;
+  }
+}
+
+function onScanSuccess(decodedText) {
+  var isbn = decodedText.replace(/[^0-9Xx]/g, '');
+  if (isbn.length >= 10) {
+    document.getElementById('isbn').value = isbn;
+    closeScannerModal();
+    lookupISBN();
+  }
+}
+
+function initScanner() {
+  if (typeof Html5Qrcode === 'undefined') {
+    var script = document.createElement('script');
+    script.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
+    script.onload = function() { startScanner(); };
+    script.onerror = function() {
+      document.getElementById('scanner-viewfinder').innerHTML = '<p class="text-text-light/60 text-sm">Camera library unavailable</p>';
+    };
+    document.head.appendChild(script);
+  } else {
+    startScanner();
+  }
+}
+
+function startScanner() {
+  html5QrcodeScanner = new Html5Qrcode('scanner-viewfinder');
+  html5QrcodeScanner.start(
+    { facingMode: 'environment' },
+    { fps: 10, qrbox: { width: 250, height: 150 } },
+    onScanSuccess,
+    function() {}
+  ).catch(function(err) {
+    document.getElementById('scanner-viewfinder').innerHTML = '<p class="text-text-light/60 text-sm">Camera not available — enter ISBN manually</p>';
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  var isbnInput = document.getElementById('isbn');
+  if (isbnInput) {
+    isbnInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); lookupISBN(); }
+    });
+  }
+});
+</script>
 {{end}}
