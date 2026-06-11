@@ -3,53 +3,53 @@
   <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
   
   <div class="space-y-4">
-    <!-- Basic fields -->
+    <!-- ISBN (first field - lookup auto-fills the rest) -->
     <div>
-      <label for="title" class="block text-sm font-medium text-text mb-1">Title <span class="text-error" aria-hidden="true">*</span></label>
-      <input type="text" id="title" name="title" value="{{.Title}}" required class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary" aria-required="true">
+      <label for="isbn" class="block text-sm font-medium text-text mb-1">ISBN</label>
+      <div class="flex gap-2">
+        <input type="text" id="isbn" name="isbn" value="{{.ISBN}}" placeholder="978-0-12345-678-9" class="flex-1 px-3 py-2 rounded-lg border bg-surface border-secondary">
+        <button type="button" id="isbn-lookup-btn"
+          onclick="lookupISBN()"
+          class="bg-primary text-white p-2 rounded-lg hover:opacity-90 transition-opacity shrink-0"
+          aria-label="Lookup ISBN">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+        <button type="button"
+          onclick="openScannerModal()"
+          class="bg-secondary text-white p-2 rounded-lg hover:opacity-90 transition-opacity shrink-0"
+          aria-label="Scan ISBN">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/></svg>
+        </button>
+      </div>
+      <div id="isbn-lookup-status" class="mt-1 text-sm hidden" role="status" aria-live="polite"></div>
     </div>
-    
-    <div>
-      <label for="subtitle" class="block text-sm font-medium text-text mb-1">Subtitle</label>
-      <input type="text" id="subtitle" name="subtitle" value="{{.Subtitle}}" class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">
-    </div>
-    
-    <div>
-      <label for="authors" class="block text-sm font-medium text-text mb-1">Authors</label>
-      <input type="text" id="authors" name="authors" value="{{.Authors}}" placeholder="e.g., J.K. Rowling" class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">
-    </div>
-    
-    <div>
-      <label for="illustrators" class="block text-sm font-medium text-text mb-1">Illustrators</label>
-      <input type="text" id="illustrators" name="illustrators" value="{{.Illustrators}}" class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">
-    </div>
-    
+
+    <!-- Title + Publisher (responsive grid) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div>
-        <label for="isbn" class="block text-sm font-medium text-text mb-1">ISBN</label>
-        <div class="flex gap-2">
-          <input type="text" id="isbn" name="isbn" value="{{.ISBN}}" placeholder="978-0-12345-678-9" class="flex-1 px-3 py-2 rounded-lg border bg-surface border-secondary">
-          <button type="button" id="isbn-lookup-btn"
-            onclick="lookupISBN()"
-            class="bg-primary text-white p-2 rounded-lg hover:opacity-90 transition-opacity shrink-0"
-            aria-label="Lookup ISBN">
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          </button>
-          <button type="button"
-            onclick="openScannerModal()"
-            class="bg-secondary text-white p-2 rounded-lg hover:opacity-90 transition-opacity shrink-0"
-            aria-label="Scan ISBN">
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/></svg>
-          </button>
-        </div>
-        <div id="isbn-lookup-status" class="mt-1 text-sm hidden" role="status" aria-live="polite"></div>
+        <label for="title" class="block text-sm font-medium text-text mb-1">Title <span class="text-error" aria-hidden="true">*</span></label>
+        <input type="text" id="title" name="title" value="{{.Title}}" required class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary" aria-required="true">
       </div>
       <div>
         <label for="publisher" class="block text-sm font-medium text-text mb-1">Publisher</label>
         <input type="text" id="publisher" name="publisher" value="{{.Publisher}}" class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">
       </div>
     </div>
-    
+
+    <div>
+      <label for="subtitle" class="block text-sm font-medium text-text mb-1">Subtitle</label>
+      <input type="text" id="subtitle" name="subtitle" value="{{.Subtitle}}" class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">
+    </div>
+
+    <div>
+      <label for="authors" class="block text-sm font-medium text-text mb-1">Authors</label>
+      <input type="text" id="authors" name="authors" value="{{.Authors}}" placeholder="e.g., J.K. Rowling" class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">
+    </div>
+
+    <div>
+      <label for="illustrators" class="block text-sm font-medium text-text mb-1">Illustrators</label>
+      <input type="text" id="illustrators" name="illustrators" value="{{.Illustrators}}" class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">
+    </div>
     <div class="grid grid-cols-2 gap-4">
       <div>
         <label for="publication_year" class="block text-sm font-medium text-text mb-1">Publication Year</label>
