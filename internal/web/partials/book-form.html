@@ -202,15 +202,15 @@ function lookupISBN() {
   var btn = document.getElementById('isbn-lookup-btn');
   btn.disabled = true;
   btn.innerHTML = '<svg class="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>';
-  fetch('/books/lookup-isbn?isbn=' + encodeURIComponent(isbn), {
+  fetch('/api/v1/books/lookup-isbn?isbn=' + encodeURIComponent(isbn), {
     headers: { 'X-CSRF-Token': document.querySelector('input[name="csrf_token"]').value }
   })
   .then(function(r) {
-    if (!r.ok) return r.json().then(function(e) { throw new Error(e.error || 'Lookup failed'); });
+    if (!r.ok) throw new Error('Lookup failed (' + r.status + ')');
     return r.json();
   })
   .then(function(data) {
-    if (data.success) { populateForm(data); showStatus('Book data loaded!', false); }
+    if (data.success || data.title) { populateForm(data); showStatus('Book data loaded!', false); }
     else { showStatus(data.error || 'Lookup failed', true); }
   })
   .catch(function(err) { showStatus(err.message, true); })
