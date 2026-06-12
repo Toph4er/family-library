@@ -340,6 +340,7 @@ func (r *sqliteBookRepository) UpdatePartial(ctx context.Context, id int64, inpu
 	sets = append(sets, "updated_at = CURRENT_TIMESTAMP")
 	args = append(args, id)
 
+	//#nosec G202 -- sets contains only hardcoded column names, not user input
 	query := "UPDATE books SET " + strings.Join(sets, ", ") + " WHERE id = ?"
 	result, err := r.db.ExecContext(ctx, query, args...)
 	if err != nil {
@@ -431,6 +432,7 @@ func (r *sqliteBookRepository) Search(ctx context.Context, query string, fields 
 	}
 
 	whereStr := strings.Join(whereClauses, " OR ")
+	//#nosec G202 -- whereClauses uses hardcoded field names with parameterized values; bookColumns is a constant
 	countQuery := `SELECT COUNT(*) FROM books WHERE ` + whereStr
 	dataQuery := `SELECT ` + bookColumns + ` FROM books WHERE ` + whereStr + ` ORDER BY title ASC LIMIT ? OFFSET ?`
 	args = append(args, perPage, offset)
@@ -479,6 +481,7 @@ func (r *sqliteBookRepository) Delete(ctx context.Context, id int64) error {
 
 // GetDistinctTags returns unique values from a JSON array column.
 func (r *sqliteBookRepository) GetDistinctTags(ctx context.Context, column string) ([]string, error) {
+	//#nosec G202 -- column is a hardcoded field name from callers (tags, series, etc.), not user input
 	query := `SELECT DISTINCT value FROM books, json_each(books.` + column + `) WHERE value IS NOT NULL AND value != '' ORDER BY value COLLATE NOCASE`
 
 	rows, err := r.db.QueryContext(ctx, query)
