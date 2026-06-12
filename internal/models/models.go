@@ -321,3 +321,46 @@ type UpdateReadingLogRequest struct {
 	ReaderName *string `json:"reader_name"`
 	Notes      *string `json:"notes"`
 }
+
+// User represents a user account in the system.
+type User struct {
+	ID          int64   `json:"id"`
+	Username    string  `json:"username"`
+	Role        string  `json:"role"`
+	DisplayName *string `json:"display_name,omitempty"`
+	CreatedAt   string  `json:"created_at"`
+}
+
+// CreateUserRequest represents a user creation request.
+type CreateUserRequest struct {
+	Username    string  `json:"username" validate:"required"`
+	Password    string  `json:"password" validate:"required"`
+	DisplayName *string `json:"display_name,omitempty"`
+}
+
+// UpdateUserRequest represents a partial user update request.
+type UpdateUserRequest struct {
+	Role        *string `json:"role"`
+	DisplayName *string `json:"display_name,omitempty"`
+}
+
+// ReadingLogWithBook is a reading log entry joined with its book title.
+type ReadingLogWithBook struct {
+	ID         int64   `json:"id"`
+	BookID     int64   `json:"book_id"`
+	StartPage  *int    `json:"start_page,omitempty"`
+	EndPage    *int    `json:"end_page,omitempty"`
+	TotalPages *int    `json:"total_pages,omitempty"`
+	EntireBook bool    `json:"entire_book"`
+	ReadAt     string  `json:"read_at"`
+	ReaderName *string `json:"reader_name,omitempty"`
+	Notes      *string `json:"notes,omitempty"`
+	CreatedAt  string  `json:"created_at"`
+	BookTitle  string  `json:"book_title"`
+}
+
+// Setting represents a key-value application setting.
+type Setting struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
