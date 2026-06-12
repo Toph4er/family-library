@@ -18,6 +18,7 @@ import (
 
 	"git.rcsmaine.com/chris/library/internal/auth"
 	"git.rcsmaine.com/chris/library/internal/models"
+	"git.rcsmaine.com/chris/library/internal/repository"
 
 	"github.com/go-chi/chi/v5"
 	"golang.org/x/time/rate"
@@ -388,7 +389,7 @@ func SearchBooksHandler(db *sql.DB) http.HandlerFunc {
 }
 
 // GetBookHandler returns a single book
-func GetBookHandler(db *sql.DB) http.HandlerFunc {
+func GetBookHandler(repo repository.BookRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		idStr := chi.URLParam(r, "id")
 		id, err := strconv.ParseInt(idStr, 10, 64)
@@ -397,10 +398,7 @@ func GetBookHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		query := `SELECT ` + bookColumns + ` FROM books WHERE id = ?`
-		row := db.QueryRow(query, id)
-
-		b, err := scanBook(row)
+		b, err := repo.GetByID(r.Context(), id)
 		if errors.Is(err, sql.ErrNoRows) {
 			JSONError(w, http.StatusNotFound, "book not found")
 			return
@@ -722,7 +720,7 @@ func UpdateBookHandler(db *sql.DB) http.HandlerFunc {
 }
 
 // DeleteBookHandler deletes a book
-func DeleteBookHandler(db *sql.DB) http.HandlerFunc {
+func DeleteBookHandler(repo repository.BookRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		idStr := chi.URLParam(r, "id")
 		id, err := strconv.ParseInt(idStr, 10, 64)
@@ -731,19 +729,13 @@ func DeleteBookHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		result, err := db.Exec("DELETE FROM books WHERE id = ?", id)
+		err = repo.Delete(r.Context(), id)
 		if err != nil {
+			if strings.Contains(err.Error(), "no rows affected") {
+				JSONError(w, http.StatusNotFound, "book not found")
+				return
+			}
 			JSONError(w, http.StatusInternalServerError, "database error")
-			return
-		}
-
-		rowsAffected, err := result.RowsAffected()
-		if err != nil {
-			JSONError(w, http.StatusInternalServerError, "database error")
-			return
-		}
-		if rowsAffected == 0 {
-			JSONError(w, http.StatusNotFound, "book not found")
 			return
 		}
 
@@ -758,7 +750,7 @@ func DeleteBookHandler(db *sql.DB) http.HandlerFunc {
 // Supported types: genres, themes, awards, reading_levels.
 // The tags column stores JSON arrays like ["Fantasy","Adventure"], so we
 // extract individual values using json_each in SQLite.
-func GetTagsHandler(db *sql.DB) http.HandlerFunc {
+func GetTagsHandler(repo repository.BookRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tagType := r.URL.Query().Get("type")
 
@@ -774,32 +766,8 @@ func GetTagsHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// SQLite's json_each extracts each element of a JSON array as a row.
-		// We get distinct, non-null values, ordered alphabetically.
-		query := fmt.Sprintf(
-			`SELECT DISTINCT value FROM books, json_each(books.%s) WHERE value IS NOT NULL AND value != '' ORDER BY value COLLATE NOCASE`,
-			column,
-		)
-
-		rows, err := db.Query(query)
+		tags, err := repo.GetDistinctTags(r.Context(), column)
 		if err != nil {
-			JSONError(w, http.StatusInternalServerError, "database error")
-			return
-		}
-		defer rows.Close()
-
-		tags := make([]string, 0)
-		for rows.Next() {
-			var tag string
-			if err := rows.Scan(&tag); err != nil {
-				JSONError(w, http.StatusInternalServerError, "database error")
-				return
-			}
-			if tag != "" {
-				tags = append(tags, tag)
-			}
-		}
-		if err = rows.Err(); err != nil {
 			JSONError(w, http.StatusInternalServerError, "database error")
 			return
 		}

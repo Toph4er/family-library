@@ -15,6 +15,7 @@ import (
 	"git.rcsmaine.com/chris/library/internal/auth"
 	"git.rcsmaine.com/chris/library/internal/handlers"
 	"git.rcsmaine.com/chris/library/internal/middleware"
+	"git.rcsmaine.com/chris/library/internal/repository"
 )
 
 // RouterConfig holds optional dependencies for the router.
@@ -26,6 +27,8 @@ type RouterConfig struct {
 // and middleware configured.
 func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Handler {
 	r := chi.NewRouter()
+
+	bookRepo := repository.NewBookRepository(database)
 
 	// -- Standard chi middleware --
 	r.Use(chimiddleware.RequestID)
@@ -214,7 +217,7 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 				r.Get("/", handlers.ListBooksHandler(database))
 				r.Get("/search", handlers.SearchBooksHandler(database))
 				r.Get("/tags", func(w http.ResponseWriter, r *http.Request) {
-					authSvc.RequireAdmin(handlers.GetTagsHandler(database)).ServeHTTP(w, r)
+					authSvc.RequireAdmin(handlers.GetTagsHandler(bookRepo)).ServeHTTP(w, r)
 				})
 				r.Get("/lookup-isbn", func(w http.ResponseWriter, r *http.Request) {
 					authSvc.RequireAdmin(handlers.LookupISBNHandler(database)).ServeHTTP(w, r)
@@ -222,7 +225,7 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 				r.Get("/search-ol", func(w http.ResponseWriter, r *http.Request) {
 					authSvc.RequireAuth(handlers.SearchOpenLibraryHandler(database)).ServeHTTP(w, r)
 				})
-				r.Get("/{id}", handlers.GetBookHandler(database))
+				r.Get("/{id}", handlers.GetBookHandler(bookRepo))
 
 				// POST routes
 				r.Post("/", func(w http.ResponseWriter, r *http.Request) {
@@ -237,7 +240,7 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 					authSvc.RequireAdmin(handlers.UpdateBookHandler(database)).ServeHTTP(w, r)
 				})
 				r.Delete("/{id}", func(w http.ResponseWriter, r *http.Request) {
-					authSvc.RequireAdmin(handlers.DeleteBookHandler(database)).ServeHTTP(w, r)
+					authSvc.RequireAdmin(handlers.DeleteBookHandler(bookRepo)).ServeHTTP(w, r)
 				})
 			})
 
