@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"git.rcsmaine.com/chris/library/internal/handlers"
+	"git.rcsmaine.com/chris/library/internal/repository"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -252,7 +253,7 @@ func TestGetBookHandler_Success(t *testing.T) {
 	}
 	id, _ := result.LastInsertId()
 
-	handler := handlers.GetBookHandler(env.db)
+	handler := handlers.GetBookHandler(repository.NewBookRepository(env.db))
 	req := httptest.NewRequest("GET", "/books/1", nil)
 	req = setURLParam(req, "id", fmt.Sprintf("%d", id))
 
@@ -273,7 +274,7 @@ func TestGetBookHandler_Success(t *testing.T) {
 func TestGetBookHandler_NotFound(t *testing.T) {
 	env := setupTestEnv(t)
 
-	handler := handlers.GetBookHandler(env.db)
+	handler := handlers.GetBookHandler(repository.NewBookRepository(env.db))
 	req := httptest.NewRequest("GET", "/books/999", nil)
 	req = setURLParam(req, "id", "999")
 	rec := httptest.NewRecorder()
@@ -288,7 +289,7 @@ func TestGetBookHandler_NotFound(t *testing.T) {
 func TestGetBookHandler_InvalidID(t *testing.T) {
 	env := setupTestEnv(t)
 
-	handler := handlers.GetBookHandler(env.db)
+	handler := handlers.GetBookHandler(repository.NewBookRepository(env.db))
 	req := httptest.NewRequest("GET", "/books/abc", nil)
 	req = setURLParam(req, "id", "abc")
 	rec := httptest.NewRecorder()
@@ -359,7 +360,7 @@ func TestDeleteBookHandler_Success(t *testing.T) {
 	}
 	id, _ := result.LastInsertId()
 
-	handler := handlers.DeleteBookHandler(env.db)
+	handler := handlers.DeleteBookHandler(repository.NewBookRepository(env.db))
 	req := httptest.NewRequest("DELETE", "/books/1", nil)
 	req = setURLParam(req, "id", fmt.Sprintf("%d", id))
 	rec := httptest.NewRecorder()
@@ -384,7 +385,7 @@ func TestDeleteBookHandler_Success(t *testing.T) {
 func TestDeleteBookHandler_NotFound(t *testing.T) {
 	env := setupTestEnv(t)
 
-	handler := handlers.DeleteBookHandler(env.db)
+	handler := handlers.DeleteBookHandler(repository.NewBookRepository(env.db))
 	req := httptest.NewRequest("DELETE", "/books/999", nil)
 	req = setURLParam(req, "id", "999")
 	rec := httptest.NewRecorder()
@@ -666,7 +667,7 @@ func TestUpdateBookHandler_DuplicateISBN(t *testing.T) {
 func TestDeleteBookHandler_InvalidID(t *testing.T) {
 	env := setupTestEnv(t)
 
-	handler := handlers.DeleteBookHandler(env.db)
+	handler := handlers.DeleteBookHandler(repository.NewBookRepository(env.db))
 	req := httptest.NewRequest("DELETE", "/books/abc", nil)
 	req = setURLParam(req, "id", "abc")
 	rec := httptest.NewRecorder()
