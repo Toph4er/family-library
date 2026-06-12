@@ -234,61 +234,14 @@ const bookColumns = `
 `
 
 // ListBooksHandler returns paginated list of books
-func ListBooksHandler(db *sql.DB) http.HandlerFunc {
+func ListBooksHandler(repo repository.BookRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		page, perPage := parsePagination(r)
-		offset := (page - 1) * perPage
 
 		q := r.URL.Query().Get("q")
 
-		// Count query
-		var countQuery string
-		var countArgs []interface{}
-
-		if q != "" {
-			countQuery = `SELECT COUNT(*) FROM books WHERE title LIKE ? OR authors LIKE ? OR isbn LIKE ? OR genres LIKE ? OR themes LIKE ?`
-			like := "%" + q + "%"
-			countArgs = []interface{}{like, like, like, like, like}
-		} else {
-			countQuery = `SELECT COUNT(*) FROM books`
-		}
-
-		var total int
-		if err := db.QueryRow(countQuery, countArgs...).Scan(&total); err != nil {
-			JSONError(w, http.StatusInternalServerError, "database error")
-			return
-		}
-
-		// Data query
-		var dataQuery string
-		var dataArgs []interface{}
-
-		if q != "" {
-			like := "%" + q + "%"
-			dataQuery = `SELECT ` + bookColumns + ` FROM books WHERE title LIKE ? OR authors LIKE ? OR isbn LIKE ? OR genres LIKE ? OR themes LIKE ? ORDER BY title ASC LIMIT ? OFFSET ?`
-			dataArgs = []interface{}{like, like, like, like, like, perPage, offset}
-		} else {
-			dataQuery = `SELECT ` + bookColumns + ` FROM books ORDER BY title ASC LIMIT ? OFFSET ?`
-			dataArgs = []interface{}{perPage, offset}
-		}
-
-		rows, err := db.Query(dataQuery, dataArgs...)
+		books, total, err := repo.List(r.Context(), q, page, perPage)
 		if err != nil {
-			JSONError(w, http.StatusInternalServerError, "database error")
-			return
-		}
-		defer rows.Close()
-
-		books := make([]models.Book, 0)
-		for rows.Next() {
-			b, err := scanBook(rows)
-			if err != nil {
-				JSONError(w, http.StatusInternalServerError, "database error")
-				return
-			}
-			books = append(books, *b)
-		}
-		if err = rows.Err(); err != nil {
 			JSONError(w, http.StatusInternalServerError, "database error")
 			return
 		}
@@ -299,10 +252,9 @@ func ListBooksHandler(db *sql.DB) http.HandlerFunc {
 }
 
 // SearchBooksHandler searches books with focused filters
-func SearchBooksHandler(db *sql.DB) http.HandlerFunc {
+func SearchBooksHandler(repo repository.BookRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		page, perPage := parsePagination(r)
-		offset := (page - 1) * perPage
 
 		q := r.URL.Query().Get("q")
 		if q == "" {
@@ -310,75 +262,10 @@ func SearchBooksHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		author := r.URL.Query().Get("author")
-		bookType := r.URL.Query().Get("book_type")
-		pageCountMin := r.URL.Query().Get("page_count_min")
-		pageCountMax := r.URL.Query().Get("page_count_max")
+		fields := []string{"title", "authors", "isbn", "genres", "themes"}
 
-		// Build WHERE clause dynamically
-		conditions := []string{}
-		args := []interface{}{}
-
-		// Core text search
-		like := "%" + q + "%"
-		conditions = append(conditions, "(title LIKE ? OR authors LIKE ? OR isbn LIKE ? OR genres LIKE ? OR themes LIKE ?)")
-		args = append(args, like, like, like, like, like)
-
-		if author != "" {
-			conditions = append(conditions, "authors LIKE ?")
-			args = append(args, "%"+author+"%")
-		}
-		if bookType != "" {
-			conditions = append(conditions, "book_type = ?")
-			args = append(args, bookType)
-		}
-		if pageCountMin != "" {
-			if min, err := strconv.Atoi(pageCountMin); err == nil {
-				conditions = append(conditions, "page_count >= ?")
-				args = append(args, min)
-			}
-		}
-		if pageCountMax != "" {
-			if max, err := strconv.Atoi(pageCountMax); err == nil {
-				conditions = append(conditions, "page_count <= ?")
-				args = append(args, max)
-			}
-		}
-
-		where := ""
-		if len(conditions) > 0 {
-			where = " WHERE " + strings.Join(conditions, " AND ")
-		}
-
-		// Count
-		countQuery := "SELECT COUNT(*) FROM books" + where
-		var total int
-		if err := db.QueryRow(countQuery, args...).Scan(&total); err != nil {
-			JSONError(w, http.StatusInternalServerError, "database error")
-			return
-		}
-
-		// Data
-		dataArgs := append(args, perPage, offset)
-		dataQuery := "SELECT " + bookColumns + " FROM books" + where + " ORDER BY title ASC LIMIT ? OFFSET ?"
-
-		rows, err := db.Query(dataQuery, dataArgs...)
+		books, total, err := repo.Search(r.Context(), q, fields, page, perPage)
 		if err != nil {
-			JSONError(w, http.StatusInternalServerError, "database error")
-			return
-		}
-		defer rows.Close()
-
-		books := make([]models.Book, 0)
-		for rows.Next() {
-			b, err := scanBook(rows)
-			if err != nil {
-				JSONError(w, http.StatusInternalServerError, "database error")
-				return
-			}
-			books = append(books, *b)
-		}
-		if err = rows.Err(); err != nil {
 			JSONError(w, http.StatusInternalServerError, "database error")
 			return
 		}

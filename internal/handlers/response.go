@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"reflect"
 )
 
 // JSONResponse sends a JSON response with the given status code and data
@@ -25,6 +26,14 @@ func PaginatedResponse(w http.ResponseWriter, items interface{}, total, page, pe
 	totalPages := (total + perPage - 1) / perPage
 	if totalPages == 0 {
 		totalPages = 1
+	}
+
+	// Ensure items is always a non-nil slice so JSON encodes [] not null.
+	// A nil slice stored in an interface{} is not nil at the interface level,
+	// so we use reflection to detect it.
+	rv := reflect.ValueOf(items)
+	if rv.Kind() == reflect.Slice && rv.IsNil() {
+		items = []interface{}{}
 	}
 
 	JSONResponse(w, http.StatusOK, map[string]interface{}{

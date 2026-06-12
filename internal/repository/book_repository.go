@@ -373,7 +373,7 @@ func (r *sqliteBookRepository) List(ctx context.Context, filter string, page, pe
 		like := "%" + filter + "%"
 		countQuery = `SELECT COUNT(*) FROM books WHERE title LIKE ? OR authors LIKE ? OR isbn LIKE ? OR genres LIKE ? OR themes LIKE ?`
 		dataQuery = `SELECT ` + bookColumns + ` FROM books WHERE title LIKE ? OR authors LIKE ? OR isbn LIKE ? OR genres LIKE ? OR themes LIKE ? ORDER BY title ASC LIMIT ? OFFSET ?`
-		args = []interface{}{like, like, like, like, like, like, like, like, like, perPage, offset}
+		args = []interface{}{like, like, like, like, like, like, like, like, like, like, perPage, offset}
 	} else {
 		countQuery = "SELECT COUNT(*) FROM books"
 		dataQuery = `SELECT ` + bookColumns + ` FROM books ORDER BY title ASC LIMIT ? OFFSET ?`

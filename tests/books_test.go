@@ -34,7 +34,7 @@ func buildAdminRouter(t *testing.T, env *testEnv, method, path string, handler h
 func TestListBooksHandler_Empty(t *testing.T) {
 	env := setupTestEnv(t)
 
-	r := buildAuthRouter(t, env, "GET", "/", handlers.ListBooksHandler(env.db))
+	r := buildAuthRouter(t, env, "GET", "/", handlers.ListBooksHandler(repository.NewBookRepository(env.db)))
 	cookie := loginAndGetCookie(t, env)
 
 	req := httptest.NewRequest("GET", "/", nil)
@@ -69,7 +69,7 @@ func TestListBooksHandler_WithBooks(t *testing.T) {
 		}
 	}
 
-	r := buildAuthRouter(t, env, "GET", "/", handlers.ListBooksHandler(env.db))
+	r := buildAuthRouter(t, env, "GET", "/", handlers.ListBooksHandler(repository.NewBookRepository(env.db)))
 	cookie := loginAndGetCookie(t, env)
 
 	req := httptest.NewRequest("GET", "/", nil)
@@ -101,7 +101,7 @@ func TestListBooksHandler_Pagination(t *testing.T) {
 		}
 	}
 
-	r := buildAuthRouter(t, env, "GET", "/", handlers.ListBooksHandler(env.db))
+	r := buildAuthRouter(t, env, "GET", "/", handlers.ListBooksHandler(repository.NewBookRepository(env.db)))
 	cookie := loginAndGetCookie(t, env)
 
 	req := httptest.NewRequest("GET", "/?per_page=3", nil)
@@ -132,7 +132,7 @@ func TestListBooksHandler_Pagination(t *testing.T) {
 func TestListBooksHandler_NotAuthenticated(t *testing.T) {
 	env := setupTestEnv(t)
 
-	r := buildAuthRouter(t, env, "GET", "/", handlers.ListBooksHandler(env.db))
+	r := buildAuthRouter(t, env, "GET", "/", handlers.ListBooksHandler(repository.NewBookRepository(env.db)))
 
 	req := httptest.NewRequest("GET", "/", nil)
 	rec := httptest.NewRecorder()
@@ -414,7 +414,7 @@ func TestListBooksHandler_SearchQuery(t *testing.T) {
 		t.Fatalf("failed to insert book: %v", err)
 	}
 
-	r := buildAuthRouter(t, env, "GET", "/", handlers.ListBooksHandler(env.db))
+	r := buildAuthRouter(t, env, "GET", "/", handlers.ListBooksHandler(repository.NewBookRepository(env.db)))
 	cookie := loginAndGetCookie(t, env)
 
 	req := httptest.NewRequest("GET", "/?q=Gatsby", nil)
@@ -450,7 +450,7 @@ func TestListBooksHandler_PerPageCap(t *testing.T) {
 		}
 	}
 
-	r := buildAuthRouter(t, env, "GET", "/", handlers.ListBooksHandler(env.db))
+	r := buildAuthRouter(t, env, "GET", "/", handlers.ListBooksHandler(repository.NewBookRepository(env.db)))
 	cookie := loginAndGetCookie(t, env)
 
 	// Request per_page=200, should be capped at 100
@@ -490,7 +490,7 @@ func TestListBooksHandler_Page2(t *testing.T) {
 		}
 	}
 
-	r := buildAuthRouter(t, env, "GET", "/", handlers.ListBooksHandler(env.db))
+	r := buildAuthRouter(t, env, "GET", "/", handlers.ListBooksHandler(repository.NewBookRepository(env.db)))
 	cookie := loginAndGetCookie(t, env)
 
 	// Request page 2 with per_page=3
@@ -806,7 +806,7 @@ func TestSearchBooksHandler_Success(t *testing.T) {
 		t.Fatalf("failed to insert book: %v", err)
 	}
 
-	r := buildAuthRouter(t, env, "GET", "/", handlers.SearchBooksHandler(env.db))
+	r := buildAuthRouter(t, env, "GET", "/", handlers.SearchBooksHandler(repository.NewBookRepository(env.db)))
 	cookie := loginAndGetCookie(t, env)
 
 	req := httptest.NewRequest("GET", "/?q=Gatsby", nil)
@@ -840,7 +840,7 @@ func TestSearchBooksHandler_NoResults(t *testing.T) {
 		t.Fatalf("failed to insert book: %v", err)
 	}
 
-	r := buildAuthRouter(t, env, "GET", "/", handlers.SearchBooksHandler(env.db))
+	r := buildAuthRouter(t, env, "GET", "/", handlers.SearchBooksHandler(repository.NewBookRepository(env.db)))
 	cookie := loginAndGetCookie(t, env)
 
 	req := httptest.NewRequest("GET", "/?q=nonexistentterm", nil)
