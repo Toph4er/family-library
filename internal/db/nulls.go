@@ -50,3 +50,21 @@ func NullBoolPtr(nb sql.NullBool) *bool {
 	b := nb.Bool
 	return &b
 }
+
+// StrToNullString converts a *string to sql.NullString.
+// Returns an empty NullString (Valid=false) when s is nil.
+func StrToNullString(s *string) sql.NullString {
+	if s == nil {
+		return sql.NullString{}
+	}
+	return sql.NullString{String: *s, Valid: true}
+}
+
+// IntToNullInt64 converts a *int to sql.NullInt64.
+// Returns an empty NullInt64 (Valid=false) when i is nil.
+func IntToNullInt64(i *int) sql.NullInt64 {
+	if i == nil {
+		return sql.NullInt64{}
+	}
+	return sql.NullInt64{Int64: int64(*i), Valid: true}
+}
