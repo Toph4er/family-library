@@ -434,6 +434,7 @@ func (r *sqliteBookRepository) Search(ctx context.Context, query string, fields 
 	whereStr := strings.Join(whereClauses, " OR ")
 	//#nosec G202 -- whereClauses uses hardcoded field names with parameterized values; bookColumns is a constant
 	countQuery := `SELECT COUNT(*) FROM books WHERE ` + whereStr
+	//#nosec G202 -- same: hardcoded field names, parameterized values, bookColumns is a constant
 	dataQuery := `SELECT ` + bookColumns + ` FROM books WHERE ` + whereStr + ` ORDER BY title ASC LIMIT ? OFFSET ?`
 	args = append(args, perPage, offset)
 
