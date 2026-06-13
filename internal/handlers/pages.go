@@ -25,6 +25,7 @@ import (
 type BaseContext struct {
 	Year            int
 	CSRFToken       string
+	CSPNonce        string
 	IsAdmin         bool
 	IsAuthenticated bool
 	IsGuest         bool
@@ -150,6 +151,7 @@ type pageContext struct {
 // back to reading the session directly for routes without that middleware.
 func buildBaseContext(r *http.Request, store *sessions.CookieStore, sessionName string, db *sql.DB) BaseContext {
 	ctx := BaseContext{Year: time.Now().Year()}
+	ctx.CSPNonce = middleware.GetCSPNonce(r)
 
 	// Check context first (set by auth middleware on protected routes).
 	if user := auth.GetUserFromContext(r); user != nil {

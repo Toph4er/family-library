@@ -19,7 +19,7 @@
 
   {{block "extra-head" .}}{{end}}
   {{.ActiveTheme.CSSOverrideBlock}}
-  <script>
+  <script nonce="{{ .Nonce }}">
   (function(){
     var stored = localStorage.getItem('active_theme');
     if (!stored) return;
@@ -179,7 +179,7 @@
   <!-- HTMX -->
   <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js"></script>
 
-  <script>
+  <script nonce="{{ .Nonce }}">
     // HTMX configuration: inject CSRF token into all requests.
     // Do NOT override Content-Type — let HTMX use the default
     // (application/x-www-form-urlencoded for <form> submissions).
@@ -243,7 +243,7 @@
   </script>
 
   <!-- TagInput module -->
-  <script>
+  <script nonce="{{ .Nonce }}">
   var TagInput = (function() {
     var instances = [];
 

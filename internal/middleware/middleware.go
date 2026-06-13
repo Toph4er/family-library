@@ -3,6 +3,9 @@
 package middleware
 
 import (
+	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"log/slog"
 	"net/http"
 	"sync"
@@ -10,6 +13,30 @@ import (
 
 	"golang.org/x/time/rate"
 )
+
+// nonceContextKey is the key type for storing the CSP nonce in request context.
+type nonceContextKey struct{}
+
+// GenerateCSPNonce generates a random 16-byte nonce and stores it in the
+// request context. Templates can access it via .Nonce on pageContext.
+func GenerateCSPNonce(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		buf := make([]byte, 16)
+		_, _ = rand.Read(buf)
+		nonce := base64.RawURLEncoding.EncodeToString(buf)
+		ctx := context.WithValue(r.Context(), nonceContextKey{}, nonce)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+// GetCSPNonce returns the nonce for the current request, or empty string
+// if no nonce was generated (e.g., for API responses that skip HTML rendering).
+func GetCSPNonce(r *http.Request) string {
+	if v := r.Context().Value(nonceContextKey{}); v != nil {
+		return v.(string)
+	}
+	return ""
+}
 
 // SecurityHeaders adds security-related HTTP headers to every response.
 //
@@ -20,7 +47,7 @@ import (
 //   - Referrer-Policy
 //   - Permissions-Policy
 //   - Cross-Origin-Opener-Policy
-//   - Content-Security-Policy
+//   - Content-Security-Policy (with per-request nonce for scripts)
 func SecurityHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload")
@@ -29,9 +56,19 @@ func SecurityHeaders(next http.Handler) http.Handler {
 		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
 		w.Header().Set("Permissions-Policy", "geolocation=(), camera=(self), microphone=()")
 		w.Header().Set("Cross-Origin-Opener-Policy", "same-origin")
+
+		// Build CSP with per-request nonce for inline scripts.
+		// Note: style-src still uses 'unsafe-inline' because inline style=
+		// attributes are pervasive in templates and would require extracting
+		// every one to CSS classes to remove.
+		nonce := GetCSPNonce(r)
+		scriptSrc := "'self' https://cdn.jsdelivr.net https://unpkg.com"
+		if nonce != "" {
+			scriptSrc += " 'nonce-" + nonce + "'"
+		}
 		w.Header().Set("Content-Security-Policy",
 			"default-src 'self'; "+
-				"script-src 'self' https://cdn.jsdelivr.net https://unpkg.com 'unsafe-inline'; "+
+				"script-src "+scriptSrc+"; "+
 				"style-src 'self' 'unsafe-inline' fonts.googleapis.com; "+
 				"img-src 'self' data: https:; "+
 				"font-src 'self' fonts.gstatic.com; "+

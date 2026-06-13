@@ -36,6 +36,7 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 	r.Use(chimiddleware.Recoverer)
 
 	// -- Custom middleware --
+	r.Use(middleware.GenerateCSPNonce)
 	r.Use(middleware.SecurityHeaders)
 	r.Use(middleware.RequestLogger)
 	r.Use(middleware.RateLimiter)

@@ -248,7 +248,7 @@
 </style>
 
 {{define "scripts"}}
-<script>
+<script nonce="{{ .Nonce }}">
 function updateGuestVisibility(field, visible) {
   var csrf = '{{.CSRFToken}}';
   fetch('/settings/guest-visibility/update', {

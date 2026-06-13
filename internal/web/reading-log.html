@@ -135,7 +135,7 @@
 {{end}}
 
 {{define "scripts"}}
-<script>
+<script nonce="{{ .Nonce }}">
 // Book selector modal is now server-fetched via HTMX (hx-get on button above)
 
 function openLogForm(bookId) {

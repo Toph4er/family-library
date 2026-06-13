@@ -187,7 +187,7 @@
   </div>
 </form>
 
-<script>
+<script nonce="{{ .Nonce }}">
 function showStatus(msg, isError) {
   var el = document.getElementById('isbn-lookup-status');
   if (!el) return;

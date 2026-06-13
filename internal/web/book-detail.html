@@ -272,7 +272,7 @@
       <button type="button" id="desc-toggle" class="mt-1 text-sm text-primary hover:text-text-light transition-colors font-medium no-underline bg-transparent border-none cursor-pointer">
         Show more
       </button>
-      <script>
+      <script nonce="{{ .Nonce }}">
         (function() {
           var el = document.getElementById('book-description');
           var btn = document.getElementById('desc-toggle');
