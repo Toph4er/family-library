@@ -58,7 +58,7 @@ func HTMLFamilyMemberFormHandler(db *sql.DB) http.HandlerFunc {
 				return
 			}
 			if err != nil {
-				http.Error(w, "database error", http.StatusInternalServerError)
+				HTMXError(w, http.StatusInternalServerError)
 				return
 			}
 			member = *m

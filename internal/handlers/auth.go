@@ -85,11 +85,11 @@ func RenderLoginPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if isHTMXRequest(r) {
 			if err := tmpl.ExecuteTemplate(w, "content", data); err != nil {
-				http.Error(w, "template error", http.StatusInternalServerError)
+				HTMXError(w, http.StatusInternalServerError)
 			}
 		} else {
 			if err := tmpl.ExecuteTemplate(w, "login.html", data); err != nil {
-				http.Error(w, "template error", http.StatusInternalServerError)
+				HTMXError(w, http.StatusInternalServerError)
 			}
 		}
 	}
@@ -123,11 +123,11 @@ func RenderGuestLoginPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if isHTMXRequest(r) {
 			if err := tmpl.ExecuteTemplate(w, "content", data); err != nil {
-				http.Error(w, "template error", http.StatusInternalServerError)
+				HTMXError(w, http.StatusInternalServerError)
 			}
 		} else {
 			if err := tmpl.ExecuteTemplate(w, "guest-login.html", data); err != nil {
-				http.Error(w, "template error", http.StatusInternalServerError)
+				HTMXError(w, http.StatusInternalServerError)
 			}
 		}
 	}
@@ -145,11 +145,11 @@ func RenderLogoutSuccess(tmpl *template.Template, db *sql.DB, authSvc *auth.Auth
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if isHTMXRequest(r) {
 			if err := tmpl.ExecuteTemplate(w, "content", data); err != nil {
-				http.Error(w, "template error", http.StatusInternalServerError)
+				HTMXError(w, http.StatusInternalServerError)
 			}
 		} else {
 			if err := tmpl.ExecuteTemplate(w, "logout.html", data); err != nil {
-				http.Error(w, "template error", http.StatusInternalServerError)
+				HTMXError(w, http.StatusInternalServerError)
 			}
 		}
 	}

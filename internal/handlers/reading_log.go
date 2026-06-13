@@ -304,7 +304,7 @@ func HTMLBookSelectorHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		rows, err := db.Query("SELECT id, title FROM books ORDER BY title ASC LIMIT 50")
 		if err != nil {
-			http.Error(w, "database error", http.StatusInternalServerError)
+			HTMXError(w, http.StatusInternalServerError)
 			return
 		}
 		defer rows.Close()
@@ -369,14 +369,14 @@ func HTMLReadingLogFormHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 		if err != nil {
-			http.Error(w, "database error", http.StatusInternalServerError)
+			HTMXError(w, http.StatusInternalServerError)
 			return
 		}
 
 		// Load family members for reader dropdown
 		fmRows, err := db.Query("SELECT id, name, relation FROM family_members ORDER BY name ASC")
 		if err != nil {
-			http.Error(w, "database error", http.StatusInternalServerError)
+			HTMXError(w, http.StatusInternalServerError)
 			return
 		}
 		defer fmRows.Close()
@@ -628,7 +628,7 @@ func RenderReadingLogPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 		query := `SELECT rl.id, rl.book_id, b.title, rl.start_page, rl.end_page, rl.total_pages, rl.entire_book, rl.read_at, rl.reader_name, rl.notes, rl.created_at FROM reading_logs rl JOIN books b ON b.id = rl.book_id ORDER BY rl.read_at DESC`
 		rows, err := db.Query(query)
 		if err != nil {
-			http.Error(w, "database error", http.StatusInternalServerError)
+			HTMXError(w, http.StatusInternalServerError)
 			return
 		}
 		defer rows.Close()
@@ -639,14 +639,14 @@ func RenderReadingLogPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 			var entireBook int
 			err := rows.Scan(&rl.ID, &rl.BookID, &rl.BookTitle, &rl.StartPage, &rl.EndPage, &rl.TotalPages, &entireBook, &rl.ReadAt, &rl.ReaderName, &rl.Notes, &rl.CreatedAt)
 			if err != nil {
-				http.Error(w, "database error", http.StatusInternalServerError)
+				HTMXError(w, http.StatusInternalServerError)
 				return
 			}
 			rl.EntireBook = entireBook != 0
 			logs = append(logs, rl)
 		}
 		if err = rows.Err(); err != nil {
-			http.Error(w, "database error", http.StatusInternalServerError)
+			HTMXError(w, http.StatusInternalServerError)
 			return
 		}
 		ctx.ReadingLogs = logs
@@ -654,7 +654,7 @@ func RenderReadingLogPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 		// Load family members for the "Log Reading" modal
 		fmRows, err := db.Query("SELECT id, name, relation FROM family_members ORDER BY name ASC")
 		if err != nil {
-			http.Error(w, "database error", http.StatusInternalServerError)
+			HTMXError(w, http.StatusInternalServerError)
 			return
 		}
 		defer fmRows.Close()
@@ -670,7 +670,7 @@ func RenderReadingLogPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 		// Load recent books for quick logging
 		bookRows, err := db.Query("SELECT id, title FROM books ORDER BY created_at DESC LIMIT 20")
 		if err != nil {
-			http.Error(w, "database error", http.StatusInternalServerError)
+			HTMXError(w, http.StatusInternalServerError)
 			return
 		}
 		defer bookRows.Close()

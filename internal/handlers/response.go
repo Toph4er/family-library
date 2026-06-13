@@ -19,3 +19,18 @@ func JSONError(w http.ResponseWriter, status int, message string) {
 		"error":   message,
 	})
 }
+
+// HTMXError sends a 4xx/5xx response for HTMX requests.
+// HTMX only cares about the status code — the body is ignored
+// unless hx-push-url or swap options are configured to render it.
+func HTMXError(w http.ResponseWriter, status int) {
+	w.WriteHeader(status)
+}
+
+// HTMXErrorResponse sends a status code with an error message body.
+// Used when the client may display the message (e.g., via hx-on::after-request).
+func HTMXErrorResponse(w http.ResponseWriter, status int, message string) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(status)
+	_, _ = w.Write([]byte(htmlErrorFragment(message)))
+}

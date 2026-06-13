@@ -227,13 +227,13 @@ func renderPage(w http.ResponseWriter, r *http.Request, tmpl *template.Template,
 		// HTMX request — render only the content block, not the base layout.
 		if err := tmpl.ExecuteTemplate(w, "content", data); err != nil {
 			slog.Error("template error", "page", pageName, "error", err)
-			http.Error(w, "template error", http.StatusInternalServerError)
+			HTMXError(w, http.StatusInternalServerError)
 		}
 	} else {
 		// Full page request — render the page template (which includes base).
 		if err := tmpl.ExecuteTemplate(w, pageName, data); err != nil {
 			slog.Error("template error", "page", pageName, "error", err)
-			http.Error(w, "template error", http.StatusInternalServerError)
+			HTMXError(w, http.StatusInternalServerError)
 		}
 	}
 }
@@ -310,13 +310,13 @@ func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 				like, like, like, like, like, like, like,
 			).Scan(&total)
 			if err != nil {
-				http.Error(w, "database error", http.StatusInternalServerError)
+				HTMXError(w, http.StatusInternalServerError)
 				return
 			}
 		} else {
 			err := db.QueryRow("SELECT COUNT(*) FROM books").Scan(&total)
 			if err != nil {
-				http.Error(w, "database error", http.StatusInternalServerError)
+				HTMXError(w, http.StatusInternalServerError)
 				return
 			}
 		}
@@ -357,7 +357,7 @@ func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 			)
 		}
 		if err != nil {
-			http.Error(w, "database error", http.StatusInternalServerError)
+			HTMXError(w, http.StatusInternalServerError)
 			return
 		}
 		defer rows.Close()
@@ -368,7 +368,7 @@ func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 			var author, isbn, coverImage sql.NullString
 			var createdAt string
 			if err := rows.Scan(&book.ID, &book.Title, &author, &isbn, &coverImage, &createdAt); err != nil {
-				http.Error(w, "database error", http.StatusInternalServerError)
+				HTMXError(w, http.StatusInternalServerError)
 				return
 			}
 			if author.Valid {
@@ -384,7 +384,7 @@ func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 			books = append(books, book)
 		}
 		if err = rows.Err(); err != nil {
-			http.Error(w, "database error", http.StatusInternalServerError)
+			HTMXError(w, http.StatusInternalServerError)
 			return
 		}
 
@@ -424,7 +424,7 @@ func RenderBookDetailPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 			return
 		}
 		if err != nil {
-			http.Error(w, "database error", http.StatusInternalServerError)
+			HTMXError(w, http.StatusInternalServerError)
 			return
 		}
 		book = *b
@@ -444,7 +444,7 @@ func RenderWishlistPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 
 		rows, err := db.Query("SELECT id, isbn, title, author, reason, priority, amazon_url, thriftbooks_url, notes, fulfilled, requested_by, requested_at, fulfilled_at, cover_image_url FROM wishlist ORDER BY priority DESC, requested_at DESC")
 		if err != nil {
-			http.Error(w, "database error", http.StatusInternalServerError)
+			HTMXError(w, http.StatusInternalServerError)
 			return
 		}
 		defer rows.Close()
@@ -458,7 +458,7 @@ func RenderWishlistPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 			var requestedAtStr, fulfilledAtStr sql.NullString
 			var coverImageURL sql.NullString
 			if err := rows.Scan(&item.ID, &isbn, &item.Title, &author, &reason, &item.Priority, &amazonURL, &thriftbooksURL, &notes, &fulfilled, &requestedBy, &requestedAtStr, &fulfilledAtStr, &coverImageURL); err != nil {
-				http.Error(w, "database error", http.StatusInternalServerError)
+				HTMXError(w, http.StatusInternalServerError)
 				return
 			}
 			if isbn.Valid {
@@ -497,7 +497,7 @@ func RenderWishlistPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 			items = append(items, item)
 		}
 		if err = rows.Err(); err != nil {
-			http.Error(w, "database error", http.StatusInternalServerError)
+			HTMXError(w, http.StatusInternalServerError)
 			return
 		}
 
@@ -570,7 +570,7 @@ func RenderWishlistFormPage(tmpl *template.Template, db *sql.DB, store *sessions
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if err := tmpl.ExecuteTemplate(w, "wishlist-form.html", data); err != nil {
 			slog.Error("template error", "page", "wishlist-form", "error", err)
-			http.Error(w, "template error", http.StatusInternalServerError)
+			HTMXError(w, http.StatusInternalServerError)
 		}
 	}
 }
@@ -594,7 +594,7 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 		// Load settings
 		rows, err := db.Query("SELECT key, value FROM settings ORDER BY key ASC")
 		if err != nil {
-			http.Error(w, "database error", http.StatusInternalServerError)
+			HTMXError(w, http.StatusInternalServerError)
 			return
 		}
 		defer rows.Close()
@@ -603,7 +603,7 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 		for rows.Next() {
 			var key, value string
 			if err := rows.Scan(&key, &value); err != nil {
-				http.Error(w, "database error", http.StatusInternalServerError)
+				HTMXError(w, http.StatusInternalServerError)
 				return
 			}
 			if _, sensitive := sensitiveKeys[key]; sensitive {
@@ -612,7 +612,7 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 			settings[key] = value
 		}
 		if err = rows.Err(); err != nil {
-			http.Error(w, "database error", http.StatusInternalServerError)
+			HTMXError(w, http.StatusInternalServerError)
 			return
 		}
 		ctx.Settings = settings
@@ -620,7 +620,7 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 		// Load users
 		userRows, err := db.Query("SELECT id, username, role, display_name, created_at FROM users ORDER BY id")
 		if err != nil {
-			http.Error(w, "database error", http.StatusInternalServerError)
+			HTMXError(w, http.StatusInternalServerError)
 			return
 		}
 		defer userRows.Close()
@@ -630,7 +630,7 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 			var id int64
 			var username, role, displayName, createdAt string
 			if err := userRows.Scan(&id, &username, &role, &displayName, &createdAt); err != nil {
-				http.Error(w, "database error", http.StatusInternalServerError)
+				HTMXError(w, http.StatusInternalServerError)
 				return
 			}
 			users = append(users, map[string]interface{}{
@@ -642,7 +642,7 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 			})
 		}
 		if err = userRows.Err(); err != nil {
-			http.Error(w, "database error", http.StatusInternalServerError)
+			HTMXError(w, http.StatusInternalServerError)
 			return
 		}
 		ctx.Users = users
@@ -650,7 +650,7 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 		// Load family members
 		fmRows, err := db.Query("SELECT id, name, relation, created_at, updated_at FROM family_members ORDER BY name ASC")
 		if err != nil {
-			http.Error(w, "database error", http.StatusInternalServerError)
+			HTMXError(w, http.StatusInternalServerError)
 			return
 		}
 		defer fmRows.Close()
@@ -660,7 +660,7 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 			var fm models.FamilyMember
 			var createdAt, updatedAt string
 			if err := fmRows.Scan(&fm.ID, &fm.Name, &fm.Relation, &createdAt, &updatedAt); err != nil {
-				http.Error(w, "database error", http.StatusInternalServerError)
+				HTMXError(w, http.StatusInternalServerError)
 				return
 			}
 			fm.CreatedAt = createdAt
@@ -668,7 +668,7 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 			familyMembers = append(familyMembers, fm)
 		}
 		if err = fmRows.Err(); err != nil {
-			http.Error(w, "database error", http.StatusInternalServerError)
+			HTMXError(w, http.StatusInternalServerError)
 			return
 		}
 		ctx.FamilyMembers = familyMembers
@@ -778,7 +778,7 @@ func RenderBookFormPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if err := tmpl.ExecuteTemplate(w, "book-form.html", data); err != nil {
 			slog.Error("template error", "page", "book-form", "error", err)
-			http.Error(w, "template error", http.StatusInternalServerError)
+			HTMXError(w, http.StatusInternalServerError)
 		}
 	}
 }
