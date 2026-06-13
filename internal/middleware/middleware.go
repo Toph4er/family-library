@@ -66,10 +66,14 @@ func SecurityHeaders(next http.Handler) http.Handler {
 		if nonce != "" {
 			scriptSrc += " 'nonce-" + nonce + "'"
 		}
+		styleSrc := "'self' fonts.googleapis.com"
+		if nonce != "" {
+			styleSrc += " 'nonce-" + nonce + "'"
+		}
 		w.Header().Set("Content-Security-Policy",
 			"default-src 'self'; "+
 				"script-src "+scriptSrc+"; "+
-				"style-src 'self' 'unsafe-inline' fonts.googleapis.com; "+
+				"style-src "+styleSrc+"; "+
 				"img-src 'self' data: https:; "+
 				"font-src 'self' fonts.gstatic.com; "+
 				"connect-src 'self' https://cdn.jsdelivr.net; "+

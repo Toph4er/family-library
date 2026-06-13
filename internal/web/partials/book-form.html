@@ -159,7 +159,7 @@
   </div>
   
   <!-- Scanner modal -->
-  <div id="scanner-modal" class="modal-backdrop" style="display: none" onclick="if(event.target===this)closeScannerModal()">
+  <div id="scanner-modal" class="modal-backdrop hidden" onclick="if(event.target===this)closeScannerModal()">
     <div class="modal-content modal-sm p-6" role="dialog" aria-modal="true">
       <div class="flex items-center justify-between mb-4 pb-3 border-b border-secondary/10">
         <h2 class="text-xl font-heading font-semibold text-primary">Scan ISBN</h2>
@@ -231,12 +231,12 @@ function populateForm(data) {
 var html5QrcodeScanner = null;
 
 function openScannerModal() {
-  document.getElementById('scanner-modal').style.display = 'flex';
+  document.getElementById('scanner-modal').classList.remove('hidden');
   initScanner();
 }
 
 function closeScannerModal() {
-  document.getElementById('scanner-modal').style.display = 'none';
+  document.getElementById('scanner-modal').classList.add('hidden');
   if (html5QrcodeScanner) {
     html5QrcodeScanner.stop().catch(function(){});
     html5QrcodeScanner = null;
