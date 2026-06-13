@@ -1129,111 +1129,57 @@ func HTMLUpdateBookHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// Build dynamic UPDATE from form fields
-		sets := []string{}
-		args := []interface{}{}
-
-		formFields := []string{
-			"isbn",
-			"subtitle",
-			"authors",
-			"illustrators",
-			"publisher",
-			"book_type",
-			"reading_levels",
-			"genres",
-			"themes",
-			"awards",
-			"gift_from",
-			"gift_relationship",
-			"date_received",
-			"condition",
-			"location",
-			"notes",
-			"cover_image_url",
-			"dewey_decimal_class",
-			"language",
-			"subject_places",
-			"subject_people",
-			"subject_times",
-			"series",
-			"age_range",
+		// ISBN - already validated and normalized above; add to update sets
+		sets := []updateField{
+			{column: "isbn", value: ptrIfNonEmpty(isbn)},
+			{column: "title", value: ptrIfNonEmpty(title)},
 		}
 
-		// ISBN - already validated and normalized above; add to update sets
-		sets = append(sets, "isbn = ?")
-		args = append(args, ptrIfNonEmpty(isbn))
-
-		// Title - already validated above; add to update sets
-		sets = append(sets, "title = ?")
-		args = append(args, ptrIfNonEmpty(title))
-
 		// String fields - always set; empty string means clear to NULL
-		for _, name := range formFields {
-			if name == "isbn" {
-				continue // already handled
-			}
-			val := strings.TrimSpace(r.FormValue(name))
-			sets = append(sets, name+" = ?")
-			args = append(args, ptrIfNonEmpty(val))
+		stringFields := []string{
+			"subtitle", "authors", "illustrators", "publisher", "book_type",
+			"reading_levels", "genres", "themes", "awards", "gift_from",
+			"gift_relationship", "date_received", "condition", "location",
+			"notes", "cover_image_url", "dewey_decimal_class", "language",
+			"subject_places", "subject_people", "subject_times", "series", "age_range",
+		}
+		for _, name := range stringFields {
+			sets = append(sets, updateField{column: name, value: ptrIfNonEmpty(strings.TrimSpace(r.FormValue(name)))})
 		}
 
 		// Integer fields - always set; empty string means clear to NULL
-		if v := strings.TrimSpace(r.FormValue("publication_year")); v != "" {
-			if n, err := strconv.Atoi(v); err == nil {
-				sets = append(sets, "publication_year = ?")
-				args = append(args, &n)
+		for _, name := range []string{"publication_year", "page_count", "child_rating"} {
+			v := strings.TrimSpace(r.FormValue(name))
+			if v != "" {
+				if n, err := strconv.Atoi(v); err == nil {
+					sets = append(sets, updateField{column: name, value: &n})
+				} else {
+					sets = append(sets, updateField{column: name, value: nil})
+				}
 			} else {
-				sets = append(sets, "publication_year = ?")
-				args = append(args, nil)
+				sets = append(sets, updateField{column: name, value: nil})
 			}
-		} else {
-			sets = append(sets, "publication_year = ?")
-			args = append(args, nil)
 		}
-		if v := strings.TrimSpace(r.FormValue("page_count")); v != "" {
-			if n, err := strconv.Atoi(v); err == nil {
-				sets = append(sets, "page_count = ?")
-				args = append(args, &n)
+		// quantity has a minimum of 1
+		qv := strings.TrimSpace(r.FormValue("quantity"))
+		if qv != "" {
+			if n, err := strconv.Atoi(qv); err == nil && n >= 1 {
+				sets = append(sets, updateField{column: "quantity", value: &n})
 			} else {
-				sets = append(sets, "page_count = ?")
-				args = append(args, nil)
+				sets = append(sets, updateField{column: "quantity", value: nil})
 			}
 		} else {
-			sets = append(sets, "page_count = ?")
-			args = append(args, nil)
-		}
-		if v := strings.TrimSpace(r.FormValue("child_rating")); v != "" {
-			if n, err := strconv.Atoi(v); err == nil {
-				sets = append(sets, "child_rating = ?")
-				args = append(args, &n)
-			} else {
-				sets = append(sets, "child_rating = ?")
-				args = append(args, nil)
-			}
-		} else {
-			sets = append(sets, "child_rating = ?")
-			args = append(args, nil)
-		}
-		if v := strings.TrimSpace(r.FormValue("quantity")); v != "" {
-			if n, err := strconv.Atoi(v); err == nil && n >= 1 {
-				sets = append(sets, "quantity = ?")
-				args = append(args, &n)
-			} else {
-				sets = append(sets, "quantity = ?")
-				args = append(args, nil)
-			}
-		} else {
-			sets = append(sets, "quantity = ?")
-			args = append(args, nil)
+			sets = append(sets, updateField{column: "quantity", value: nil})
 		}
 
 		// Always update timestamp
-		sets = append(sets, "updated_at = CURRENT_TIMESTAMP")
+		sets = append(sets, updateField{column: "updated_at", value: "CURRENT_TIMESTAMP"})
+
+		setClause, args := buildUpdateClauses(sets)
 		args = append(args, id)
 
 		// #nosec G202 -- Column names are hardcoded
-		query := "UPDATE books SET " + strings.Join(sets, ", ") + " WHERE id = ?"
+		query := "UPDATE books SET " + setClause + " WHERE id = ?"
 		result, err := db.Exec(query, args...)
 		if err != nil {
 			if strings.Contains(err.Error(), "UNIQUE constraint failed") {
@@ -1259,12 +1205,4 @@ func HTMLUpdateBookHandler(db *sql.DB) http.HandlerFunc {
 		w.Header().Set("HX-Redirect", "/books/"+strconv.FormatInt(id, 10))
 		w.WriteHeader(http.StatusOK)
 	}
-}
-
-// ptrIfNonEmpty returns a pointer to s if s is non-empty, nil otherwise.
-func ptrIfNonEmpty(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
 }

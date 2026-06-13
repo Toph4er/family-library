@@ -150,8 +150,7 @@ func UpdateReadingLogHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		sets := []string{}
-		args := []interface{}{}
+		var fields []updateField
 
 		if req.StartPage != nil || req.EndPage != nil {
 			// Recalculate total_pages when either changes
@@ -159,7 +158,6 @@ func UpdateReadingLogHandler(db *sql.DB) http.HandlerFunc {
 			if req.StartPage != nil {
 				sp = req.StartPage
 			} else {
-				// Fetch existing
 				var existing int
 				err := db.QueryRow("SELECT start_page FROM reading_logs WHERE id = ?", id).Scan(&existing)
 				if err == nil {
@@ -177,12 +175,10 @@ func UpdateReadingLogHandler(db *sql.DB) http.HandlerFunc {
 			}
 
 			if req.StartPage != nil {
-				sets = append(sets, "start_page = ?")
-				args = append(args, *req.StartPage)
+				fields = append(fields, updateField{column: "start_page", value: *req.StartPage})
 			}
 			if req.EndPage != nil {
-				sets = append(sets, "end_page = ?")
-				args = append(args, *req.EndPage)
+				fields = append(fields, updateField{column: "end_page", value: *req.EndPage})
 			}
 
 			// Calculate new total
@@ -191,8 +187,7 @@ func UpdateReadingLogHandler(db *sql.DB) http.HandlerFunc {
 				if tot < 0 {
 					tot = 0
 				}
-				sets = append(sets, "total_pages = ?")
-				args = append(args, tot)
+				fields = append(fields, updateField{column: "total_pages", value: tot})
 			}
 		}
 
@@ -201,12 +196,10 @@ func UpdateReadingLogHandler(db *sql.DB) http.HandlerFunc {
 			if *req.EntireBook {
 				val = 1
 			}
-			sets = append(sets, "entire_book = ?")
-			args = append(args, val)
+			fields = append(fields, updateField{column: "entire_book", value: val})
 		}
 		if req.ReadAt != nil {
-			sets = append(sets, "read_at = ?")
-			args = append(args, *req.ReadAt)
+			fields = append(fields, updateField{column: "read_at", value: *req.ReadAt})
 		}
 		if req.ReaderName != nil {
 			val := strings.TrimSpace(*req.ReaderName)
@@ -214,15 +207,13 @@ func UpdateReadingLogHandler(db *sql.DB) http.HandlerFunc {
 				JSONError(w, http.StatusBadRequest, "reader_name cannot be empty")
 				return
 			}
-			sets = append(sets, "reader_name = ?")
-			args = append(args, val)
+			fields = append(fields, updateField{column: "reader_name", value: val})
 		}
 		if req.Notes != nil {
-			sets = append(sets, "notes = ?")
-			args = append(args, *req.Notes)
+			fields = append(fields, updateField{column: "notes", value: *req.Notes})
 		}
 
-		if len(sets) == 0 {
+		if len(fields) == 0 {
 			row := db.QueryRow("SELECT "+readingLogColumns+", b.title FROM reading_logs rl JOIN books b ON b.id = rl.book_id WHERE rl.id = ?", id)
 			rl, err := func() (*models.ReadingLog, error) {
 				var r models.ReadingLog
@@ -243,9 +234,10 @@ func UpdateReadingLogHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
+		setClause, args := buildUpdateClauses(fields)
 		args = append(args, id)
 		// #nosec G202 -- Column names are hardcoded constants, not user input
-		query := "UPDATE reading_logs SET " + strings.Join(sets, ", ") + " WHERE id = ?"
+		query := "UPDATE reading_logs SET " + setClause + " WHERE id = ?"
 		result, err := db.Exec(query, args...)
 		if err != nil {
 			JSONError(w, http.StatusInternalServerError, "database error")

@@ -226,30 +226,28 @@ func HTMLUpdateUserHandler(db *sql.DB) http.HandlerFunc {
 		displayName := r.FormValue("display_name")
 		role := r.FormValue("role")
 
-		setClauses := []string{}
-		args := []interface{}{}
-
+		var fields []updateField
 		if displayName != "" {
-			setClauses = append(setClauses, "display_name = ?")
-			args = append(args, displayName)
+			fields = append(fields, updateField{column: "display_name", value: displayName})
 		}
 		if role != "" {
-			setClauses = append(setClauses, "role = ?")
-			args = append(args, role)
+			fields = append(fields, updateField{column: "role", value: role})
 		}
 
-		if len(setClauses) == 0 {
+		if len(fields) == 0 {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			w.WriteHeader(http.StatusBadRequest)
 			_, _ = w.Write([]byte(htmlErrorFragment("No fields to update")))
 			return
 		}
 
-		setClauses = append(setClauses, "updated_at = CURRENT_TIMESTAMP")
+		fields = append(fields, updateField{column: "updated_at", value: "CURRENT_TIMESTAMP"})
+
+		setClause, args := buildUpdateClauses(fields)
 		args = append(args, id)
 
 		// #nosec G202 -- SET clauses are hardcoded column names, not from user input
-		query := "UPDATE users SET " + strings.Join(setClauses, ", ") + " WHERE id = ?"
+		query := "UPDATE users SET " + setClause + " WHERE id = ?"
 		result, err := db.Exec(query, args...)
 		if err != nil {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
