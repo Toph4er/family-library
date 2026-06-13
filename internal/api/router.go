@@ -197,6 +197,11 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 			authSvc.RequireAdmin(handlers.LookupISBNHandler(database)).ServeHTTP(w, r)
 		})
 
+		// Rate child (admin, updates child_rating for a book)
+		r.Post("/books/rate-child", func(w http.ResponseWriter, r *http.Request) {
+			authSvc.RequireAdmin(handlers.RateChildHandler(database)).ServeHTTP(w, r)
+		})
+
 		// CSRF-protected routes (middleware applied before any routes on this sub-mux)
 		r.Route("/", func(r chi.Router) {
 			r.Use(middleware.CSRFProtection(authSvc.Store(), auth.SessionID))

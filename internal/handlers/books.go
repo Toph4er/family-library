@@ -958,6 +958,46 @@ func DeleteBookHandler(repo repository.BookRepository) http.HandlerFunc {
 	}
 }
 
+// RateChildHandler updates the child_rating for a book.
+// Used by the star rating UI on the book form page.
+func RateChildHandler(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			BookID int64 `json:"book_id"`
+			Rating int   `json:"rating"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			JSONError(w, http.StatusBadRequest, "invalid request body")
+			return
+		}
+		if req.BookID <= 0 {
+			JSONError(w, http.StatusBadRequest, "book_id is required")
+			return
+		}
+		if req.Rating < 1 || req.Rating > 5 {
+			JSONError(w, http.StatusBadRequest, "rating must be between 1 and 5")
+			return
+		}
+
+		result, err := db.Exec("UPDATE books SET child_rating = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", req.Rating, req.BookID)
+		if err != nil {
+			JSONError(w, http.StatusInternalServerError, "database error")
+			return
+		}
+
+		rowsAffected, _ := result.RowsAffected()
+		if rowsAffected == 0 {
+			JSONError(w, http.StatusNotFound, "book not found")
+			return
+		}
+
+		JSONResponse(w, http.StatusOK, map[string]interface{}{
+			"success": true,
+			"message": "rating updated",
+		})
+	}
+}
+
 // HTMLCreateBookHandler handles POST /books/create (form submission from the add-book page).
 func HTMLCreateBookHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

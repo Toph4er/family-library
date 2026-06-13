@@ -60,6 +60,7 @@ type pageContext struct {
 
 	// Form page fields
 	Title            string
+	BookID           int64 // ID of the book being edited (for rate-child endpoint)
 	IsEdit           bool
 	CancelURL        string
 	ActionURL        string
@@ -755,6 +756,7 @@ func RenderBookFormPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 
 		data := pageContext{
 			BaseContext: ctx.BaseContext,
+			BookID:      bookID,
 			IsEdit:      isEdit,
 			BookTitle:   bookTitle,
 			CancelURL:   cancelURL,
