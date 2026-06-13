@@ -173,6 +173,11 @@
   <!-- Toast container -->
   <div id="toast-container" class="toast-container"></div>
 
+  <!-- Alpine.js x-cloak: required for Alpine to hide elements before initialization -->
+  <style nonce="{{ .Nonce }}">
+    [x-cloak] { display: none !important; }
+  </style>
+
   <!-- Alpine.js (must load before HTMX for x-data attributes) -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
 
