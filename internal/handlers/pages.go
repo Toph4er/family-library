@@ -301,13 +301,12 @@ func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 		}
 		offset := (page - 1) * perPage
 
-		// Count query
+		// Count query — use FTS5 when searching.
 		var total int
 		if q != "" {
-			like := "%" + q + "%"
 			err := db.QueryRow(
-				"SELECT COUNT(*) FROM books WHERE title LIKE ? OR authors LIKE ? OR isbn LIKE ? OR genres LIKE ? OR themes LIKE ? OR awards LIKE ? OR reading_levels LIKE ?",
-				like, like, like, like, like, like, like,
+				"SELECT COUNT(*) FROM books_fts JOIN books ON books_fts.rowid = books.id WHERE books_fts MATCH ?",
+				q,
 			).Scan(&total)
 			if err != nil {
 				HTMXError(w, http.StatusInternalServerError)
@@ -341,14 +340,13 @@ func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 			endItem = 0
 		}
 
-		// Data query with LIMIT/OFFSET
+		// Data query with LIMIT/OFFSET — use FTS5 when searching.
 		var rows *sql.Rows
 		var err error
 		if q != "" {
-			like := "%" + q + "%"
 			rows, err = db.Query(
-				"SELECT id, title, authors, isbn, cover_image_url, created_at FROM books WHERE title LIKE ? OR authors LIKE ? OR isbn LIKE ? OR genres LIKE ? OR themes LIKE ? OR awards LIKE ? OR reading_levels LIKE ? ORDER BY title ASC LIMIT ? OFFSET ?",
-				like, like, like, like, like, like, like, perPage, offset,
+				"SELECT id, title, authors, isbn, cover_image_url, created_at FROM books_fts JOIN books ON books_fts.rowid = books.id WHERE books_fts MATCH ? ORDER BY books.title ASC LIMIT ? OFFSET ?",
+				q, perPage, offset,
 			)
 		} else {
 			rows, err = db.Query(

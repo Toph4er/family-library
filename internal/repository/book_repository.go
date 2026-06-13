@@ -243,6 +243,7 @@ func (r *sqliteBookRepository) UpdatePartial(ctx context.Context, id int64, inpu
 }
 
 // List returns books with optional filtering and pagination.
+// Uses FTS5 for full-text search when a filter is provided.
 func (r *sqliteBookRepository) List(ctx context.Context, filter string, page, perPage int) ([]models.Book, int, error) {
 	if page < 1 {
 		page = 1
@@ -252,56 +253,64 @@ func (r *sqliteBookRepository) List(ctx context.Context, filter string, page, pe
 	}
 	offset := (page - 1) * perPage
 
-	var countQuery string
-	var dataQuery string
-	var args []interface{}
-	var like string
-
-	if filter != "" {
-		like = "%" + filter + "%"
-		countQuery = `SELECT COUNT(*) FROM books WHERE title LIKE ? OR authors LIKE ? OR isbn LIKE ? OR genres LIKE ? OR themes LIKE ?`
-		dataQuery = `SELECT ` + db.BookColumns + ` FROM books WHERE title LIKE ? OR authors LIKE ? OR isbn LIKE ? OR genres LIKE ? OR themes LIKE ? ORDER BY title ASC LIMIT ? OFFSET ?`
-		args = []interface{}{like, like, like, like, like, perPage, offset}
-	} else {
-		countQuery = "SELECT COUNT(*) FROM books"
-		dataQuery = `SELECT ` + db.BookColumns + ` FROM books ORDER BY title ASC LIMIT ? OFFSET ?`
-		args = []interface{}{perPage, offset}
-	}
-
 	var total int
+	var books []models.Book
+
 	if filter != "" {
-		if err := r.db.QueryRowContext(ctx, countQuery, like, like, like, like, like).Scan(&total); err != nil {
-			return nil, 0, fmt.Errorf("count books: %w", err)
+		// FTS5 search — join back to books table for ORDER BY title.
+		countQuery := `SELECT COUNT(*) FROM books_fts JOIN books ON books_fts.rowid = books.id WHERE books_fts MATCH ?`
+		if err := r.db.QueryRowContext(ctx, countQuery, filter).Scan(&total); err != nil {
+			return nil, 0, fmt.Errorf("count search results: %w", err)
+		}
+
+		dataQuery := `SELECT ` + db.BookColumns + ` FROM books_fts JOIN books ON books_fts.rowid = books.id WHERE books_fts MATCH ? ORDER BY books.title ASC LIMIT ? OFFSET ?`
+		rows, err := r.db.QueryContext(ctx, dataQuery, filter, perPage, offset)
+		if err != nil {
+			return nil, 0, fmt.Errorf("search books: %w", err)
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			b, err := db.ScanBook(rows)
+			if err != nil {
+				return nil, 0, fmt.Errorf("scan book: %w", err)
+			}
+			books = append(books, *b)
+		}
+		if err := rows.Err(); err != nil {
+			return nil, 0, fmt.Errorf("search iteration: %w", err)
 		}
 	} else {
-		if err := r.db.QueryRowContext(ctx, countQuery).Scan(&total); err != nil {
+		if err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM books").Scan(&total); err != nil {
 			return nil, 0, fmt.Errorf("count books: %w", err)
 		}
-	}
 
-	rows, err := r.db.QueryContext(ctx, dataQuery, args...)
-	if err != nil {
-		return nil, 0, fmt.Errorf("list books: %w", err)
-	}
-	defer rows.Close()
-
-	var books []models.Book
-	for rows.Next() {
-		b, err := db.ScanBook(rows)
+		dataQuery := `SELECT ` + db.BookColumns + ` FROM books ORDER BY title ASC LIMIT ? OFFSET ?`
+		rows, err := r.db.QueryContext(ctx, dataQuery, perPage, offset)
 		if err != nil {
-			return nil, 0, fmt.Errorf("scan book: %w", err)
+			return nil, 0, fmt.Errorf("list books: %w", err)
 		}
-		books = append(books, *b)
-	}
+		defer rows.Close()
 
-	if err := rows.Err(); err != nil {
-		return nil, 0, fmt.Errorf("list books iteration: %w", err)
+		for rows.Next() {
+			b, err := db.ScanBook(rows)
+			if err != nil {
+				return nil, 0, fmt.Errorf("scan book: %w", err)
+			}
+			books = append(books, *b)
+		}
+		if err := rows.Err(); err != nil {
+			return nil, 0, fmt.Errorf("list books iteration: %w", err)
+		}
 	}
 
 	return books, total, nil
 }
 
-// Search performs a full-text search across multiple fields.
+// Search performs a full-text search across FTS5-indexed fields.
+// The query is matched against title, authors, isbn, genres, themes, awards,
+// and reading_levels. If fields are specified, they are used as column
+// filters (e.g., "title:term" searches only the title column).
 func (r *sqliteBookRepository) Search(ctx context.Context, query string, fields []string, page, perPage int) ([]models.Book, int, error) {
 	if page < 1 {
 		page = 1
@@ -315,29 +324,26 @@ func (r *sqliteBookRepository) Search(ctx context.Context, query string, fields 
 		return r.List(ctx, "", page, perPage)
 	}
 
-	like := "%" + query + "%"
-
-	var whereClauses []string
-	var args []interface{}
-
-	for _, field := range fields {
-		whereClauses = append(whereClauses, fmt.Sprintf("%s LIKE ?", field))
-		args = append(args, like)
+	// Build an FTS5 query that restricts to specified fields if given.
+	ftsQuery := query
+	if len(fields) > 0 {
+		// Use FTS5 column filters: "field1:term OR field2:term"
+		var clauses []string
+		for _, field := range fields {
+			clauses = append(clauses, field+":"+query)
+		}
+		ftsQuery = strings.Join(clauses, " OR ")
 	}
 
-	whereStr := strings.Join(whereClauses, " OR ")
-	//#nosec G202 -- whereClauses uses hardcoded field names with parameterized values; db.BookColumns is a constant
-	countQuery := `SELECT COUNT(*) FROM books WHERE ` + whereStr
-	//#nosec G202 -- same: hardcoded field names, parameterized values, db.BookColumns is a constant
-	dataQuery := `SELECT ` + db.BookColumns + ` FROM books WHERE ` + whereStr + ` ORDER BY title ASC LIMIT ? OFFSET ?`
-	args = append(args, perPage, offset)
+	countQuery := `SELECT COUNT(*) FROM books_fts JOIN books ON books_fts.rowid = books.id WHERE books_fts MATCH ?`
+	dataQuery := `SELECT ` + db.BookColumns + ` FROM books_fts JOIN books ON books_fts.rowid = books.id WHERE books_fts MATCH ? ORDER BY books.title ASC LIMIT ? OFFSET ?`
 
 	var total int
-	if err := r.db.QueryRowContext(ctx, countQuery, args[:len(args)-2]...).Scan(&total); err != nil {
+	if err := r.db.QueryRowContext(ctx, countQuery, ftsQuery).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("count search results: %w", err)
 	}
 
-	rows, err := r.db.QueryContext(ctx, dataQuery, args...)
+	rows, err := r.db.QueryContext(ctx, dataQuery, ftsQuery, perPage, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("search books: %w", err)
 	}
