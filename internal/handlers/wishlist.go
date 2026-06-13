@@ -187,9 +187,7 @@ func HTMLCreateWishlistItemHandler(db *sql.DB) http.HandlerFunc {
 		_, err := db.Exec(query, title, author, isbn, reason, priority,
 			amazonURL, thriftbooksURL, coverImageURL, notes)
 		if err != nil {
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(htmlErrorFragment("Failed to add to wishlist")))
+			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to add to wishlist")
 			return
 		}
 
@@ -253,9 +251,7 @@ func HTMLUpdateWishlistItemHandler(db *sql.DB) http.HandlerFunc {
 		result, err := db.Exec(query, title, author, isbn, reason, priority,
 			amazonURL, thriftbooksURL, coverImageURL, notes, id)
 		if err != nil {
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(htmlErrorFragment("Failed to update wishlist item")))
+			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to update wishlist item")
 			return
 		}
 

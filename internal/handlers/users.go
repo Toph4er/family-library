@@ -168,9 +168,7 @@ func HTMLCreateUserHandler(db *sql.DB) http.HandlerFunc {
 
 		hash, err := auth.HashPassword(password)
 		if err != nil {
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(htmlErrorFragment("Failed to hash password")))
+			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to hash password")
 			return
 		}
 
@@ -190,9 +188,7 @@ func HTMLCreateUserHandler(db *sql.DB) http.HandlerFunc {
 				_, _ = w.Write([]byte(htmlErrorFragment("Username already exists")))
 				return
 			}
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(htmlErrorFragment("Failed to create user")))
+			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to create user")
 			return
 		}
 
@@ -250,17 +246,13 @@ func HTMLUpdateUserHandler(db *sql.DB) http.HandlerFunc {
 		query := "UPDATE users SET " + setClause + " WHERE id = ?"
 		result, err := db.Exec(query, args...)
 		if err != nil {
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(htmlErrorFragment("Failed to update user")))
+			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to update user")
 			return
 		}
 
 		rowsAffected, err := result.RowsAffected()
 		if err != nil {
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(htmlErrorFragment("Failed to check update result")))
+			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to check update result")
 			return
 		}
 		if rowsAffected == 0 {
@@ -292,17 +284,13 @@ func HTMLDeleteUserHandler(db *sql.DB) http.HandlerFunc {
 
 		result, err := db.Exec("DELETE FROM users WHERE id = ?", id)
 		if err != nil {
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(htmlErrorFragment("Failed to delete user")))
+			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to delete user")
 			return
 		}
 
 		rowsAffected, err := result.RowsAffected()
 		if err != nil {
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(htmlErrorFragment("Failed to check delete result")))
+			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to check delete result")
 			return
 		}
 		if rowsAffected == 0 {

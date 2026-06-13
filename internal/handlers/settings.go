@@ -48,17 +48,13 @@ func HTMLUpdateSettingHandler(db *sql.DB) http.HandlerFunc {
 			val, key,
 		)
 		if err != nil {
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(htmlErrorFragment("Failed to update setting")))
+			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to update setting")
 			return
 		}
 
 		rowsAffected, err := result.RowsAffected()
 		if err != nil {
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(htmlErrorFragment("Failed to verify update")))
+			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to verify update")
 			return
 		}
 		if rowsAffected == 0 {
@@ -117,17 +113,13 @@ func HTMLUpdateGuestVisibilityHandler(db *sql.DB) http.HandlerFunc {
 		// Read current visibility blob
 		var blob string
 		if err := db.QueryRow("SELECT value FROM settings WHERE key = ?", "default_guest_visibility").Scan(&blob); err != nil {
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(htmlErrorFragment("Failed to read settings")))
+			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to read settings")
 			return
 		}
 
 		var visibility map[string]bool
 		if err := json.Unmarshal([]byte(blob), &visibility); err != nil {
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(htmlErrorFragment("Failed to parse settings")))
+			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to parse settings")
 			return
 		}
 
@@ -135,9 +127,7 @@ func HTMLUpdateGuestVisibilityHandler(db *sql.DB) http.HandlerFunc {
 
 		newBlob, err := json.Marshal(visibility)
 		if err != nil {
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(htmlErrorFragment("Failed to encode settings")))
+			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to encode settings")
 			return
 		}
 
@@ -146,9 +136,7 @@ func HTMLUpdateGuestVisibilityHandler(db *sql.DB) http.HandlerFunc {
 			string(newBlob), "default_guest_visibility",
 		)
 		if err != nil {
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(htmlErrorFragment("Failed to update settings")))
+			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to update settings")
 			return
 		}
 

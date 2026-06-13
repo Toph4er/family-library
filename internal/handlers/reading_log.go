@@ -566,9 +566,7 @@ func HTMLCreateReadingLogHandler(db *sql.DB) http.HandlerFunc {
 			bookID, startPage, endPage, totalPages, entireBook, readAt, readerName, notesPtr,
 		)
 		if err != nil {
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(htmlErrorFragment("Failed to create reading log entry")))
+			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to create reading log entry")
 			return
 		}
 
@@ -592,9 +590,7 @@ func HTMLDeleteReadingLogHandler(db *sql.DB) http.HandlerFunc {
 
 		result, err := db.Exec("DELETE FROM reading_logs WHERE id = ?", id)
 		if err != nil {
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(htmlErrorFragment("Failed to delete reading log entry")))
+			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to delete reading log entry")
 			return
 		}
 

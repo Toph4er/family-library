@@ -161,9 +161,7 @@ func HTMLCreateFamilyMemberHandler(db *sql.DB) http.HandlerFunc {
 
 		_, err := db.Exec("INSERT INTO family_members (name, relation) VALUES (?, ?)", name, relation)
 		if err != nil {
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(htmlErrorFragment("Failed to create family member")))
+			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to create family member")
 			return
 		}
 
@@ -210,9 +208,7 @@ func HTMLUpdateFamilyMemberHandler(db *sql.DB) http.HandlerFunc {
 
 		_, err = db.Exec("UPDATE family_members SET name = ?, relation = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", name, relation, id)
 		if err != nil {
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(htmlErrorFragment("Failed to update family member")))
+			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to update family member")
 			return
 		}
 
@@ -236,9 +232,7 @@ func HTMLDeleteFamilyMemberHandler(db *sql.DB) http.HandlerFunc {
 
 		result, err := db.Exec("DELETE FROM family_members WHERE id = ?", id)
 		if err != nil {
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(htmlErrorFragment("Failed to delete family member")))
+			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to delete family member")
 			return
 		}
 

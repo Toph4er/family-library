@@ -934,10 +934,7 @@ func HTMLCreateBookHandler(db *sql.DB) http.HandlerFunc {
 				fmt.Fprintf(w, `<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg" role="alert">A book with this ISBN already exists</div>`)
 				return
 			}
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintf(w, `<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg" role="alert">Failed to create book</div>`)
-			return
+			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to create book")
 		}
 
 		id, _ := result.LastInsertId()
@@ -1039,10 +1036,7 @@ func HTMLUpdateBookHandler(db *sql.DB) http.HandlerFunc {
 				fmt.Fprintf(w, `<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg" role="alert">A book with this ISBN already exists</div>`)
 				return
 			}
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintf(w, `<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg" role="alert">Failed to update book</div>`)
-			return
+			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to update book")
 		}
 
 		rowsAffected, _ := result.RowsAffected()
