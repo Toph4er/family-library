@@ -46,10 +46,12 @@ func Open(path string) (*sql.DB, error) {
 		return nil, err
 	}
 
-	// Configure connection pool. SQLite doesn't benefit from a large pool
-	// since the driver handles connections efficiently.
-	database.SetMaxOpenConns(25)
-	database.SetMaxIdleConns(5)
+	// Configure connection pool. SQLite is a file-based database that uses
+	// file-level locking for concurrency. A single connection is sufficient
+	// for most workloads; WAL mode allows concurrent readers with one writer.
+	// We use 2 connections as a small buffer for concurrent reads during writes.
+	database.SetMaxOpenConns(2)
+	database.SetMaxIdleConns(2)
 
 	return database, nil
 }
