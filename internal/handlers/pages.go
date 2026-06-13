@@ -710,7 +710,7 @@ func RenderBookFormPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 		cancelURL := "/books"
 
 		if isEdit {
-			row := db.QueryRow(`SELECT ` + sqldb.BookColumns + ` FROM books WHERE id = ?`, bookID)
+			row := db.QueryRow(`SELECT `+sqldb.BookColumns+` FROM books WHERE id = ?`, bookID)
 			b, err := sqldb.ScanBook(row)
 			if err != nil {
 				http.NotFound(w, r)
