@@ -245,7 +245,7 @@ func HTMLGuestLoginHandler(authSvc *auth.Auth) http.HandlerFunc {
 }
 
 // parseBody extracts credentials from a JSON body.
-// Used by the deprecated /api/v1/auth/login endpoint.
+// Deprecated: kept for test compatibility only.
 func parseBody(r *http.Request) (username, password string, err *auth.APIError) {
 	var body struct {
 		Username string `json:"username"`
@@ -258,7 +258,7 @@ func parseBody(r *http.Request) (username, password string, err *auth.APIError) 
 }
 
 // parseGuestBody extracts a guest password from a JSON body.
-// Used by the deprecated /api/v1/auth/guest-login endpoint.
+// Deprecated: kept for test compatibility only.
 func parseGuestBody(r *http.Request) (password string, err *auth.APIError) {
 	var body struct {
 		Password string `json:"password"`
@@ -272,6 +272,7 @@ func parseGuestBody(r *http.Request) (password string, err *auth.APIError) {
 // LoginHandler handles admin login.
 // Accepts both JSON and application/x-www-form-urlencoded bodies.
 // Deprecated: Use HTMLLoginHandler for HTMX-driven UI endpoints.
+// Kept for test compatibility.
 func LoginHandler(authSvc *auth.Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username, password, parseErr := parseBody(r)
@@ -312,6 +313,7 @@ func LoginHandler(authSvc *auth.Auth) http.HandlerFunc {
 // GuestLoginHandler handles guest login.
 // Accepts both JSON and application/x-www-form-urlencoded bodies.
 // Deprecated: Use HTMLGuestLoginHandler for HTMX-driven UI endpoints.
+// Kept for test compatibility.
 func GuestLoginHandler(authSvc *auth.Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		password, err := parseGuestBody(r)
@@ -347,6 +349,8 @@ func GuestLoginHandler(authSvc *auth.Auth) http.HandlerFunc {
 }
 
 // LogoutHandler handles logout
+// Deprecated: Use HTMX /logout route instead.
+// Kept for test compatibility.
 func LogoutHandler(authSvc *auth.Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := authSvc.Logout(w, r); err != nil {
@@ -358,6 +362,8 @@ func LogoutHandler(authSvc *auth.Auth) http.HandlerFunc {
 }
 
 // MeHandler returns the current user info
+// Deprecated: No longer consumed by frontend.
+// Kept for test compatibility.
 func MeHandler(authSvc *auth.Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user := auth.GetUserFromContext(r)

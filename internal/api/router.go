@@ -192,104 +192,29 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 		// Theme CSS (public, returns CSS override block for instant theme switching)
 		r.Get("/theme/{id}/css", handlers.ThemeCSSHandler())
 
-		// Public endpoints (no CSRF middleware)
-		r.Get("/csrf", handlers.CSRFTokenHandler(authSvc))
-		r.Post("/auth/login", handlers.LoginHandler(authSvc))
-		r.Post("/auth/guest-login", handlers.GuestLoginHandler(authSvc))
+		// ISBN lookup (admin, returns JSON metadata for client-side form population)
+		r.Get("/books/lookup-isbn", func(w http.ResponseWriter, r *http.Request) {
+			authSvc.RequireAdmin(handlers.LookupISBNHandler(database)).ServeHTTP(w, r)
+		})
 
 		// CSRF-protected routes (middleware applied before any routes on this sub-mux)
 		r.Route("/", func(r chi.Router) {
 			r.Use(middleware.CSRFProtection(authSvc.Store(), auth.SessionID))
 
-			// Authentication (protected endpoints)
-			r.Post("/auth/logout", func(w http.ResponseWriter, r *http.Request) {
-				authSvc.RequireAuth(handlers.LogoutHandler(authSvc)).ServeHTTP(w, r)
-			})
-			r.Get("/auth/me", func(w http.ResponseWriter, r *http.Request) {
-				authSvc.RequireAuth(handlers.MeHandler(authSvc)).ServeHTTP(w, r)
-			})
-
-			// Books (all require auth)
-			r.Route("/books", func(r chi.Router) {
-				r.Use(authSvc.RequireAuth)
-
-				// Static GET routes must be registered before parameterized ones
-				r.Get("/", handlers.ListBooksHandler(bookRepo))
-				r.Get("/search", handlers.SearchBooksHandler(bookRepo))
-				r.Get("/tags", func(w http.ResponseWriter, r *http.Request) {
-					authSvc.RequireAdmin(handlers.GetTagsHandler(bookRepo)).ServeHTTP(w, r)
-				})
-				r.Get("/lookup-isbn", func(w http.ResponseWriter, r *http.Request) {
-					authSvc.RequireAdmin(handlers.LookupISBNHandler(database)).ServeHTTP(w, r)
-				})
-				r.Get("/search-ol", func(w http.ResponseWriter, r *http.Request) {
-					authSvc.RequireAuth(handlers.SearchOpenLibraryHandler(database)).ServeHTTP(w, r)
-				})
-				r.Get("/{id}", handlers.GetBookHandler(bookRepo))
-
-				// POST routes
-				r.Post("/", func(w http.ResponseWriter, r *http.Request) {
-					authSvc.RequireAdmin(handlers.CreateBookHandler(database)).ServeHTTP(w, r)
-				})
-				r.Post("/import-isbn", func(w http.ResponseWriter, r *http.Request) {
-					authSvc.RequireAdmin(handlers.ImportISBNHandler(database)).ServeHTTP(w, r)
-				})
-
-				// Parameterized PUT/DELETE
-				r.Put("/{id}", func(w http.ResponseWriter, r *http.Request) {
-					authSvc.RequireAdmin(handlers.UpdateBookHandler(database)).ServeHTTP(w, r)
-				})
-				r.Delete("/{id}", func(w http.ResponseWriter, r *http.Request) {
-					authSvc.RequireAdmin(handlers.DeleteBookHandler(bookRepo)).ServeHTTP(w, r)
-				})
-			})
-
-			// Author works (Open Library series inference, auth required)
-			r.Get("/authors/works", func(w http.ResponseWriter, r *http.Request) {
-				authSvc.RequireAuth(handlers.AuthorWorksHandler(database)).ServeHTTP(w, r)
+			// Book delete (HTMX hx-delete, returns JSON with success message)
+			r.Delete("/books/{id}", func(w http.ResponseWriter, r *http.Request) {
+				authSvc.RequireAdmin(handlers.DeleteBookHandler(bookRepo)).ServeHTTP(w, r)
 			})
 
 			// Wishlist (all require auth)
 			r.Route("/wishlist", func(r chi.Router) {
 				r.Use(authSvc.RequireAuth)
-				r.Get("/", handlers.ListWishlistHandler(database))
-				r.Post("/", func(w http.ResponseWriter, r *http.Request) {
-					authSvc.RequireAdmin(handlers.CreateWishlistItemHandler(database)).ServeHTTP(w, r)
-				})
-				r.Put("/{id}", func(w http.ResponseWriter, r *http.Request) {
-					authSvc.RequireAdmin(handlers.UpdateWishlistItemHandler(database)).ServeHTTP(w, r)
-				})
 				r.Delete("/{id}", func(w http.ResponseWriter, r *http.Request) {
 					authSvc.RequireAdmin(handlers.DeleteWishlistItemHandler(database)).ServeHTTP(w, r)
 				})
 				r.Post("/{id}/fulfill", func(w http.ResponseWriter, r *http.Request) {
 					authSvc.RequireAdmin(handlers.FulfillWishlistItemHandler(database)).ServeHTTP(w, r)
 				})
-			})
-
-			// Settings (admin only)
-			r.Route("/settings", func(r chi.Router) {
-				r.Use(authSvc.RequireAdmin)
-				r.Get("/", handlers.ListSettingsHandler(database))
-				r.Put("/{key}", handlers.UpdateSettingHandler(database))
-			})
-
-			// User management (admin only, under /settings)
-			r.Route("/settings/users", func(r chi.Router) {
-				r.Use(authSvc.RequireAdmin)
-				r.Get("/", handlers.ListUsersHandler(database))
-				r.Post("/", handlers.CreateUserHandler(database))
-				r.Put("/{id}", handlers.UpdateUserHandler(database))
-				r.Delete("/{id}", handlers.DeleteUserHandler(database))
-			})
-
-			// Family member management (admin only, under /settings)
-			r.Route("/settings/family-members", func(r chi.Router) {
-				r.Use(authSvc.RequireAdmin)
-				r.Get("/", handlers.ListFamilyMembersHandler(database))
-				r.Post("/", handlers.CreateFamilyMemberHandler(database))
-				r.Put("/{id}", handlers.UpdateFamilyMemberHandler(database))
-				r.Delete("/{id}", handlers.DeleteFamilyMemberHandler(database))
 			})
 		})
 	})

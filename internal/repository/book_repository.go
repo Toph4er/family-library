@@ -368,12 +368,13 @@ func (r *sqliteBookRepository) List(ctx context.Context, filter string, page, pe
 	var countQuery string
 	var dataQuery string
 	var args []interface{}
+	var like string
 
 	if filter != "" {
-		like := "%" + filter + "%"
+		like = "%" + filter + "%"
 		countQuery = `SELECT COUNT(*) FROM books WHERE title LIKE ? OR authors LIKE ? OR isbn LIKE ? OR genres LIKE ? OR themes LIKE ?`
 		dataQuery = `SELECT ` + bookColumns + ` FROM books WHERE title LIKE ? OR authors LIKE ? OR isbn LIKE ? OR genres LIKE ? OR themes LIKE ? ORDER BY title ASC LIMIT ? OFFSET ?`
-		args = []interface{}{like, like, like, like, like, like, like, like, like, like, perPage, offset}
+		args = []interface{}{like, like, like, like, like, perPage, offset}
 	} else {
 		countQuery = "SELECT COUNT(*) FROM books"
 		dataQuery = `SELECT ` + bookColumns + ` FROM books ORDER BY title ASC LIMIT ? OFFSET ?`
@@ -381,8 +382,14 @@ func (r *sqliteBookRepository) List(ctx context.Context, filter string, page, pe
 	}
 
 	var total int
-	if err := r.db.QueryRowContext(ctx, countQuery).Scan(&total); err != nil {
-		return nil, 0, fmt.Errorf("count books: %w", err)
+	if filter != "" {
+		if err := r.db.QueryRowContext(ctx, countQuery, like, like, like, like, like).Scan(&total); err != nil {
+			return nil, 0, fmt.Errorf("count books: %w", err)
+		}
+	} else {
+		if err := r.db.QueryRowContext(ctx, countQuery).Scan(&total); err != nil {
+			return nil, 0, fmt.Errorf("count books: %w", err)
+		}
 	}
 
 	rows, err := r.db.QueryContext(ctx, dataQuery, args...)

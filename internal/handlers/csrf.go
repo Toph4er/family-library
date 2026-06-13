@@ -10,9 +10,8 @@ import (
 // CSRFTokenHandler handles GET /api/v1/csrf by returning the current CSRF
 // token from the session, or generating a new one if none exists.
 //
-// GET requests are exempt from CSRF validation, so this endpoint is safe to
-// call before any authenticated request.  The token is bound to the session
-// cookie, so an attacker without access to the cookie cannot forge requests.
+// Deprecated: No longer consumed by frontend (tokens come from {{.CSRFToken}}).
+// Kept for test compatibility.
 func CSRFTokenHandler(authSvc *auth.Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		store := authSvc.Store()

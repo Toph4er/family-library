@@ -569,52 +569,6 @@ func TestRequireAdminHTML_RedirectsGuest(t *testing.T) {
 	}
 }
 
-// ---------- ptrIfNonEmpty helper (used by wishlist and book handlers) ----------
-
-func TestPtrIfNonEmpty(t *testing.T) {
-	// Test via the wishlist update handler which uses ptrIfNonEmpty
-	env := setupTestEnv(t)
-
-	// Create a wishlist item
-	result, err := env.db.Exec(
-		"INSERT INTO wishlist (title, author, isbn, reason, requested_by) VALUES (?, ?, ?, ?, ?)",
-		"Test Book", "Author", "123", "For fun", "Chris",
-	)
-	if err != nil {
-		t.Fatalf("failed to insert wishlist item: %v", err)
-	}
-	id, _ := result.LastInsertId()
-
-	// Update with empty string for requested_by — should set to NULL
-	body := `{"requested_by":""}`
-	req := httptest.NewRequest("PUT", "/wishlist/1", strings.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
-	req = setURLParam(req, "id", fmt.Sprintf("%d", id))
-
-	r := chi.NewRouter()
-	r.Handle("/wishlist/{id}", env.auth.RequireAdmin(handlers.UpdateWishlistItemHandler(env.db)))
-
-	cookie := loginAndGetCookie(t, env)
-	req.Header.Set("Cookie", cookie)
-
-	rec := httptest.NewRecorder()
-	r.ServeHTTP(rec, req)
-
-	if rec.Code != http.StatusOK {
-		t.Fatalf("expected status 200, got %d: %s", rec.Code, rec.Body.String())
-	}
-
-	// Verify requested_by is NULL
-	var requestedBy sql.NullString
-	err = env.db.QueryRow("SELECT requested_by FROM wishlist WHERE id = ?", id).Scan(&requestedBy)
-	if err != nil {
-		t.Fatalf("failed to query wishlist: %v", err)
-	}
-	if requestedBy.Valid {
-		t.Fatalf("expected requested_by to be NULL, got %q", requestedBy.String)
-	}
-}
-
 // ---------- Auth helper: RequireAuth/RequireAdmin ----------
 
 func TestRequireAuth_AllowsAuthenticated(t *testing.T) {
