@@ -654,6 +654,7 @@ func TestCSRFTokenHandler(t *testing.T) {
 	req := httptest.NewRequest("GET", "/api/v1/csrf", nil)
 	rec := httptest.NewRecorder()
 
+	//nolint:staticcheck // CSRFTokenHandler kept for test compatibility
 	handlers.CSRFTokenHandler(env.auth).ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
@@ -1025,6 +1026,7 @@ func TestBuildPageContext_CSRFTokenWithAuthHTMLMiddleware(t *testing.T) {
 	req = httptest.NewRequest("GET", "/api/v1/csrf", nil)
 	req.Header.Set("Cookie", cookie)
 	rec = httptest.NewRecorder()
+		//nolint:staticcheck // CSRFTokenHandler kept for test compatibility
 	handlers.CSRFTokenHandler(env.auth).ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {

@@ -177,21 +177,3 @@ func setURLParam(r *http.Request, key, value string) *http.Request {
 	rctx.URLParams.Add(key, value)
 	return r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, rctx))
 }
-
-// buildAuthRouter creates a chi router that wraps the given handler with
-// RequireAuth middleware, so we can test protected endpoints with a session cookie.
-func buildAuthRouter(t *testing.T, env *testEnv, method, path string, handler http.HandlerFunc) *chi.Mux {
-	t.Helper()
-	r := chi.NewRouter()
-	r.Handle(path, env.auth.RequireAuth(handler))
-	return r
-}
-
-// buildAdminRouter creates a chi router that wraps the given handler with
-// RequireAdmin middleware.
-func buildAdminRouter(t *testing.T, env *testEnv, method, path string, handler http.HandlerFunc) *chi.Mux {
-	t.Helper()
-	r := chi.NewRouter()
-	r.Handle(path, env.auth.RequireAdmin(handler))
-	return r
-}
