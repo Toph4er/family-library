@@ -58,18 +58,15 @@ func SecurityHeaders(next http.Handler) http.Handler {
 		w.Header().Set("Cross-Origin-Opener-Policy", "same-origin")
 
 		// Build CSP with per-request nonce for inline scripts.
-		// Note: style-src still uses 'unsafe-inline' because inline style=
-		// attributes are pervasive in templates and would require extracting
-		// every one to CSS classes to remove.
+		// style-src includes 'unsafe-inline' because inline style= attributes
+		// are pervasive in templates and cannot be nonce-protected (nonces only
+		// work for <script nonce="..."> and <link nonce="..."> tags).
 		nonce := GetCSPNonce(r)
 		scriptSrc := "'self' https://cdn.jsdelivr.net https://unpkg.com"
 		if nonce != "" {
 			scriptSrc += " 'nonce-" + nonce + "'"
 		}
-		styleSrc := "'self' fonts.googleapis.com"
-		if nonce != "" {
-			styleSrc += " 'nonce-" + nonce + "'"
-		}
+		styleSrc := "'self' fonts.googleapis.com 'unsafe-inline'"
 		w.Header().Set("Content-Security-Policy",
 			"default-src 'self'; "+
 				"script-src "+scriptSrc+"; "+
