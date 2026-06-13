@@ -35,37 +35,35 @@ type BaseContext struct {
 	ThemeColorsJSON template.HTML
 }
 
-// pageContext holds template data for all page handlers.
-type pageContext struct {
-	BaseContext
-
-	// Data lists
-	Books                  []models.Book
-	Book                   *models.Book
-	Items                  []models.WishlistItem
-	Users                  []map[string]interface{}
-	FamilyMembers          []models.FamilyMember
-	ReadingLogs            []models.ReadingLog
-	RecentBooks            interface{} // []bookSelect for reading-log page
-	Settings               map[string]string
-	DefaultGuestVisibility map[string]bool
-	CurrentQuery           string
-	TotalResults           int
-	// Pagination
+// PaginationContext holds pagination data for list pages.
+type PaginationContext struct {
 	Page            int
 	PerPage         int
 	TotalPages      int
 	PaginationStart int
 	PaginationEnd   int
+}
 
-	// Form page fields
-	Title            string
-	BookID           int64 // ID of the book being edited (for rate-child endpoint)
+// BookListContext holds data for the books listing page.
+type BookListContext struct {
+	Books        []models.Book
+	CurrentQuery string
+	TotalResults int
+}
+
+// BookDetailContext holds data for the book detail page.
+type BookDetailContext struct {
+	Book *models.Book
+}
+
+// BookFormContext holds data for the add/edit book form page.
+type BookFormContext struct {
+	BookID           int64
 	IsEdit           bool
+	BookTitle        string
 	CancelURL        string
 	ActionURL        string
-	BookTitle        string
-	ItemTitle        string
+	Title            string
 	Subtitle         string
 	Authors          string
 	Illustrators     string
@@ -88,11 +86,62 @@ type pageContext struct {
 	Notes            string
 	ChildRating      int
 	Quantity         int
-	Author           string // for wishlist
-	Reason           string // for wishlist
-	Priority         int    // for wishlist
-	AmazonURL        string // for wishlist
-	ThriftbooksURL   string // for wishlist
+}
+
+// WishlistListContext holds data for the wishlist listing page.
+type WishlistListContext struct {
+	Items []models.WishlistItem
+}
+
+// WishlistFormContext holds data for the add/edit wishlist item form page.
+type WishlistFormContext struct {
+	IsEdit         bool
+	ItemTitle      string
+	CancelURL      string
+	ActionURL      string
+	Title          string
+	Author         string
+	ISBN           string
+	Reason         string
+	Priority       int
+	AmazonURL      string
+	ThriftbooksURL string
+	CoverImageURL  string
+	Notes          string
+}
+
+// FamilyMembersContext holds family member data (shared by settings and reading-log pages).
+type FamilyMembersContext struct {
+	FamilyMembers []models.FamilyMember
+}
+
+// SettingsContext holds data for the settings page.
+type SettingsContext struct {
+	Settings               map[string]string
+	Users                  []map[string]interface{}
+	DefaultGuestVisibility map[string]bool
+}
+
+// ReadingLogContext holds data for the reading log page.
+type ReadingLogContext struct {
+	ReadingLogs []models.ReadingLog
+	RecentBooks interface{} // []bookSelect
+}
+
+// pageContext is the composite context used by all page handlers.
+// It embeds smaller context structs so template access via {{.FieldName}}
+// continues to work transparently.
+type pageContext struct {
+	BaseContext
+	PaginationContext
+	BookListContext
+	BookDetailContext
+	BookFormContext
+	WishlistListContext
+	WishlistFormContext
+	FamilyMembersContext
+	SettingsContext
+	ReadingLogContext
 }
 
 // buildBaseContext creates a BaseContext for the given request.
@@ -575,29 +624,31 @@ func RenderWishlistFormPage(tmpl *template.Template, db *sql.DB, store *sessions
 
 		data := pageContext{
 			BaseContext: ctx.BaseContext,
-			IsEdit:      isEdit,
-			ItemTitle:   itemTitle,
-			CancelURL:   cancelURL,
-			ActionURL: func() string {
-				if isEdit {
-					return "/wishlist/" + strconv.FormatInt(itemID, 10) + "/update"
-				}
-				return "/wishlist/create"
-			}(),
-			Title:  item.Title,
-			Author: derefString(item.Author),
-			ISBN:   derefString(item.ISBN),
-			Reason: derefString(item.Reason),
-			Priority: func() int {
-				if isEdit {
-					return item.Priority
-				}
-				return 3
-			}(),
-			AmazonURL:      derefString(item.AmazonURL),
-			ThriftbooksURL: derefString(item.ThriftbooksURL),
-			CoverImageURL:  derefString(item.CoverImageURL),
-			Notes:          derefString(item.Notes),
+			WishlistFormContext: WishlistFormContext{
+				IsEdit:    isEdit,
+				ItemTitle: itemTitle,
+				CancelURL: cancelURL,
+				ActionURL: func() string {
+					if isEdit {
+						return "/wishlist/" + strconv.FormatInt(itemID, 10) + "/update"
+					}
+					return "/wishlist/create"
+				}(),
+				Title:  item.Title,
+				Author: derefString(item.Author),
+				ISBN:   derefString(item.ISBN),
+				Reason: derefString(item.Reason),
+				Priority: func() int {
+					if isEdit {
+						return item.Priority
+					}
+					return 3
+				}(),
+				AmazonURL:      derefString(item.AmazonURL),
+				ThriftbooksURL: derefString(item.ThriftbooksURL),
+				CoverImageURL:  derefString(item.CoverImageURL),
+				Notes:          derefString(item.Notes),
+			},
 		}
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -756,54 +807,56 @@ func RenderBookFormPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 
 		data := pageContext{
 			BaseContext: ctx.BaseContext,
-			BookID:      bookID,
-			IsEdit:      isEdit,
-			BookTitle:   bookTitle,
-			CancelURL:   cancelURL,
-			ActionURL: func() string {
-				if isEdit {
-					return "/books/" + strconv.FormatInt(bookID, 10) + "/update"
-				}
-				return "/books/create"
-			}(),
-			Title:        derefString(&book.Title),
-			Subtitle:     derefString(book.Subtitle),
-			Authors:      derefString(book.Authors),
-			Illustrators: derefString(book.Illustrators),
-			ISBN:         derefString(book.ISBN),
-			Publisher:    derefString(book.Publisher),
-			PublicationYear: func() string {
-				if book.PublicationYear != nil {
-					return strconv.Itoa(*book.PublicationYear)
-				}
-				return ""
-			}(),
-			PageCount: func() string {
-				if book.PageCount != nil {
-					return strconv.Itoa(*book.PageCount)
-				}
-				return ""
-			}(),
-			BookType:         derefString(book.BookType),
-			Condition:        derefString(book.Condition),
-			Genres:           derefString(book.Genres),
-			Themes:           derefString(book.Themes),
-			Awards:           derefString(book.Awards),
-			ReadingLevels:    derefString(book.ReadingLevels),
-			GiftFrom:         derefString(book.GiftFrom),
-			GiftRelationship: derefString(book.GiftRelationship),
-			DateReceived:     derefString(book.DateReceived),
-			Location:         derefString(book.Location),
-			AgeRange:         derefString(book.AgeRange),
-			CoverImageURL:    derefString(book.CoverImageURL),
-			Notes:            derefString(book.Notes),
-			ChildRating:      derefInt(book.ChildRating),
-			Quantity: func() int {
-				if book.Quantity > 0 {
-					return book.Quantity
-				}
-				return 1
-			}(),
+			BookFormContext: BookFormContext{
+				BookID:    bookID,
+				IsEdit:    isEdit,
+				BookTitle: bookTitle,
+				CancelURL: cancelURL,
+				ActionURL: func() string {
+					if isEdit {
+						return "/books/" + strconv.FormatInt(bookID, 10) + "/update"
+					}
+					return "/books/create"
+				}(),
+				Title:        derefString(&book.Title),
+				Subtitle:     derefString(book.Subtitle),
+				Authors:      derefString(book.Authors),
+				Illustrators: derefString(book.Illustrators),
+				ISBN:         derefString(book.ISBN),
+				Publisher:    derefString(book.Publisher),
+				PublicationYear: func() string {
+					if book.PublicationYear != nil {
+						return strconv.Itoa(*book.PublicationYear)
+					}
+					return ""
+				}(),
+				PageCount: func() string {
+					if book.PageCount != nil {
+						return strconv.Itoa(*book.PageCount)
+					}
+					return ""
+				}(),
+				BookType:         derefString(book.BookType),
+				Condition:        derefString(book.Condition),
+				Genres:           derefString(book.Genres),
+				Themes:           derefString(book.Themes),
+				Awards:           derefString(book.Awards),
+				ReadingLevels:    derefString(book.ReadingLevels),
+				GiftFrom:         derefString(book.GiftFrom),
+				GiftRelationship: derefString(book.GiftRelationship),
+				DateReceived:     derefString(book.DateReceived),
+				Location:         derefString(book.Location),
+				AgeRange:         derefString(book.AgeRange),
+				CoverImageURL:    derefString(book.CoverImageURL),
+				Notes:            derefString(book.Notes),
+				ChildRating:      derefInt(book.ChildRating),
+				Quantity: func() int {
+					if book.Quantity > 0 {
+						return book.Quantity
+					}
+					return 1
+				}(),
+			},
 		}
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
