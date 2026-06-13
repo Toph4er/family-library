@@ -17,6 +17,7 @@ import (
 type pageData struct {
 	Year            int
 	CSRFToken       string
+	Nonce           string
 	IsAdmin         bool
 	IsAuthenticated bool
 	ActiveTheme     theme.Theme
@@ -80,6 +81,7 @@ func RenderLoginPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 		data := pageData{
 			Year:        time.Now().Year(),
 			CSRFToken:   token,
+			Nonce:       middleware.GetCSPNonce(r),
 			ActiveTheme: loadActiveTheme(db),
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -118,6 +120,7 @@ func RenderGuestLoginPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 		data := pageData{
 			Year:        time.Now().Year(),
 			CSRFToken:   token,
+			Nonce:       middleware.GetCSPNonce(r),
 			ActiveTheme: loadActiveTheme(db),
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -140,6 +143,7 @@ func RenderLogoutSuccess(tmpl *template.Template, db *sql.DB, authSvc *auth.Auth
 		_ = authSvc.Logout(w, r)
 		data := pageData{
 			Year:        time.Now().Year(),
+			Nonce:       middleware.GetCSPNonce(r),
 			ActiveTheme: loadActiveTheme(db),
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
