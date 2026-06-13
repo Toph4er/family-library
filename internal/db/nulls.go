@@ -3,7 +3,10 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
 	"time"
+
+	"git.rcsmaine.com/chris/library/internal/models"
 )
 
 // NullStrPtr converts a sql.NullString to *string. Returns nil if not valid.
@@ -67,4 +70,123 @@ func IntToNullInt64(i *int) sql.NullInt64 {
 		return sql.NullInt64{}
 	}
 	return sql.NullInt64{Int64: int64(*i), Valid: true}
+}
+
+// BookColumns is the full column list for the books table, used in SELECT
+// queries across the handlers and repository packages.
+const BookColumns = `
+	id, isbn, title, subtitle, authors, illustrators,
+	publisher, publication_year, page_count, book_type,
+	reading_levels, genres, themes, awards,
+	gift_from, gift_relationship, date_received,
+	condition, location, notes,
+	child_rating, quantity, read_count, last_read_date,
+	cover_image_url, cover_source, dewey_decimal_class, description, language,
+	subject_places, subject_people, subject_times,
+	series, age_range,
+	guest_visible_fields, created_at, updated_at
+`
+
+// BookScanner is implemented by both *sql.Row and *sql.Rows.
+type BookScanner interface {
+	Scan(dest ...interface{}) error
+}
+
+// ScanBook scans a database row into a models.Book.
+func ScanBook(s BookScanner) (*models.Book, error) {
+	var b models.Book
+	var isbn sql.NullString
+	var subtitle sql.NullString
+	var authors sql.NullString
+	var illustrators sql.NullString
+	var publisher sql.NullString
+	var pubYear sql.NullInt64
+	var pageCount sql.NullInt64
+	var bookType sql.NullString
+	var readingLevels sql.NullString
+	var genres sql.NullString
+	var themes sql.NullString
+	var awards sql.NullString
+	var giftFrom sql.NullString
+	var giftRelationship sql.NullString
+	var dateReceived sql.NullString
+	var condition sql.NullString
+	var location sql.NullString
+	var notes sql.NullString
+	var childRating sql.NullInt64
+	var quantity sql.NullInt64
+	var readCount sql.NullInt64
+	var lastReadDate sql.NullString
+	var coverImageURL sql.NullString
+	var coverSource sql.NullString
+	var deweyDecimalClass sql.NullString
+	var description sql.NullString
+	var language sql.NullString
+	var subjectPlaces sql.NullString
+	var subjectPeople sql.NullString
+	var subjectTimes sql.NullString
+	var series sql.NullString
+	var ageRange sql.NullString
+	var guestVisibleFields sql.NullString
+
+	err := s.Scan(
+		&b.ID, &isbn, &b.Title, &subtitle, &authors, &illustrators,
+		&publisher, &pubYear, &pageCount, &bookType, &readingLevels, &genres,
+		&themes, &awards, &giftFrom, &giftRelationship, &dateReceived,
+		&condition, &location, &notes, &childRating, &quantity, &readCount,
+		&lastReadDate, &coverImageURL, &coverSource, &deweyDecimalClass,
+		&description, &language, &subjectPlaces, &subjectPeople, &subjectTimes,
+		&series, &ageRange, &guestVisibleFields, &b.CreatedAt, &b.UpdatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("scanning book row: %w", err)
+	}
+
+	b.ISBN = NullStrPtr(isbn)
+	b.Subtitle = NullStrPtr(subtitle)
+	b.Authors = NullStrPtr(authors)
+	b.Illustrators = NullStrPtr(illustrators)
+	b.Publisher = NullStrPtr(publisher)
+	b.PublicationYear = NullIntPtr(pubYear)
+	b.PageCount = NullIntPtr(pageCount)
+	b.BookType = NullStrPtr(bookType)
+	b.ReadingLevels = NullStrPtr(readingLevels)
+	b.Genres = NullStrPtr(genres)
+	b.Themes = NullStrPtr(themes)
+	b.Awards = NullStrPtr(awards)
+	b.GiftFrom = NullStrPtr(giftFrom)
+	b.GiftRelationship = NullStrPtr(giftRelationship)
+	b.DateReceived = NullStrPtr(dateReceived)
+	b.Condition = NullStrPtr(condition)
+	b.Location = NullStrPtr(location)
+	b.Notes = NullStrPtr(notes)
+	b.ChildRating = NullIntPtr(childRating)
+
+	if quantity.Valid {
+		b.Quantity = int(quantity.Int64)
+	} else {
+		b.Quantity = 1
+	}
+
+	b.LastReadDate = NullStrPtr(lastReadDate)
+	b.CoverImageURL = NullStrPtr(coverImageURL)
+	b.CoverSource = NullStrPtr(coverSource)
+	b.DeweyDecimalClass = NullStrPtr(deweyDecimalClass)
+	b.Description = NullStrPtr(description)
+	b.Language = NullStrPtr(language)
+	b.SubjectPlaces = NullStrPtr(subjectPlaces)
+	b.SubjectPeople = NullStrPtr(subjectPeople)
+	b.SubjectTimes = NullStrPtr(subjectTimes)
+	b.Series = NullStrPtr(series)
+	b.AgeRange = NullStrPtr(ageRange)
+
+	if readCount.Valid {
+		b.ReadCount = int(readCount.Int64)
+	}
+
+	if guestVisibleFields.Valid {
+		b.GuestVisibleFields = guestVisibleFields.String
+	}
+
+	return &b, nil
 }

@@ -16,6 +16,11 @@ import (
 
 const familyMemberColumns = `id, name, relation, created_at, updated_at`
 
+// scanner is implemented by both *sql.Row and *sql.Rows.
+type scanner interface {
+	Scan(dest ...interface{}) error
+}
+
 // scanFamilyMember scans a row into a FamilyMember struct.
 func scanFamilyMember(s scanner) (*models.FamilyMember, error) {
 	var fm models.FamilyMember

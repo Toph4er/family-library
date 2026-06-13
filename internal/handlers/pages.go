@@ -15,6 +15,7 @@ import (
 	"github.com/gorilla/sessions"
 
 	"git.rcsmaine.com/chris/library/internal/auth"
+	sqldb "git.rcsmaine.com/chris/library/internal/db"
 	"git.rcsmaine.com/chris/library/internal/middleware"
 	"git.rcsmaine.com/chris/library/internal/models"
 	"git.rcsmaine.com/chris/library/internal/theme"
@@ -794,8 +795,8 @@ func RenderBookFormPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 		cancelURL := "/books"
 
 		if isEdit {
-			row := db.QueryRow(`SELECT `+bookColumns+` FROM books WHERE id = ?`, bookID)
-			b, err := scanBook(row)
+			row := db.QueryRow(`SELECT ` + sqldb.BookColumns + ` FROM books WHERE id = ?`, bookID)
+			b, err := sqldb.ScanBook(row)
 			if err != nil {
 				http.NotFound(w, r)
 				return

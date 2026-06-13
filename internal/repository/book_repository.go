@@ -10,119 +10,6 @@ import (
 	"git.rcsmaine.com/chris/library/internal/models"
 )
 
-type bookScanner interface {
-	Scan(dest ...interface{}) error
-}
-
-const bookColumns = `id, isbn, title, subtitle, authors, illustrators,
-	publisher, publication_year, page_count, book_type,
-	reading_levels, genres, themes, awards,
-	gift_from, gift_relationship, date_received,
-	condition, location, notes,
-	child_rating, quantity, read_count, last_read_date,
-	cover_image_url, cover_source, dewey_decimal_class, description, language,
-	subject_places, subject_people, subject_times,
-	series, age_range,
-	guest_visible_fields, created_at, updated_at`
-
-func scanBook(s bookScanner) (*models.Book, error) {
-	var b models.Book
-	var isbn sql.NullString
-	var subtitle sql.NullString
-	var authors sql.NullString
-	var illustrators sql.NullString
-	var publisher sql.NullString
-	var pubYear sql.NullInt64
-	var pageCount sql.NullInt64
-	var bookType sql.NullString
-	var readingLevels sql.NullString
-	var genres sql.NullString
-	var themes sql.NullString
-	var awards sql.NullString
-	var giftFrom sql.NullString
-	var giftRelationship sql.NullString
-	var dateReceived sql.NullString
-	var condition sql.NullString
-	var location sql.NullString
-	var notes sql.NullString
-	var childRating sql.NullInt64
-	var quantity sql.NullInt64
-	var readCount sql.NullInt64
-	var lastReadDate sql.NullString
-	var coverImageURL sql.NullString
-	var coverSource sql.NullString
-	var deweyDecimalClass sql.NullString
-	var description sql.NullString
-	var language sql.NullString
-	var subjectPlaces sql.NullString
-	var subjectPeople sql.NullString
-	var subjectTimes sql.NullString
-	var series sql.NullString
-	var ageRange sql.NullString
-	var guestVisibleFields sql.NullString
-
-	err := s.Scan(
-		&b.ID, &isbn, &b.Title, &subtitle, &authors, &illustrators,
-		&publisher, &pubYear, &pageCount, &bookType, &readingLevels, &genres,
-		&themes, &awards, &giftFrom, &giftRelationship, &dateReceived,
-		&condition, &location, &notes, &childRating, &quantity, &readCount,
-		&lastReadDate, &coverImageURL, &coverSource, &deweyDecimalClass,
-		&description, &language, &subjectPlaces, &subjectPeople, &subjectTimes,
-		&series, &ageRange, &guestVisibleFields, &b.CreatedAt, &b.UpdatedAt,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("scanning book row: %w", err)
-	}
-
-	b.ISBN = db.NullStrPtr(isbn)
-	b.Subtitle = db.NullStrPtr(subtitle)
-	b.Authors = db.NullStrPtr(authors)
-	b.Illustrators = db.NullStrPtr(illustrators)
-	b.Publisher = db.NullStrPtr(publisher)
-	b.PublicationYear = db.NullIntPtr(pubYear)
-	b.PageCount = db.NullIntPtr(pageCount)
-	b.BookType = db.NullStrPtr(bookType)
-	b.ReadingLevels = db.NullStrPtr(readingLevels)
-	b.Genres = db.NullStrPtr(genres)
-	b.Themes = db.NullStrPtr(themes)
-	b.Awards = db.NullStrPtr(awards)
-	b.GiftFrom = db.NullStrPtr(giftFrom)
-	b.GiftRelationship = db.NullStrPtr(giftRelationship)
-	b.DateReceived = db.NullStrPtr(dateReceived)
-	b.Condition = db.NullStrPtr(condition)
-	b.Location = db.NullStrPtr(location)
-	b.Notes = db.NullStrPtr(notes)
-	b.ChildRating = db.NullIntPtr(childRating)
-
-	if quantity.Valid {
-		b.Quantity = int(quantity.Int64)
-	} else {
-		b.Quantity = 1
-	}
-
-	b.LastReadDate = db.NullStrPtr(lastReadDate)
-	b.CoverImageURL = db.NullStrPtr(coverImageURL)
-	b.CoverSource = db.NullStrPtr(coverSource)
-	b.DeweyDecimalClass = db.NullStrPtr(deweyDecimalClass)
-	b.Description = db.NullStrPtr(description)
-	b.Language = db.NullStrPtr(language)
-	b.SubjectPlaces = db.NullStrPtr(subjectPlaces)
-	b.SubjectPeople = db.NullStrPtr(subjectPeople)
-	b.SubjectTimes = db.NullStrPtr(subjectTimes)
-	b.Series = db.NullStrPtr(series)
-	b.AgeRange = db.NullStrPtr(ageRange)
-
-	if readCount.Valid {
-		b.ReadCount = int(readCount.Int64)
-	}
-
-	if guestVisibleFields.Valid {
-		b.GuestVisibleFields = guestVisibleFields.String
-	}
-
-	return &b, nil
-}
-
 type sqliteBookRepository struct {
 	db *sql.DB
 }
@@ -164,8 +51,8 @@ func (r *sqliteBookRepository) Create(ctx context.Context, book *models.Book) er
 	id, _ := result.LastInsertId()
 	book.ID = id
 
-	row := r.db.QueryRowContext(ctx, "SELECT "+bookColumns+" FROM books WHERE id = ?", book.ID)
-	fetched, err := scanBook(row)
+	row := r.db.QueryRowContext(ctx, "SELECT "+db.BookColumns+" FROM books WHERE id = ?", book.ID)
+	fetched, err := db.ScanBook(row)
 	if err != nil {
 		return fmt.Errorf("fetch created book: %w", err)
 	}
@@ -177,8 +64,8 @@ func (r *sqliteBookRepository) Create(ctx context.Context, book *models.Book) er
 
 // GetByID retrieves a book by its ID.
 func (r *sqliteBookRepository) GetByID(ctx context.Context, id int64) (*models.Book, error) {
-	row := r.db.QueryRowContext(ctx, "SELECT "+bookColumns+" FROM books WHERE id = ?", id)
-	book, err := scanBook(row)
+	row := r.db.QueryRowContext(ctx, "SELECT "+db.BookColumns+" FROM books WHERE id = ?", id)
+	book, err := db.ScanBook(row)
 	if err != nil {
 		return nil, fmt.Errorf("get book by id: %w", err)
 	}
@@ -187,8 +74,8 @@ func (r *sqliteBookRepository) GetByID(ctx context.Context, id int64) (*models.B
 
 // GetByISBN retrieves a book by its ISBN.
 func (r *sqliteBookRepository) GetByISBN(ctx context.Context, isbn string) (*models.Book, error) {
-	row := r.db.QueryRowContext(ctx, "SELECT "+bookColumns+" FROM books WHERE isbn = ?", isbn)
-	book, err := scanBook(row)
+	row := r.db.QueryRowContext(ctx, "SELECT "+db.BookColumns+" FROM books WHERE isbn = ?", isbn)
+	book, err := db.ScanBook(row)
 	if err != nil {
 		return nil, fmt.Errorf("get book by isbn: %w", err)
 	}
@@ -373,11 +260,11 @@ func (r *sqliteBookRepository) List(ctx context.Context, filter string, page, pe
 	if filter != "" {
 		like = "%" + filter + "%"
 		countQuery = `SELECT COUNT(*) FROM books WHERE title LIKE ? OR authors LIKE ? OR isbn LIKE ? OR genres LIKE ? OR themes LIKE ?`
-		dataQuery = `SELECT ` + bookColumns + ` FROM books WHERE title LIKE ? OR authors LIKE ? OR isbn LIKE ? OR genres LIKE ? OR themes LIKE ? ORDER BY title ASC LIMIT ? OFFSET ?`
+		dataQuery = `SELECT ` + db.BookColumns + ` FROM books WHERE title LIKE ? OR authors LIKE ? OR isbn LIKE ? OR genres LIKE ? OR themes LIKE ? ORDER BY title ASC LIMIT ? OFFSET ?`
 		args = []interface{}{like, like, like, like, like, perPage, offset}
 	} else {
 		countQuery = "SELECT COUNT(*) FROM books"
-		dataQuery = `SELECT ` + bookColumns + ` FROM books ORDER BY title ASC LIMIT ? OFFSET ?`
+		dataQuery = `SELECT ` + db.BookColumns + ` FROM books ORDER BY title ASC LIMIT ? OFFSET ?`
 		args = []interface{}{perPage, offset}
 	}
 
@@ -400,7 +287,7 @@ func (r *sqliteBookRepository) List(ctx context.Context, filter string, page, pe
 
 	var books []models.Book
 	for rows.Next() {
-		b, err := scanBook(rows)
+		b, err := db.ScanBook(rows)
 		if err != nil {
 			return nil, 0, fmt.Errorf("scan book: %w", err)
 		}
@@ -439,10 +326,10 @@ func (r *sqliteBookRepository) Search(ctx context.Context, query string, fields 
 	}
 
 	whereStr := strings.Join(whereClauses, " OR ")
-	//#nosec G202 -- whereClauses uses hardcoded field names with parameterized values; bookColumns is a constant
+	//#nosec G202 -- whereClauses uses hardcoded field names with parameterized values; db.BookColumns is a constant
 	countQuery := `SELECT COUNT(*) FROM books WHERE ` + whereStr
-	//#nosec G202 -- same: hardcoded field names, parameterized values, bookColumns is a constant
-	dataQuery := `SELECT ` + bookColumns + ` FROM books WHERE ` + whereStr + ` ORDER BY title ASC LIMIT ? OFFSET ?`
+	//#nosec G202 -- same: hardcoded field names, parameterized values, db.BookColumns is a constant
+	dataQuery := `SELECT ` + db.BookColumns + ` FROM books WHERE ` + whereStr + ` ORDER BY title ASC LIMIT ? OFFSET ?`
 	args = append(args, perPage, offset)
 
 	var total int
@@ -458,7 +345,7 @@ func (r *sqliteBookRepository) Search(ctx context.Context, query string, fields 
 
 	var books []models.Book
 	for rows.Next() {
-		b, err := scanBook(rows)
+		b, err := db.ScanBook(rows)
 		if err != nil {
 			return nil, 0, fmt.Errorf("scan search result: %w", err)
 		}
