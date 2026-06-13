@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-chi/cors"
 	"golang.org/x/time/rate"
 )
 
@@ -32,7 +31,7 @@ func SecurityHeaders(next http.Handler) http.Handler {
 		w.Header().Set("Cross-Origin-Opener-Policy", "same-origin")
 		w.Header().Set("Content-Security-Policy",
 			"default-src 'self'; "+
-				"script-src 'self' https://cdn.jsdelivr.net https://unpkg.com 'unsafe-inline' 'unsafe-eval'; "+
+				"script-src 'self' https://cdn.jsdelivr.net https://unpkg.com 'unsafe-inline'; "+
 				"style-src 'self' 'unsafe-inline' fonts.googleapis.com; "+
 				"img-src 'self' data: https:; "+
 				"font-src 'self' fonts.gstatic.com; "+
@@ -196,19 +195,4 @@ func RateLimiter(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
-}
-
-// CORSConfig returns a configured CORS handler based on environment settings.
-//
-// This is a convenience function for use outside the router setup if needed.
-// The router.go file uses this configuration directly.
-func CORSConfig() cors.Options {
-	return cors.Options{
-		AllowedOrigins:   []string{"https://library.rcsmaine.com"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: true,
-		MaxAge:           300,
-	}
 }
