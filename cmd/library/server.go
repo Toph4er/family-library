@@ -41,6 +41,10 @@ func main() {
 		slog.Error("SESSION_SECRET is required")
 		os.Exit(1)
 	}
+	if len(sessionSecret) < 32 {
+		slog.Error("SESSION_SECRET must be at least 32 characters", "length", len(sessionSecret))
+		os.Exit(1)
+	}
 
 	// -- Setup logging --
 	setupLogging(logLevel)
