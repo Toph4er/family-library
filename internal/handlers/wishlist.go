@@ -2,13 +2,11 @@ package handlers
 
 import (
 	"database/sql"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 
-	"git.rcsmaine.com/chris/library/internal/db"
-	"git.rcsmaine.com/chris/library/internal/models"
+	sqldb "git.rcsmaine.com/chris/library/internal/db"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -19,55 +17,6 @@ const wishlistColumns = `
 	cover_image_url, requested_by, requested_at,
 	fulfilled, fulfilled_at, notes
 `
-
-// scanWishlistItem scans a row into a WishlistItem struct.
-func scanWishlistItem(s scanner) (*models.WishlistItem, error) {
-	var item models.WishlistItem
-	var author sql.NullString
-	var isbn sql.NullString
-	var reason sql.NullString
-	var amazonURL sql.NullString
-	var thriftbooksURL sql.NullString
-	var otherURLs sql.NullString
-	var coverImageURL sql.NullString
-	var requestedBy sql.NullString
-	var fulfilledAt sql.NullTime
-	var notes sql.NullString
-
-	err := s.Scan(
-		&item.ID,
-		&item.Title,
-		&author,
-		&isbn,
-		&reason,
-		&item.Priority,
-		&amazonURL,
-		&thriftbooksURL,
-		&otherURLs,
-		&coverImageURL,
-		&requestedBy,
-		&item.RequestedAt,
-		&item.Fulfilled,
-		&fulfilledAt,
-		&notes,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("scanning wishlist item row: %w", err)
-	}
-
-	item.Author = db.NullStrPtr(author)
-	item.ISBN = db.NullStrPtr(isbn)
-	item.Reason = db.NullStrPtr(reason)
-	item.AmazonURL = db.NullStrPtr(amazonURL)
-	item.ThriftbooksURL = db.NullStrPtr(thriftbooksURL)
-	item.OtherURLs = db.NullStrPtr(otherURLs)
-	item.CoverImageURL = db.NullStrPtr(coverImageURL)
-	item.RequestedBy = db.NullStrPtr(requestedBy)
-	item.FulfilledAt = db.NullTimePtr(fulfilledAt)
-	item.Notes = db.NullStrPtr(notes)
-
-	return &item, nil
-}
 
 // DeleteWishlistItemHandler removes a wishlist item.
 func DeleteWishlistItemHandler(db *sql.DB) http.HandlerFunc {
@@ -132,7 +81,7 @@ func FulfillWishlistItemHandler(db *sql.DB) http.HandlerFunc {
 
 		// Return the updated item
 		row := db.QueryRow(`SELECT `+wishlistColumns+` FROM wishlist WHERE id = ?`, id)
-		item, err := scanWishlistItem(row)
+		item, err := sqldb.ScanWishlistItem(row)
 		if err != nil {
 			JSONError(w, http.StatusInternalServerError, "database error")
 			return

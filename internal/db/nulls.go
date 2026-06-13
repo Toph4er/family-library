@@ -190,3 +190,65 @@ func ScanBook(s BookScanner) (*models.Book, error) {
 
 	return &b, nil
 }
+
+// ScanFamilyMember scans a database row into a models.FamilyMember.
+func ScanFamilyMember(s BookScanner) (*models.FamilyMember, error) {
+	var fm models.FamilyMember
+	var createdAt, updatedAt string
+	err := s.Scan(&fm.ID, &fm.Name, &fm.Relation, &createdAt, &updatedAt)
+	if err != nil {
+		return nil, err
+	}
+	fm.CreatedAt = createdAt
+	fm.UpdatedAt = updatedAt
+	return &fm, nil
+}
+
+// ScanWishlistItem scans a database row into a models.WishlistItem.
+func ScanWishlistItem(s BookScanner) (*models.WishlistItem, error) {
+	var item models.WishlistItem
+	var author sql.NullString
+	var isbn sql.NullString
+	var reason sql.NullString
+	var amazonURL sql.NullString
+	var thriftbooksURL sql.NullString
+	var otherURLs sql.NullString
+	var coverImageURL sql.NullString
+	var requestedBy sql.NullString
+	var fulfilledAt sql.NullTime
+	var notes sql.NullString
+
+	err := s.Scan(
+		&item.ID,
+		&item.Title,
+		&author,
+		&isbn,
+		&reason,
+		&item.Priority,
+		&amazonURL,
+		&thriftbooksURL,
+		&otherURLs,
+		&coverImageURL,
+		&requestedBy,
+		&item.RequestedAt,
+		&item.Fulfilled,
+		&fulfilledAt,
+		&notes,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("scanning wishlist item row: %w", err)
+	}
+
+	item.Author = NullStrPtr(author)
+	item.ISBN = NullStrPtr(isbn)
+	item.Reason = NullStrPtr(reason)
+	item.AmazonURL = NullStrPtr(amazonURL)
+	item.ThriftbooksURL = NullStrPtr(thriftbooksURL)
+	item.OtherURLs = NullStrPtr(otherURLs)
+	item.CoverImageURL = NullStrPtr(coverImageURL)
+	item.RequestedBy = NullStrPtr(requestedBy)
+	item.FulfilledAt = NullTimePtr(fulfilledAt)
+	item.Notes = NullStrPtr(notes)
+
+	return &item, nil
+}

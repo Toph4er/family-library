@@ -417,7 +417,7 @@ func RenderBookDetailPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 		id := chi.URLParam(r, "id")
 
 		var book models.Book
-		row := db.QueryRow(`SELECT `+sqldb.BookColumns+` FROM books WHERE id = ?`, id)
+		row := db.QueryRow(`SELECT `+sqldb.BookColumns+` FROM books WHERE id = ?`, id) // #nosec G202 -- BookColumns is a constant
 		b, err := sqldb.ScanBook(row)
 		if err == sql.ErrNoRows {
 			http.NotFound(w, r)
@@ -528,7 +528,7 @@ func RenderWishlistFormPage(tmpl *template.Template, db *sql.DB, store *sessions
 
 		if isEdit {
 			row := db.QueryRow(`SELECT `+wishlistColumns+` FROM wishlist WHERE id = ?`, itemID)
-			itm, err := scanWishlistItem(row)
+			itm, err := sqldb.ScanWishlistItem(row)
 			if err != nil {
 				http.NotFound(w, r)
 				return
@@ -710,7 +710,7 @@ func RenderBookFormPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 		cancelURL := "/books"
 
 		if isEdit {
-			row := db.QueryRow(`SELECT `+sqldb.BookColumns+` FROM books WHERE id = ?`, bookID)
+			row := db.QueryRow(`SELECT `+sqldb.BookColumns+` FROM books WHERE id = ?`, bookID) // #nosec G202 -- BookColumns is a constant
 			b, err := sqldb.ScanBook(row)
 			if err != nil {
 				http.NotFound(w, r)

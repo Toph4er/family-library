@@ -51,7 +51,7 @@ func (r *sqliteBookRepository) Create(ctx context.Context, book *models.Book) er
 	id, _ := result.LastInsertId()
 	book.ID = id
 
-	row := r.db.QueryRowContext(ctx, "SELECT "+db.BookColumns+" FROM books WHERE id = ?", book.ID)
+	row := r.db.QueryRowContext(ctx, "SELECT "+db.BookColumns+" FROM books WHERE id = ?", book.ID) // #nosec G202 -- BookColumns is a constant
 	fetched, err := db.ScanBook(row)
 	if err != nil {
 		return fmt.Errorf("fetch created book: %w", err)
@@ -64,7 +64,7 @@ func (r *sqliteBookRepository) Create(ctx context.Context, book *models.Book) er
 
 // GetByID retrieves a book by its ID.
 func (r *sqliteBookRepository) GetByID(ctx context.Context, id int64) (*models.Book, error) {
-	row := r.db.QueryRowContext(ctx, "SELECT "+db.BookColumns+" FROM books WHERE id = ?", id)
+	row := r.db.QueryRowContext(ctx, "SELECT "+db.BookColumns+" FROM books WHERE id = ?", id) // #nosec G202 -- BookColumns is a constant
 	book, err := db.ScanBook(row)
 	if err != nil {
 		return nil, fmt.Errorf("get book by id: %w", err)
@@ -74,7 +74,7 @@ func (r *sqliteBookRepository) GetByID(ctx context.Context, id int64) (*models.B
 
 // GetByISBN retrieves a book by its ISBN.
 func (r *sqliteBookRepository) GetByISBN(ctx context.Context, isbn string) (*models.Book, error) {
-	row := r.db.QueryRowContext(ctx, "SELECT "+db.BookColumns+" FROM books WHERE isbn = ?", isbn)
+	row := r.db.QueryRowContext(ctx, "SELECT "+db.BookColumns+" FROM books WHERE isbn = ?", isbn) // #nosec G202 -- BookColumns is a constant
 	book, err := db.ScanBook(row)
 	if err != nil {
 		return nil, fmt.Errorf("get book by isbn: %w", err)
@@ -263,7 +263,7 @@ func (r *sqliteBookRepository) List(ctx context.Context, filter string, page, pe
 			return nil, 0, fmt.Errorf("count search results: %w", err)
 		}
 
-		dataQuery := `SELECT ` + db.BookColumns + ` FROM books_fts JOIN books ON books_fts.rowid = books.id WHERE books_fts MATCH ? ORDER BY books.title ASC LIMIT ? OFFSET ?`
+		dataQuery := `SELECT ` + db.BookColumns + ` FROM books_fts JOIN books ON books_fts.rowid = books.id WHERE books_fts MATCH ? ORDER BY books.title ASC LIMIT ? OFFSET ?` // #nosec G202 -- BookColumns is a constant
 		rows, err := r.db.QueryContext(ctx, dataQuery, filter, perPage, offset)
 		if err != nil {
 			return nil, 0, fmt.Errorf("search books: %w", err)
@@ -285,7 +285,7 @@ func (r *sqliteBookRepository) List(ctx context.Context, filter string, page, pe
 			return nil, 0, fmt.Errorf("count books: %w", err)
 		}
 
-		dataQuery := `SELECT ` + db.BookColumns + ` FROM books ORDER BY title ASC LIMIT ? OFFSET ?`
+		dataQuery := `SELECT ` + db.BookColumns + ` FROM books ORDER BY title ASC LIMIT ? OFFSET ?` // #nosec G202 -- BookColumns is a constant
 		rows, err := r.db.QueryContext(ctx, dataQuery, perPage, offset)
 		if err != nil {
 			return nil, 0, fmt.Errorf("list books: %w", err)
@@ -336,7 +336,7 @@ func (r *sqliteBookRepository) Search(ctx context.Context, query string, fields 
 	}
 
 	countQuery := `SELECT COUNT(*) FROM books_fts JOIN books ON books_fts.rowid = books.id WHERE books_fts MATCH ?`
-	dataQuery := `SELECT ` + db.BookColumns + ` FROM books_fts JOIN books ON books_fts.rowid = books.id WHERE books_fts MATCH ? ORDER BY books.title ASC LIMIT ? OFFSET ?`
+	dataQuery := `SELECT ` + db.BookColumns + ` FROM books_fts JOIN books ON books_fts.rowid = books.id WHERE books_fts MATCH ? ORDER BY books.title ASC LIMIT ? OFFSET ?` // #nosec G202 -- BookColumns is a constant
 
 	var total int
 	if err := r.db.QueryRowContext(ctx, countQuery, ftsQuery).Scan(&total); err != nil {

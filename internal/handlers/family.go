@@ -11,28 +11,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	sqldb "git.rcsmaine.com/chris/library/internal/db"
 	"git.rcsmaine.com/chris/library/internal/models"
 )
 
 const familyMemberColumns = `id, name, relation, created_at, updated_at`
-
-// scanner is implemented by both *sql.Row and *sql.Rows.
-type scanner interface {
-	Scan(dest ...interface{}) error
-}
-
-// scanFamilyMember scans a row into a FamilyMember struct.
-func scanFamilyMember(s scanner) (*models.FamilyMember, error) {
-	var fm models.FamilyMember
-	var createdAt, updatedAt string
-	err := s.Scan(&fm.ID, &fm.Name, &fm.Relation, &createdAt, &updatedAt)
-	if err != nil {
-		return nil, err
-	}
-	fm.CreatedAt = createdAt
-	fm.UpdatedAt = updatedAt
-	return &fm, nil
-}
 
 // --- HTMX HTML Handlers ---
 
@@ -52,7 +35,7 @@ func HTMLFamilyMemberFormHandler(db *sql.DB) http.HandlerFunc {
 				return
 			}
 			row := db.QueryRow("SELECT "+familyMemberColumns+" FROM family_members WHERE id = ?", id)
-			m, err := scanFamilyMember(row)
+			m, err := sqldb.ScanFamilyMember(row)
 			if errors.Is(err, sql.ErrNoRows) {
 				http.NotFound(w, r)
 				return
