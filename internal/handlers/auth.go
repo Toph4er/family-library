@@ -155,11 +155,6 @@ func RenderLogoutSuccess(tmpl *template.Template, db *sql.DB, authSvc *auth.Auth
 	}
 }
 
-// htmlErrorFragment returns a styled HTML error div for HTMX swapping.
-func htmlErrorFragment(message string) string {
-	return "<div class=\"p-3 rounded-lg bg-error/10 border border-error/20 text-error text-sm\" role=\"alert\">" + template.HTMLEscapeString(message) + "</div>"
-}
-
 // HTMLLoginHandler handles admin login via HTMX (form-encoded, returns HTML).
 // On success: sets HX-Redirect header to /books.
 // On failure: returns an HTML error fragment for HTMX to swap into the DOM.

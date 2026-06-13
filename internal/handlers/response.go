@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"html/template"
 	"net/http"
 )
 
@@ -33,4 +34,9 @@ func HTMXErrorResponse(w http.ResponseWriter, status int, message string) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
 	_, _ = w.Write([]byte(htmlErrorFragment(message)))
+}
+
+// htmlErrorFragment returns a styled HTML error div for HTMX swapping.
+func htmlErrorFragment(message string) string {
+	return "<div class=\"p-3 rounded-lg bg-error/10 border border-error/20 text-error text-sm\" role=\"alert\">" + template.HTMLEscapeString(message) + "</div>"
 }
