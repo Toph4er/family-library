@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"git.rcsmaine.com/chris/library/internal/auth"
+	"git.rcsmaine.com/chris/library/internal/db"
 	"git.rcsmaine.com/chris/library/internal/models"
 	"git.rcsmaine.com/chris/library/internal/repository"
 
@@ -133,42 +134,42 @@ func scanBook(s scanner) (*models.Book, error) {
 		return nil, fmt.Errorf("scanning book row: %w", err)
 	}
 
-	b.ISBN = nullStrPtr(isbn)
-	b.Subtitle = nullStrPtr(subtitle)
-	b.Authors = nullStrPtr(authors)
-	b.Illustrators = nullStrPtr(illustrators)
-	b.Publisher = nullStrPtr(publisher)
-	b.PublicationYear = nullIntPtr(pubYear)
-	b.PageCount = nullIntPtr(pageCount)
-	b.BookType = nullStrPtr(bookType)
-	b.ReadingLevels = nullStrPtr(readingLevels)
-	b.Genres = nullStrPtr(genres)
-	b.Themes = nullStrPtr(themes)
-	b.Awards = nullStrPtr(awards)
-	b.GiftFrom = nullStrPtr(giftFrom)
-	b.GiftRelationship = nullStrPtr(giftRelationship)
-	b.DateReceived = nullStrPtr(dateReceived)
-	b.Condition = nullStrPtr(condition)
-	b.Location = nullStrPtr(location)
-	b.Notes = nullStrPtr(notes)
-	b.ChildRating = nullIntPtr(childRating)
+	b.ISBN = db.NullStrPtr(isbn)
+	b.Subtitle = db.NullStrPtr(subtitle)
+	b.Authors = db.NullStrPtr(authors)
+	b.Illustrators = db.NullStrPtr(illustrators)
+	b.Publisher = db.NullStrPtr(publisher)
+	b.PublicationYear = db.NullIntPtr(pubYear)
+	b.PageCount = db.NullIntPtr(pageCount)
+	b.BookType = db.NullStrPtr(bookType)
+	b.ReadingLevels = db.NullStrPtr(readingLevels)
+	b.Genres = db.NullStrPtr(genres)
+	b.Themes = db.NullStrPtr(themes)
+	b.Awards = db.NullStrPtr(awards)
+	b.GiftFrom = db.NullStrPtr(giftFrom)
+	b.GiftRelationship = db.NullStrPtr(giftRelationship)
+	b.DateReceived = db.NullStrPtr(dateReceived)
+	b.Condition = db.NullStrPtr(condition)
+	b.Location = db.NullStrPtr(location)
+	b.Notes = db.NullStrPtr(notes)
+	b.ChildRating = db.NullIntPtr(childRating)
 	// quantity defaults to 1 if NULL
 	if quantity.Valid {
 		b.Quantity = int(quantity.Int64)
 	} else {
 		b.Quantity = 1
 	}
-	b.LastReadDate = nullStrPtr(lastReadDate)
-	b.CoverImageURL = nullStrPtr(coverImageURL)
-	b.CoverSource = nullStrPtr(coverSource)
-	b.DeweyDecimalClass = nullStrPtr(deweyDecimalClass)
-	b.Description = nullStrPtr(description)
-	b.Language = nullStrPtr(language)
-	b.SubjectPlaces = nullStrPtr(subjectPlaces)
-	b.SubjectPeople = nullStrPtr(subjectPeople)
-	b.SubjectTimes = nullStrPtr(subjectTimes)
-	b.Series = nullStrPtr(series)
-	b.AgeRange = nullStrPtr(ageRange)
+	b.LastReadDate = db.NullStrPtr(lastReadDate)
+	b.CoverImageURL = db.NullStrPtr(coverImageURL)
+	b.CoverSource = db.NullStrPtr(coverSource)
+	b.DeweyDecimalClass = db.NullStrPtr(deweyDecimalClass)
+	b.Description = db.NullStrPtr(description)
+	b.Language = db.NullStrPtr(language)
+	b.SubjectPlaces = db.NullStrPtr(subjectPlaces)
+	b.SubjectPeople = db.NullStrPtr(subjectPeople)
+	b.SubjectTimes = db.NullStrPtr(subjectTimes)
+	b.Series = db.NullStrPtr(series)
+	b.AgeRange = db.NullStrPtr(ageRange)
 
 	// read_count defaults to 0 if NULL
 	if readCount.Valid {
@@ -180,21 +181,6 @@ func scanBook(s scanner) (*models.Book, error) {
 	}
 
 	return &b, nil
-}
-
-func nullStrPtr(ns sql.NullString) *string {
-	if ns.Valid {
-		return &ns.String
-	}
-	return nil
-}
-
-func nullIntPtr(ni sql.NullInt64) *int {
-	if ni.Valid {
-		v := int(ni.Int64)
-		return &v
-	}
-	return nil
 }
 
 const bookColumns = `

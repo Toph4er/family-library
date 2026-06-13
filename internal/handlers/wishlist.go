@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
+	"git.rcsmaine.com/chris/library/internal/db"
 	"git.rcsmaine.com/chris/library/internal/models"
 
 	"github.com/go-chi/chi/v5"
@@ -55,26 +55,18 @@ func scanWishlistItem(s scanner) (*models.WishlistItem, error) {
 		return nil, fmt.Errorf("scanning wishlist item row: %w", err)
 	}
 
-	item.Author = nullStrPtr(author)
-	item.ISBN = nullStrPtr(isbn)
-	item.Reason = nullStrPtr(reason)
-	item.AmazonURL = nullStrPtr(amazonURL)
-	item.ThriftbooksURL = nullStrPtr(thriftbooksURL)
-	item.OtherURLs = nullStrPtr(otherURLs)
-	item.CoverImageURL = nullStrPtr(coverImageURL)
-	item.RequestedBy = nullStrPtr(requestedBy)
-	item.FulfilledAt = nullTimePtr(fulfilledAt)
-	item.Notes = nullStrPtr(notes)
+	item.Author = db.NullStrPtr(author)
+	item.ISBN = db.NullStrPtr(isbn)
+	item.Reason = db.NullStrPtr(reason)
+	item.AmazonURL = db.NullStrPtr(amazonURL)
+	item.ThriftbooksURL = db.NullStrPtr(thriftbooksURL)
+	item.OtherURLs = db.NullStrPtr(otherURLs)
+	item.CoverImageURL = db.NullStrPtr(coverImageURL)
+	item.RequestedBy = db.NullStrPtr(requestedBy)
+	item.FulfilledAt = db.NullTimePtr(fulfilledAt)
+	item.Notes = db.NullStrPtr(notes)
 
 	return &item, nil
-}
-
-func nullTimePtr(nt sql.NullTime) *string {
-	if nt.Valid {
-		s := nt.Time.Format(time.RFC3339)
-		return &s
-	}
-	return nil
 }
 
 // DeleteWishlistItemHandler removes a wishlist item.
