@@ -417,13 +417,8 @@ func RenderBookDetailPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 		id := chi.URLParam(r, "id")
 
 		var book models.Book
-		var title, createdAt, updatedAt string
-		var subtitle, author, illustrators, publisher, bookType, readingLevels, genres, themes, awards, giftFrom, giftRelationship, dateReceived, condition, location, notes, lastReadDate, coverImage, coverSource, guestVisibleFields sql.NullString
-		var pubYear, pageCount, childRating, quantity, readCount sql.NullInt64
-
-		err := db.QueryRow(`SELECT id, title, subtitle, authors, illustrators, isbn, publisher, publication_year, page_count, book_type, reading_levels, genres, themes, awards, gift_from, gift_relationship, date_received, condition, location, notes, child_rating, quantity, read_count, last_read_date, cover_image_url, cover_source, guest_visible_fields, created_at, updated_at FROM books WHERE id = ?`, id).Scan(
-			&book.ID, &title, &subtitle, &author, &illustrators, &book.ISBN, &publisher, &pubYear, &pageCount, &bookType, &readingLevels, &genres, &themes, &awards, &giftFrom, &giftRelationship, &dateReceived, &condition, &location, &notes, &childRating, &quantity, &readCount, &lastReadDate, &coverImage, &coverSource, &guestVisibleFields, &createdAt, &updatedAt,
-		)
+		row := db.QueryRow(`SELECT `+sqldb.BookColumns+` FROM books WHERE id = ?`, id)
+		b, err := sqldb.ScanBook(row)
 		if err == sql.ErrNoRows {
 			http.NotFound(w, r)
 			return
@@ -432,87 +427,7 @@ func RenderBookDetailPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 			http.Error(w, "database error", http.StatusInternalServerError)
 			return
 		}
-
-		book.Title = title
-		if subtitle.Valid {
-			book.Subtitle = &subtitle.String
-		}
-		if author.Valid {
-			book.Authors = &author.String
-		}
-		if illustrators.Valid {
-			book.Illustrators = &illustrators.String
-		}
-		if publisher.Valid {
-			book.Publisher = &publisher.String
-		}
-		if pubYear.Valid {
-			y := int(pubYear.Int64)
-			book.PublicationYear = &y
-		}
-		if pageCount.Valid {
-			p := int(pageCount.Int64)
-			book.PageCount = &p
-		}
-		if bookType.Valid {
-			book.BookType = &bookType.String
-		}
-		if readingLevels.Valid {
-			book.ReadingLevels = &readingLevels.String
-		}
-		if genres.Valid {
-			book.Genres = &genres.String
-		}
-		if themes.Valid {
-			book.Themes = &themes.String
-		}
-		if awards.Valid {
-			book.Awards = &awards.String
-		}
-		if giftFrom.Valid {
-			book.GiftFrom = &giftFrom.String
-		}
-		if giftRelationship.Valid {
-			book.GiftRelationship = &giftRelationship.String
-		}
-		if dateReceived.Valid {
-			book.DateReceived = &dateReceived.String
-		}
-		if condition.Valid {
-			book.Condition = &condition.String
-		}
-		if location.Valid {
-			book.Location = &location.String
-		}
-		if notes.Valid {
-			book.Notes = &notes.String
-		}
-		if childRating.Valid {
-			cr := int(childRating.Int64)
-			book.ChildRating = &cr
-		}
-		if quantity.Valid {
-			book.Quantity = int(quantity.Int64)
-		} else {
-			book.Quantity = 1
-		}
-		if readCount.Valid {
-			book.ReadCount = int(readCount.Int64)
-		}
-		if lastReadDate.Valid {
-			book.LastReadDate = &lastReadDate.String
-		}
-		if coverImage.Valid {
-			book.CoverImageURL = &coverImage.String
-		}
-		if coverSource.Valid {
-			book.CoverSource = &coverSource.String
-		}
-		book.CreatedAt = createdAt
-		book.UpdatedAt = updatedAt
-		if guestVisibleFields.Valid {
-			book.GuestVisibleFields = guestVisibleFields.String
-		}
+		book = *b
 
 		ctx.Book = &book
 		filterBookForGuest(r, &book)
