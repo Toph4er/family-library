@@ -34,5 +34,10 @@ issues:
     - path: tests/
       linters:
         - dupl
+    # Deprecated handlers kept for test compatibility
+    - path: _test\.go
+      linters:
+        - staticcheck
+      text: "SA1019:"
   max-issues-per-linter: 50
   max-same-issues: 10
