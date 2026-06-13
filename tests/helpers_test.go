@@ -152,12 +152,12 @@ func getSessionCookie(rec *httptest.ResponseRecorder) string {
 func loginAndGetCookie(t *testing.T, env *testEnv) string {
 	t.Helper()
 
-	body := fmt.Sprintf(`{"username":"%s","password":"%s"}`, testUsername, testPassword)
-	req := httptest.NewRequest("POST", "/api/v1/auth/login", strings.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
+	form := strings.NewReader(fmt.Sprintf("username=%s&password=%s", testUsername, testPassword))
+	req := httptest.NewRequest("POST", "/auth/login", form)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rec := httptest.NewRecorder()
 
-	handlers.LoginHandler(env.auth).ServeHTTP(rec, req)
+	handlers.HTMLLoginHandler(env.auth).ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("login failed: status %d, body: %s", rec.Code, rec.Body.String())

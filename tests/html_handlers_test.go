@@ -3,7 +3,6 @@ package tests
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -15,6 +14,7 @@ import (
 
 	"git.rcsmaine.com/chris/library/internal/auth"
 	"git.rcsmaine.com/chris/library/internal/handlers"
+	"git.rcsmaine.com/chris/library/internal/middleware"
 )
 
 // buildAdminHTMLRouter creates a chi router that wraps the given handler with
@@ -646,29 +646,6 @@ func TestRequireAdmin_RejectsNonAdmin(t *testing.T) {
 	}
 }
 
-// ---------- CSRF Token Handler ----------
-
-func TestCSRFTokenHandler(t *testing.T) {
-	env := setupTestEnv(t)
-
-	req := httptest.NewRequest("GET", "/api/v1/csrf", nil)
-	rec := httptest.NewRecorder()
-
-	//nolint:staticcheck // CSRFTokenHandler kept for test compatibility
-	handlers.CSRFTokenHandler(env.auth).ServeHTTP(rec, req)
-
-	if rec.Code != http.StatusOK {
-		t.Fatalf("expected status 200, got %d: %s", rec.Code, rec.Body.String())
-	}
-
-	// Should return a CSRF token in the JSON body
-	var resp map[string]interface{}
-	json.NewDecoder(rec.Body).Decode(&resp)
-	if _, ok := resp["csrf_token"]; !ok {
-		t.Fatalf("expected csrf_token in response body, got: %s", rec.Body.String())
-	}
-}
-
 // ---------- HTML User Handlers ----------
 
 func TestHTMLCreateUserHandler_Success(t *testing.T) {
@@ -1006,12 +983,12 @@ func TestHTMLUpdateWishlistItemHandler_MissingTitle(t *testing.T) {
 func TestBuildPageContext_CSRFTokenWithAuthHTMLMiddleware(t *testing.T) {
 	env := setupTestEnv(t)
 
-	// Step 1: Login to create a session with a CSRF token.
-	body := fmt.Sprintf(`{"username":"%s","password":"%s"}`, testUsername, testPassword)
-	req := httptest.NewRequest("POST", "/api/v1/auth/login", strings.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
+	// Step 1: Login via HTML handler to create a session.
+	form := strings.NewReader(fmt.Sprintf("username=%s&password=%s", testUsername, testPassword))
+	req := httptest.NewRequest("POST", "/auth/login", form)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rec := httptest.NewRecorder()
-	handlers.LoginHandler(env.auth).ServeHTTP(rec, req)
+	handlers.HTMLLoginHandler(env.auth).ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("login failed: status %d", rec.Code)
@@ -1022,30 +999,31 @@ func TestBuildPageContext_CSRFTokenWithAuthHTMLMiddleware(t *testing.T) {
 		t.Fatal("no session cookie in login response")
 	}
 
-	// Step 2: Fetch the CSRF token via the /api/v1/csrf endpoint.
-	req = httptest.NewRequest("GET", "/api/v1/csrf", nil)
-	req.Header.Set("Cookie", cookie)
-	rec = httptest.NewRecorder()
-	//nolint:staticcheck // CSRFTokenHandler kept for test compatibility
-	handlers.CSRFTokenHandler(env.auth).ServeHTTP(rec, req)
-
-	if rec.Code != http.StatusOK {
-		t.Fatalf("csrf endpoint failed: status %d", rec.Code)
+	// Step 2: Create a known CSRF token and store it directly in the session.
+	// This replaces the deprecated /api/v1/csrf endpoint.
+	csrfToken, err := middleware.GenerateCSRFToken()
+	if err != nil {
+		t.Fatalf("failed to generate CSRF token: %v", err)
 	}
 
-	var csrfResp map[string]interface{}
-	json.NewDecoder(rec.Body).Decode(&csrfResp)
-	csrfToken, ok := csrfResp["csrf_token"].(string)
-	if !ok || csrfToken == "" {
-		t.Fatal("expected non-empty csrf_token from /api/v1/csrf")
+	session, err := env.auth.Store().Get(req, auth.SessionID)
+	if err != nil {
+		t.Fatalf("failed to get session: %v", err)
+	}
+	session.Values[middleware.CSRFTokenKey] = csrfToken
+
+	// Save the session to get the updated cookie string.
+	dummyRec := httptest.NewRecorder()
+	if err := session.Save(req, dummyRec); err != nil {
+		t.Fatalf("failed to save session: %v", err)
 	}
 
-	// The CSRF endpoint saves the session (with the token) via Set-Cookie.
-	// Use the updated cookie for subsequent requests.
-	updatedCookie := getSessionCookie(rec)
-	if updatedCookie != "" {
-		cookie = updatedCookie
+	// Extract the Set-Cookie header from the saved response.
+	setCookie := dummyRec.Header().Get("Set-Cookie")
+	if setCookie == "" {
+		t.Fatal("no Set-Cookie header in session save response")
 	}
+	cookie = setCookie
 
 	// Step 3: Simulate a GET request through RequireAuthHTML middleware.
 	// RequireAuthHTML puts the user in context but does NOT put the session
