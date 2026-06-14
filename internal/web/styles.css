@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Prevent horizontal overflow on mobile from minor width issues */
+html {
+  overflow-x: hidden;
+  width: 100%;
+}
+
 @theme {
   --color-primary: #2d5016;
   --color-secondary: #8b4513;
