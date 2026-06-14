@@ -77,8 +77,6 @@
           hx-target="#modal-target"
           hx-swap="innerHTML"
           class="px-5 py-2.5 rounded-xl font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 no-underline bg-primary"
-          onmouseenter="this.style.backgroundColor='var(--color-text-light)'"
-          onmouseleave="this.style.backgroundColor='var(--color-primary)'"
           aria-label="Log reading for {{.Book.Title}}"
         >
           <span class="flex items-center gap-2">
@@ -93,8 +91,6 @@
         {{if .IsAdmin}}
         <a href="/books/{{.Book.ID}}/edit-book"
           class="px-5 py-2.5 rounded-xl font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 no-underline bg-primary"
-          onmouseenter="this.style.backgroundColor='var(--color-text-light)'"
-          onmouseleave="this.style.backgroundColor='var(--color-primary)'"
           aria-label="Edit {{.Book.Title}}"
         >
           <span class="flex items-center gap-2">
@@ -111,8 +107,6 @@
           hx-confirm="Are you sure you want to delete this book?"
           hx-swap="none"
           class="px-5 py-2.5 rounded-xl font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 bg-error"
-          onmouseenter="this.style.backgroundColor='var(--color-warning)'"
-          onmouseleave="this.style.backgroundColor='var(--color-error)'"
           aria-label="Delete {{.Book.Title}}"
           hx-on::after-request="if(event.detail.successful) window.location.href='/books'"
         >
