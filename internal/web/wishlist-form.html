@@ -1,6 +1,6 @@
 {{template "base" .}}
 
-{{define "title"}}{{if .IsEdit}}Edit Wishlist Item{{else}}Add Wishlist Item{{end}} — Woodland Library{{end}}
+{{define "title"}}{{if .IsWishlistEdit}}Edit Wishlist Item{{else}}Add Wishlist Item{{end}} — Woodland Library{{end}}
 
 {{define "content"}}
 <div class="flex flex-col gap-6 animate-fade-in-up max-w-3xl mx-auto">
@@ -12,16 +12,16 @@
         <a href="/wishlist" class="text-primary hover:text-text-light transition-colors no-underline">Wishlist</a>
       </li>
       <li class="text-text-light/50" aria-hidden="true">→</li>
-      <li class="text-text-light font-medium" aria-current="page">{{if .IsEdit}}{{.ItemTitle}}{{else}}Add Item{{end}}</li>
+      <li class="text-text-light font-medium" aria-current="page">{{if .IsWishlistEdit}}{{.ItemTitle}}{{else}}Add Item{{end}}</li>
     </ol>
   </nav>
 
   <!-- Page Header -->
   <header class="py-4">
     <h1 class="text-4xl md:text-5xl font-heading text-primary leading-tight">
-      {{if .IsEdit}}Edit Wishlist Item{{else}}Add Wishlist Item{{end}}
+      {{if .IsWishlistEdit}}Edit Wishlist Item{{else}}Add Wishlist Item{{end}}
     </h1>
-    {{if .IsEdit}}
+    {{if .IsWishlistEdit}}
     <p class="text-text-light/80 text-lg mt-1 font-accent text-xl">{{.ItemTitle}}</p>
     {{end}}
   </header>
@@ -38,13 +38,13 @@
   </div>
 
   <!-- Form (HTMX native) -->
-  <form hx-post="{{.ActionURL}}" hx-swap="outerHTML" hx-target="#error-container" hx-indicator="#loading-indicator" class="space-y-5">
+  <form hx-post="{{.WishlistActionURL}}" hx-swap="outerHTML" hx-target="#error-container" hx-indicator="#loading-indicator" class="space-y-5">
     <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 
     <!-- Basic fields -->
     <div>
       <label for="title" class="block text-sm font-medium text-text mb-1">Title <span class="text-error" aria-hidden="true">*</span></label>
-      <input type="text" id="title" name="title" value="{{.Title}}" required
+      <input type="text" id="title" name="title" value="{{.WishlistTitle}}" required
         class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary"
         aria-required="true">
     </div>
@@ -58,7 +58,7 @@
     <div class="grid grid-cols-2 gap-4">
       <div>
         <label for="isbn" class="block text-sm font-medium text-text mb-1">ISBN</label>
-        <input type="text" id="isbn" name="isbn" value="{{.ISBN}}" placeholder="978-0-12345-678-9"
+        <input type="text" id="isbn" name="isbn" value="{{.WishlistISBN}}" placeholder="978-0-12345-678-9"
           class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">
       </div>
       <div>
@@ -91,23 +91,23 @@
     <!-- Additional fields -->
     <div>
       <label for="cover_image_url" class="block text-sm font-medium text-text mb-1">Cover Image URL</label>
-      <input type="url" id="cover_image_url" name="cover_image_url" value="{{.CoverImageURL}}"
+      <input type="url" id="cover_image_url" name="cover_image_url" value="{{.WishlistCoverImageURL}}"
         class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">
     </div>
 
     <div>
       <label for="notes" class="block text-sm font-medium text-text mb-1">Notes</label>
       <textarea id="notes" name="notes" rows="3"
-        class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">{{.Notes}}</textarea>
+        class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">{{.WishlistNotes}}</textarea>
     </div>
 
     <!-- Actions -->
     <div class="flex justify-end gap-3 pt-4">
-      <a href="{{.CancelURL}}"
+      <a href="{{.WishlistCancelURL}}"
         class="px-5 py-2.5 rounded-lg border text-text-light hover:text-text transition-colors no-underline border-secondary">Cancel</a>
       <button type="submit"
         class="px-5 py-2.5 rounded-lg font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md bg-primary">
-        {{if .IsEdit}}Save Changes{{else}}Add Item{{end}}
+        {{if .IsWishlistEdit}}Save Changes{{else}}Add Item{{end}}
       </button>
     </div>
   </form>

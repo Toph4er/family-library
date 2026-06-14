@@ -97,19 +97,19 @@ type WishlistListContext struct {
 
 // WishlistFormContext holds data for the add/edit wishlist item form page.
 type WishlistFormContext struct {
-	IsEdit         bool
-	ItemTitle      string
-	CancelURL      string
-	ActionURL      string
-	Title          string
-	Author         string
-	ISBN           string
-	Reason         string
-	Priority       int
-	AmazonURL      string
-	ThriftbooksURL string
-	CoverImageURL  string
-	Notes          string
+	IsWishlistEdit   bool
+	ItemTitle        string
+	WishlistCancelURL string
+	WishlistActionURL string
+	WishlistTitle    string
+	Author           string
+	WishlistISBN     string
+	Reason           string
+	Priority         int
+	AmazonURL        string
+	ThriftbooksURL   string
+	WishlistCoverImageURL string
+	WishlistNotes    string
 }
 
 // FamilyMembersContext holds family member data (shared by settings and reading-log pages).
@@ -541,29 +541,29 @@ func RenderWishlistFormPage(tmpl *template.Template, db *sql.DB, store *sessions
 		data := pageContext{
 			BaseContext: ctx.BaseContext,
 			WishlistFormContext: WishlistFormContext{
-				IsEdit:    isEdit,
-				ItemTitle: itemTitle,
-				CancelURL: cancelURL,
-				ActionURL: func() string {
+				IsWishlistEdit: isEdit,
+				ItemTitle:      itemTitle,
+				WishlistCancelURL: cancelURL,
+				WishlistActionURL: func() string {
 					if isEdit {
 						return "/wishlist/" + strconv.FormatInt(itemID, 10) + "/update"
 					}
 					return "/wishlist/create"
 				}(),
-				Title:  item.Title,
-				Author: derefString(item.Author),
-				ISBN:   derefString(item.ISBN),
-				Reason: derefString(item.Reason),
+				WishlistTitle:    item.Title,
+				Author:           derefString(item.Author),
+				WishlistISBN:     derefString(item.ISBN),
+				Reason:           derefString(item.Reason),
 				Priority: func() int {
 					if isEdit {
 						return item.Priority
 					}
 					return 3
 				}(),
-				AmazonURL:      derefString(item.AmazonURL),
-				ThriftbooksURL: derefString(item.ThriftbooksURL),
-				CoverImageURL:  derefString(item.CoverImageURL),
-				Notes:          derefString(item.Notes),
+				AmazonURL:           derefString(item.AmazonURL),
+				ThriftbooksURL:      derefString(item.ThriftbooksURL),
+				WishlistCoverImageURL: derefString(item.CoverImageURL),
+				WishlistNotes:       derefString(item.Notes),
 			},
 		}
 
