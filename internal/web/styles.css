@@ -130,6 +130,9 @@
   justify-content: center;
   z-index: 50;
 }
+.modal-backdrop.modal-hidden {
+  display: none !important;
+}
 .modal-content {
   background: var(--color-surface);
   border-radius: 12px;

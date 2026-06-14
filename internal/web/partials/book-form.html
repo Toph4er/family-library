@@ -9,13 +9,11 @@
       <div class="flex gap-2">
         <input type="text" id="isbn" name="isbn" value="{{.ISBN}}" placeholder="978-0-12345-678-9" class="flex-1 px-3 py-2 rounded-lg border bg-surface border-secondary">
         <button type="button" id="isbn-lookup-btn"
-          onclick="lookupISBN()"
           class="bg-primary text-white p-2 rounded-lg hover:opacity-90 transition-opacity shrink-0"
           aria-label="Lookup ISBN">
           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         </button>
-        <button type="button"
-          onclick="openScannerModal()"
+        <button type="button" id="isbn-scan-btn"
           class="bg-secondary text-white p-2 rounded-lg hover:opacity-90 transition-opacity shrink-0"
           aria-label="Scan ISBN">
           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/></svg>
@@ -159,17 +157,17 @@
   </div>
   
   <!-- Scanner modal -->
-  <div id="scanner-modal" class="modal-backdrop hidden" onclick="if(event.target===this)closeScannerModal()">
+  <div id="scanner-modal" class="modal-backdrop modal-hidden">
     <div class="modal-content modal-sm p-6" role="dialog" aria-modal="true">
       <div class="flex items-center justify-between mb-4 pb-3 border-b border-secondary/10">
         <h2 class="text-xl font-heading font-semibold text-primary">Scan ISBN</h2>
-        <button type="button" onclick="closeScannerModal()" class="text-text-light hover:text-text transition-colors text-2xl no-underline" aria-label="Close modal">×</button>
+        <button type="button" id="scanner-close-btn" class="text-text-light hover:text-text transition-colors text-2xl no-underline" aria-label="Close modal">×</button>
       </div>
       <div id="scanner-viewfinder" class="w-full h-48 bg-background rounded-lg flex items-center justify-center mb-4">
         <p class="text-text-light/60 text-sm">Initializing camera...</p>
       </div>
       <div class="flex justify-end gap-3">
-        <button type="button" onclick="closeScannerModal()" class="px-4 py-2 rounded-lg border border-secondary text-text-light hover:text-text transition-colors no-underline">Cancel</button>
+        <button type="button" id="scanner-cancel-btn" class="px-4 py-2 rounded-lg border border-secondary text-text-light hover:text-text transition-colors no-underline">Cancel</button>
       </div>
     </div>
   </div>
@@ -279,10 +277,43 @@ function startScanner() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+  // ISBN lookup button
+  var lookupBtn = document.getElementById('isbn-lookup-btn');
+  if (lookupBtn) {
+    lookupBtn.addEventListener('click', function() { lookupISBN(); });
+  }
+
+  // ISBN scan button
+  var scanBtn = document.getElementById('isbn-scan-btn');
+  if (scanBtn) {
+    scanBtn.addEventListener('click', function() { openScannerModal(); });
+  }
+
+  // ISBN input: Enter key triggers lookup
   var isbnInput = document.getElementById('isbn');
   if (isbnInput) {
     isbnInput.addEventListener('keydown', function(e) {
       if (e.key === 'Enter') { e.preventDefault(); lookupISBN(); }
+    });
+  }
+
+  // Scanner modal: close button (×)
+  var closeBtn = document.getElementById('scanner-close-btn');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', function() { closeScannerModal(); });
+  }
+
+  // Scanner modal: cancel button
+  var cancelBtn = document.getElementById('scanner-cancel-btn');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', function() { closeScannerModal(); });
+  }
+
+  // Scanner modal: backdrop click closes
+  var modal = document.getElementById('scanner-modal');
+  if (modal) {
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) { closeScannerModal(); }
     });
   }
 });
