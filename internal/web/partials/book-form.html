@@ -229,12 +229,12 @@ function populateForm(data) {
 var html5QrcodeScanner = null;
 
 function openScannerModal() {
-  document.getElementById('scanner-modal').classList.remove('hidden');
+  document.getElementById('scanner-modal').classList.remove('modal-hidden');
   initScanner();
 }
 
 function closeScannerModal() {
-  document.getElementById('scanner-modal').classList.add('hidden');
+  document.getElementById('scanner-modal').classList.add('modal-hidden');
   if (html5QrcodeScanner) {
     html5QrcodeScanner.stop().catch(function(){});
     html5QrcodeScanner = null;
