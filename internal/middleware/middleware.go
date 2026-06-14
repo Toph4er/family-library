@@ -62,7 +62,11 @@ func SecurityHeaders(next http.Handler) http.Handler {
 		// are pervasive in templates and cannot be nonce-protected (nonces only
 		// work for <script nonce="..."> and <link nonce="..."> tags).
 		nonce := GetCSPNonce(r)
-		scriptSrc := "'self' https://cdn.jsdelivr.net https://unpkg.com"
+		// Alpine.js requires 'unsafe-eval' to evaluate x-data/@click/x-show
+		// expressions. This is a known requirement — Alpine.js uses eval()
+		// internally to parse reactive expressions. See:
+		// https://alpinejs.dev/advanced/csp
+		scriptSrc := "'self' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com"
 		if nonce != "" {
 			scriptSrc += " 'nonce-" + nonce + "'"
 		}
