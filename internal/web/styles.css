@@ -139,6 +139,36 @@ html {
 .modal-backdrop.modal-hidden {
   display: none !important;
 }
+
+/* View toggle pill */
+.view-toggle {
+  display: inline-flex;
+  border-radius: 9999px;
+  overflow: hidden;
+  border: 1px solid var(--color-secondary);
+}
+.view-toggle-btn {
+  padding: 0.5rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-light);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.view-toggle-btn.active {
+  color: var(--color-white);
+  background: var(--color-primary);
+}
+.view-toggle-btn:hover:not(.active) {
+  background: var(--color-secondary/10);
+}
+
+/* Compact view: override cover aspect ratio */
+.view-compact .book-cover {
+  aspect-ratio: 2 / 1 !important;
+}
 .modal-content {
   background: var(--color-surface);
   border-radius: 12px;

@@ -35,7 +35,12 @@
 
     <!-- Admin Actions -->
     {{if .IsAdmin}}
-    <div class="flex justify-end">
+    <div class="flex justify-end items-center gap-3">
+      <!-- View Toggle -->
+      <div id="view-toggle" class="view-toggle" role="radiogroup" aria-label="Book view mode">
+        <button type="button" class="view-toggle-btn active" data-view="full" role="radio" aria-checked="true">Full</button>
+        <button type="button" class="view-toggle-btn" data-view="compact" role="radio" aria-checked="false">Compact</button>
+      </div>
       <a href="/books/add-book"
         class="px-5 py-2.5 rounded-xl font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 no-underline bg-primary"
         aria-label="Add a new book to the collection"
@@ -102,4 +107,39 @@
   {{end}}
 
 </div>
+{{end}}
+
+{{define "scripts"}}
+<script nonce="{{ .Nonce }}">
+(function() {
+  var toggle = document.getElementById('view-toggle');
+  if (!toggle) return;
+
+  var btns = toggle.querySelectorAll('.view-toggle-btn');
+  var grid = document.getElementById('book-grid');
+
+  function setView(view) {
+    localStorage.setItem('book_view', view);
+    if (grid) {
+      grid.classList.toggle('view-compact', view === 'compact');
+    }
+    btns.forEach(function(b) {
+      var active = b.getAttribute('data-view') === view;
+      b.classList.toggle('active', active);
+      b.setAttribute('aria-checked', String(active));
+    });
+  }
+
+  // Apply saved preference
+  var saved = localStorage.getItem('book_view') || 'full';
+  setView(saved);
+
+  // Wire up buttons
+  btns.forEach(function(b) {
+    b.addEventListener('click', function() {
+      setView(b.getAttribute('data-view'));
+    });
+  });
+})();
+</script>
 {{end}}

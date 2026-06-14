@@ -1,7 +1,7 @@
 {{define "partials/book-card"}}
 <div class="card-hover bg-surface rounded-xl shadow-md overflow-hidden border border-secondary/20">
   <a href="/books/{{.ID}}" class="block no-underline">
-    <div class="aspect-[2/3] bg-background flex items-center justify-center overflow-hidden">
+    <div class="book-cover aspect-[2/3] bg-background flex items-center justify-center overflow-hidden">
       {{if .CoverImageURL}}
       <img src="{{.CoverImageURL}}" alt="Cover of {{.Title}}" class="w-full h-full object-cover" loading="lazy">
       {{else}}
