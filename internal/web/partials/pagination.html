@@ -8,7 +8,7 @@
     {{if gt .Page 1}}
     <a href="?page={{sub .Page 1}}{{if .CurrentQuery}}&q={{.CurrentQuery}}{{end}}"
       hx-get="?page={{sub .Page 1}}{{if .CurrentQuery}}&q={{.CurrentQuery}}{{end}}"
-      hx-target="#book-grid"
+      hx-target="#main-content"
       hx-swap="innerHTML"
       class="px-3 py-1.5 rounded-lg border text-primary hover:bg-primary hover:text-white transition-colors no-underline text-sm border-primary">
       ← Prev
@@ -21,7 +21,7 @@
     {{else}}
     <a href="?page={{.}}{{if $.CurrentQuery}}&q={{$.CurrentQuery}}{{end}}"
       hx-get="?page={{.}}{{if $.CurrentQuery}}&q={{$.CurrentQuery}}{{end}}"
-      hx-target="#book-grid"
+      hx-target="#main-content"
       hx-swap="innerHTML"
       class="px-3 py-1.5 rounded-lg border text-primary hover:bg-primary hover:text-white transition-colors no-underline text-sm border-primary">
       {{.}}
@@ -32,7 +32,7 @@
     {{if lt .Page .TotalPages}}
     <a href="?page={{add .Page 1}}{{if .CurrentQuery}}&q={{.CurrentQuery}}{{end}}"
       hx-get="?page={{add .Page 1}}{{if .CurrentQuery}}&q={{.CurrentQuery}}{{end}}"
-      hx-target="#book-grid"
+      hx-target="#main-content"
       hx-swap="innerHTML"
       class="px-3 py-1.5 rounded-lg border text-primary hover:bg-primary hover:text-white transition-colors no-underline text-sm border-primary">
       Next →
