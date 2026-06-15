@@ -799,13 +799,41 @@ func DeleteBookHandler(repo repository.BookRepository) http.HandlerFunc {
 // Used by the star rating UI on the book form page.
 func RateChildHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		bookID, err := strconv.ParseInt(r.FormValue("book_id"), 10, 64)
-		if err != nil || bookID <= 0 {
+		var bookID int64
+		var rating int
+
+		// HTMX 2.x sends hx-vals as JSON (application/json).
+		// Fall back to form parsing for other clients.
+		if r.Header.Get("Content-Type") == "application/json" {
+			var req struct {
+				BookID int64 `json:"book_id"`
+				Rating int   `json:"rating"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				JSONError(w, http.StatusBadRequest, "invalid request body")
+				return
+			}
+			bookID = req.BookID
+			rating = req.Rating
+		} else {
+			var err error
+			bookID, err = strconv.ParseInt(r.FormValue("book_id"), 10, 64)
+			if err != nil || bookID <= 0 {
+				JSONError(w, http.StatusBadRequest, "book_id is required")
+				return
+			}
+			rating, err = strconv.Atoi(r.FormValue("rating"))
+			if err != nil || rating < 1 || rating > 5 {
+				JSONError(w, http.StatusBadRequest, "rating must be between 1 and 5")
+				return
+			}
+		}
+
+		if bookID <= 0 {
 			JSONError(w, http.StatusBadRequest, "book_id is required")
 			return
 		}
-		rating, err := strconv.Atoi(r.FormValue("rating"))
-		if err != nil || rating < 1 || rating > 5 {
+		if rating < 1 || rating > 5 {
 			JSONError(w, http.StatusBadRequest, "rating must be between 1 and 5")
 			return
 		}

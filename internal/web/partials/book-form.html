@@ -119,6 +119,7 @@
           hx-post="/api/v1/books/rate-child"
           hx-vals='{"book_id": {{$.BookID}}, "rating": {{.}}}'
           hx-swap="none"
+          hx-on:click="var r=this.getAttribute('data-rating');var stars=this.parentElement.querySelectorAll('button');stars.forEach(function(s){var v=s.getAttribute('data-rating');s.classList.toggle('text-accent',parseInt(v)<=parseInt(r));s.classList.toggle('text-text-light/30',parseInt(v)>parseInt(r))})"
         >{{template "partials/star-icon" (dict "Class" "w-5 h-5")}}</button>
         {{end}}
       </div>
