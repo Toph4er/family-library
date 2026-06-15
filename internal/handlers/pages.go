@@ -373,7 +373,7 @@ func RenderDashboardPage(tmpl *template.Template, db *sql.DB, store *sessions.Co
 
 		// Average child rating (among rated books)
 		var avgRating float64
-		if err := db.QueryRow("SELECT COALESCE(AVG(child_rating), 0) FROM books WHERE child_rating IS NOT NULL").Scan(&avgRating); err == nil {
+		if err := db.QueryRow("SELECT COALESCE(AVG(child_rating), 0) FROM books WHERE child_rating IS NOT NULL AND child_rating > 0").Scan(&avgRating); err == nil {
 			dash.StatCards = append(dash.StatCards, StatCard{
 				Icon:  "⭐",
 				Value: fmt.Sprintf("%.1f", avgRating),
@@ -454,7 +454,7 @@ func RenderDashboardPage(tmpl *template.Template, db *sql.DB, store *sessions.Co
 		rows3, err := db.Query(`
 			SELECT title, child_rating
 			FROM books
-			WHERE child_rating IS NOT NULL
+			WHERE child_rating IS NOT NULL AND child_rating > 0
 			ORDER BY child_rating DESC
 			LIMIT 5
 		`)
