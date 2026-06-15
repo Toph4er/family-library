@@ -23,7 +23,8 @@
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     transform: translateY(-2px);
   }
-  .stat-icon { font-size: 1.75rem; margin-bottom: 0.5rem; }
+  .stat-icon { width: 1.75rem; height: 1.75rem; margin-bottom: 0.5rem; color: var(--color-primary); }
+  .stat-icon svg { width: 100%; height: 100%; }
   .stat-value { font-size: 2rem; font-weight: 700; color: var(--color-primary); line-height: 1.2; }
   .stat-label { font-size: 0.875rem; color: var(--color-text-light); margin-top: 0.25rem; }
 
@@ -46,6 +47,16 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+  }
+  .section-card h2 .section-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: var(--color-primary);
+    flex-shrink: 0;
+  }
+  .section-card h2 .section-icon svg {
+    width: 100%;
+    height: 100%;
   }
   .section-row {
     display: flex;
@@ -248,7 +259,7 @@
     <!-- Fourth section: Most Wanted -->
     {{end}}
     <div class="section-card">
-      <h2>{{.Icon}} {{.Title}}</h2>
+      <h2><span class="section-icon" aria-hidden="true">{{.Icon}}</span> {{.Title}}</h2>
       {{if .Rows}}
         {{range .Rows}}
         <div class="section-row">
@@ -279,7 +290,7 @@
     <!-- Reading by Reader -->
     {{if .ReaderBreakdown}}
     <div class="section-card">
-      <h2>👥 Reading by Reader</h2>
+      <h2><span class="section-icon" aria-hidden="true"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> Reading by Reader</h2>
       {{range .ReaderBreakdown}}
       <div class="reader-bar-container">
         <span class="reader-bar-name" title="{{.Reader}}">{{.Reader}}</span>
@@ -292,7 +303,7 @@
     </div>
     {{else}}
     <div class="section-card">
-      <h2>👥 Reading by Reader</h2>
+      <h2><span class="section-icon" aria-hidden="true"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> Reading by Reader</h2>
       <div class="empty-state" style="padding: 1rem 0;"><p>No reading logs yet</p></div>
     </div>
     {{end}}
@@ -300,7 +311,7 @@
     <!-- Genre Breakdown -->
     {{if .GenreBreakdown}}
     <div class="section-card">
-      <h2>🏷️ Genre Breakdown</h2>
+      <h2><span class="section-icon" aria-hidden="true"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></span> Genre Breakdown</h2>
       {{range .GenreBreakdown}}
       <div class="genre-bar-container">
         <span class="genre-bar-name" title="{{.Genre}}">{{.Genre}}</span>
@@ -313,7 +324,7 @@
     </div>
     {{else}}
     <div class="section-card">
-      <h2>🏷️ Genre Breakdown</h2>
+      <h2><span class="section-icon" aria-hidden="true"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></span> Genre Breakdown</h2>
       <div class="empty-state" style="padding: 1rem 0;"><p>No genres assigned yet</p></div>
     </div>
     {{end}}
@@ -325,7 +336,7 @@
     <!-- Books by Book Type -->
     {{if .BookTypeBreakdown}}
     <div class="section-card">
-      <h2>📚 Books by Book Type</h2>
+      <h2><span class="section-icon" aria-hidden="true"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span> Books by Book Type</h2>
       {{range .BookTypeBreakdown}}
       <div class="genre-bar-container">
         <span class="genre-bar-name" title="{{.BookType}}">{{.BookType}}</span>
@@ -338,14 +349,14 @@
     </div>
     {{else}}
     <div class="section-card">
-      <h2>📚 Books by Book Type</h2>
+      <h2><span class="section-icon" aria-hidden="true"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span> Books by Book Type</h2>
       <div class="empty-state" style="padding: 1rem 0;"><p>No book types assigned yet</p></div>
     </div>
     {{end}}
 
     <!-- Collection Stats -->
     <div class="section-card">
-      <h2>📊 Collection Stats</h2>
+      <h2><span class="section-icon" aria-hidden="true"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg></span> Collection Stats</h2>
       {{if .CollectionStats}}
         {{range .CollectionStats}}
         <div class="section-row">

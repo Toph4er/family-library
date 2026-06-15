@@ -132,7 +132,7 @@ type ReadingLogContext struct {
 
 // StatCard represents a top-of-page stat card (big number).
 type StatCard struct {
-	Icon  string
+	Icon  template.HTML
 	Value string
 	Label string
 	Link  string
@@ -140,7 +140,7 @@ type StatCard struct {
 
 // SectionCard represents a side-by-side info panel.
 type SectionCard struct {
-	Icon  string
+	Icon  template.HTML
 	Title string
 	Rows  []SectionRow
 	Link  string
@@ -353,7 +353,7 @@ func RenderDashboardPage(tmpl *template.Template, db *sql.DB, store *sessions.Co
 		var bookCount int
 		if err := db.QueryRow("SELECT COUNT(*) FROM books").Scan(&bookCount); err == nil {
 			dash.StatCards = append(dash.StatCards, StatCard{
-				Icon:  "📚",
+				Icon:  svgIcon("book"),
 				Value: strconv.Itoa(bookCount),
 				Label: "Total Books",
 				Link:  "/books",
@@ -364,7 +364,7 @@ func RenderDashboardPage(tmpl *template.Template, db *sql.DB, store *sessions.Co
 		var totalReads int
 		if err := db.QueryRow("SELECT COUNT(*) FROM reading_logs").Scan(&totalReads); err == nil {
 			dash.StatCards = append(dash.StatCards, StatCard{
-				Icon:  "📖",
+				Icon:  svgIcon("open-book"),
 				Value: strconv.Itoa(totalReads),
 				Label: "Total Reads",
 				Link:  "/reading-log",
@@ -375,7 +375,7 @@ func RenderDashboardPage(tmpl *template.Template, db *sql.DB, store *sessions.Co
 		var avgRating float64
 		if err := db.QueryRow("SELECT COALESCE(AVG(child_rating), 0) FROM books WHERE child_rating IS NOT NULL AND child_rating > 0").Scan(&avgRating); err == nil {
 			dash.StatCards = append(dash.StatCards, StatCard{
-				Icon:  "⭐",
+				Icon:  svgIcon("star"),
 				Value: fmt.Sprintf("%.1f", avgRating),
 				Label: "Avg Rating",
 				Link:  "/books",
@@ -386,7 +386,7 @@ func RenderDashboardPage(tmpl *template.Template, db *sql.DB, store *sessions.Co
 		var wishlistCount int
 		if err := db.QueryRow("SELECT COUNT(*) FROM wishlist WHERE NOT fulfilled").Scan(&wishlistCount); err == nil {
 			dash.StatCards = append(dash.StatCards, StatCard{
-				Icon:  "📋",
+				Icon:  svgIcon("clipboard-list"),
 				Value: strconv.Itoa(wishlistCount),
 				Label: "Wishlist Items",
 				Link:  "/wishlist",
@@ -443,7 +443,7 @@ func RenderDashboardPage(tmpl *template.Template, db *sql.DB, store *sessions.Co
 			}
 		}
 		dash.Sections = append(dash.Sections, SectionCard{
-			Icon:  "📖",
+			Icon:  svgIcon("open-book"),
 			Title: "Most Read Books",
 			Rows:  mostReadRows,
 			Link:  "/reading-log",
@@ -472,7 +472,7 @@ func RenderDashboardPage(tmpl *template.Template, db *sql.DB, store *sessions.Co
 			}
 		}
 		dash.Sections = append(dash.Sections, SectionCard{
-			Icon:  "⭐",
+			Icon:  svgIcon("star"),
 			Title: "Highest Rated",
 			Rows:  topRatedRows,
 			Link:  "/books",
@@ -499,7 +499,7 @@ func RenderDashboardPage(tmpl *template.Template, db *sql.DB, store *sessions.Co
 			}
 		}
 		dash.Sections = append(dash.Sections, SectionCard{
-			Icon:  "🆕",
+			Icon:  svgIcon("sparkles"),
 			Title: "Recently Added",
 			Rows:  recentRows,
 			Link:  "/books",
@@ -532,7 +532,7 @@ func RenderDashboardPage(tmpl *template.Template, db *sql.DB, store *sessions.Co
 			}
 		}
 		dash.Sections = append(dash.Sections, SectionCard{
-			Icon:  "📋",
+			Icon:  svgIcon("clipboard-list"),
 			Title: "Most Wanted",
 			Rows:  wishlistRows,
 			Link:  "/wishlist",
@@ -691,7 +691,7 @@ func RenderDashboardPage(tmpl *template.Template, db *sql.DB, store *sessions.Co
 		).Scan(&booksReadThisMonth)
 		if err == nil {
 			dash.StatCards = append(dash.StatCards, StatCard{
-				Icon:  "📅",
+				Icon:  svgIcon("calendar"),
 				Value: strconv.Itoa(booksReadThisMonth),
 				Label: "Read This Month",
 				Link:  "/reading-log",
@@ -1245,6 +1245,46 @@ func buildThemeColorsJSON(themes []theme.Theme) template.HTML {
 }
 
 // --- Dashboard helpers ---
+
+// svgIcon returns a 24x24 inline SVG as template.HTML.
+func svgIcon(name string) template.HTML {
+	const (
+		iconBook = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>`
+		iconOpenBook = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`
+		iconStar = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`
+		iconClipboardList = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 14l2 2 4-4"/></svg>`
+		iconCalendar = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`
+		iconUsers = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`
+		iconTag = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>`
+		iconBarChart = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>`
+		iconHeart = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`
+		iconSparkles = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>`
+	)
+	switch name {
+	case "book":
+		return template.HTML(iconBook)
+	case "open-book":
+		return template.HTML(iconOpenBook)
+	case "star":
+		return template.HTML(iconStar)
+	case "clipboard-list":
+		return template.HTML(iconClipboardList)
+	case "calendar":
+		return template.HTML(iconCalendar)
+	case "users":
+		return template.HTML(iconUsers)
+	case "tag":
+		return template.HTML(iconTag)
+	case "bar-chart":
+		return template.HTML(iconBarChart)
+	case "heart":
+		return template.HTML(iconHeart)
+	case "sparkles":
+		return template.HTML(iconSparkles)
+	default:
+		return ""
+	}
+}
 
 func pluralS(n int, plural, singular string) string {
 	if n == 1 {
