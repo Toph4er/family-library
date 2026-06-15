@@ -1,5 +1,5 @@
 {{define "partials/book-card"}}
-<div class="card-hover bg-surface rounded-xl shadow-md overflow-hidden border border-secondary/20">
+<div class="book-card card-hover bg-surface rounded-xl shadow-md overflow-hidden border border-secondary/20">
   <a href="/books/{{.ID}}" class="block no-underline">
     <div class="book-cover aspect-[2/3] bg-background flex items-center justify-center overflow-hidden">
       {{if .CoverImageURL}}
@@ -10,19 +10,19 @@
       </svg>
       {{end}}
     </div>
-    <div class="p-4">
+    <div class="p-4 book-card-info">
       <h3 class="font-heading text-lg font-semibold text-primary mb-1 truncate">{{.Title}}</h3>
       {{if .Authors}}
       <p class="text-text-light text-sm mb-2">{{join ", " (split .Authors)}}</p>
       {{end}}
       {{if .ChildRating}}
-      <div class="flex items-center gap-1" aria-label="Child rating: {{.ChildRating}} out of 5 stars">
+      <div class="book-card-rating flex items-center gap-1" aria-label="Child rating: {{.ChildRating}} out of 5 stars">
         {{range seq 1 .ChildRating}}<svg class="w-4 h-4 text-accent" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>{{end}}
         {{range seq 1 (sub 5 .ChildRating)}}<svg class="w-4 h-4 text-text-light/30" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>{{end}}
       </div>
       {{end}}
       {{if .Genres}}
-      <div class="flex flex-wrap gap-1 mt-2">
+      <div class="book-card-genres flex flex-wrap gap-1 mt-2">
         {{range (split .Genres)}}
         <span class="mushroom-tag bg-primary/10 text-primary">{{.}}</span>
         {{end}}

@@ -165,9 +165,30 @@ html {
   background: var(--color-secondary/10);
 }
 
-/* Compact view: override cover aspect ratio */
+/* Compact view: denser grid, smaller cards, hidden extras */
+.view-compact {
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+  gap: 1rem !important;
+}
 .view-compact .book-cover {
-  aspect-ratio: 2 / 1 !important;
+  aspect-ratio: 2 / 3 !important;
+}
+.view-compact .book-card-info {
+  padding: 0.5rem 0.75rem !important;
+}
+.view-compact .book-card-info h3 {
+  font-size: 0.8125rem !important;
+  line-height: 1.25 !important;
+  max-height: 2.5em;
+  overflow: hidden;
+}
+.view-compact .book-card-info p {
+  font-size: 0.6875rem !important;
+  line-height: 1.2 !important;
+}
+.view-compact .book-card-rating,
+.view-compact .book-card-genres {
+  display: none !important;
 }
 .modal-content {
   background: var(--color-surface);

@@ -4,6 +4,7 @@ design-docs/
 # Go
 vendor/
 server
+library
 *.test
 *.out
 go.work.sum

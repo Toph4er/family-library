@@ -224,15 +224,30 @@ func isHTMXRequest(r *http.Request) bool {
 // renderPage renders a template, returning only the content fragment for HTMX
 // requests (HX-Request header present) or the full page layout otherwise.
 func renderPage(w http.ResponseWriter, r *http.Request, tmpl *template.Template, pageName string, data interface{}) {
+	renderFragmentOrPage(w, r, tmpl, pageName, "content", data)
+}
+
+// renderFragment is like renderPage but renders a specific template block
+// instead of the full "content" block. Use for surgical HTMX swaps where
+// only a small piece of the page needs to be re-rendered (e.g., a single
+// wishlist item, a settings row, a book card).
+//
+// For non-HTMX requests it renders the named page template (full layout).
+// For HTMX requests it renders only the specified fragment block.
+func renderFragment(w http.ResponseWriter, r *http.Request, tmpl *template.Template, pageName string, fragmentName string, data interface{}) {
+	renderFragmentOrPage(w, r, tmpl, pageName, fragmentName, data)
+}
+
+// renderFragmentOrPage is the internal implementation shared by renderPage
+// and renderFragment.
+func renderFragmentOrPage(w http.ResponseWriter, r *http.Request, tmpl *template.Template, pageName string, fragmentName string, data interface{}) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if isHTMXRequest(r) {
-		// HTMX request — render only the content block, not the base layout.
-		if err := tmpl.ExecuteTemplate(w, "content", data); err != nil {
-			slog.Error("template error", "page", pageName, "error", err)
+		if err := tmpl.ExecuteTemplate(w, fragmentName, data); err != nil {
+			slog.Error("template error", "page", pageName, "fragment", fragmentName, "error", err)
 			HTMXError(w, http.StatusInternalServerError)
 		}
 	} else {
-		// Full page request — render the page template (which includes base).
 		if err := tmpl.ExecuteTemplate(w, pageName, data); err != nil {
 			slog.Error("template error", "page", pageName, "error", err)
 			HTMXError(w, http.StatusInternalServerError)
