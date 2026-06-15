@@ -118,7 +118,7 @@
           aria-label="Rate {{.}} star{{if gt . 1}}s{{end}}"
           hx-post="/api/v1/books/rate-child"
           hx-vals='{"book_id": {{$.BookID}}, "rating": {{.}}}'
-          hx-target="none"
+          hx-swap="none"
         >{{template "partials/star-icon" (dict "Class" "w-5 h-5")}}</button>
         {{end}}
       </div>
