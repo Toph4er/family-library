@@ -661,7 +661,7 @@ func RenderDashboardPage(tmpl *template.Template, db *sql.DB, store *sessions.Co
 		}
 
 		var booksReadCount int
-		if err := db.QueryRow("SELECT COUNT(*) FROM books WHERE read_count > 0").Scan(&booksReadCount); err != nil {
+		if err := db.QueryRow("SELECT COUNT(DISTINCT book_id) FROM reading_logs").Scan(&booksReadCount); err != nil {
 			booksReadCount = 0
 		}
 
