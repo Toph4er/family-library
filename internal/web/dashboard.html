@@ -1,0 +1,369 @@
+{{template "base" .}}
+
+{{define "title"}}Dashboard — Woodland Library{{end}}
+
+{{define "extra-head"}}
+<style>
+  /* Dashboard stat cards */
+  .stat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    border-radius: 1rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-secondary);
+    transition: all 0.2s ease;
+    text-decoration: none;
+    color: inherit;
+  }
+  .stat-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
+  }
+  .stat-icon { font-size: 1.75rem; margin-bottom: 0.5rem; }
+  .stat-value { font-size: 2rem; font-weight: 700; color: var(--color-primary); line-height: 1.2; }
+  .stat-label { font-size: 0.875rem; color: var(--color-text-light); margin-top: 0.25rem; }
+
+  /* Dashboard section cards */
+  .section-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-secondary);
+    border-radius: 1rem;
+    padding: 1.25rem;
+    transition: box-shadow 0.2s ease;
+  }
+  .section-card:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .section-card h2 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .section-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--color-secondary);
+  }
+  .section-row:last-child { border-bottom: none; }
+  .section-row-label {
+    font-size: 0.875rem;
+    color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 60%;
+  }
+  .section-row-value {
+    font-size: 0.875rem;
+    color: var(--color-text-light);
+    font-weight: 500;
+    white-space: nowrap;
+    margin-left: 1rem;
+  }
+  .section-row-link {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .section-row-link:hover {
+    text-decoration: underline;
+  }
+  .section-link {
+    display: inline-block;
+    margin-top: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .section-link:hover {
+    text-decoration: underline;
+  }
+
+  /* Reader breakdown bars */
+  .reader-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.4rem 0;
+  }
+  .reader-bar-name {
+    font-size: 0.875rem;
+    color: var(--color-text);
+    width: 80px;
+    flex-shrink: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: right;
+  }
+  .reader-bar-track {
+    flex: 1;
+    height: 18px;
+    background: var(--color-background);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .reader-bar-fill {
+    height: 100%;
+    background: var(--color-primary);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+    min-width: 2px;
+  }
+  .reader-bar-count {
+    font-size: 0.875rem;
+    color: var(--color-text-light);
+    font-weight: 500;
+    width: 40px;
+    flex-shrink: 0;
+    text-align: right;
+  }
+
+  /* Genre/BookType bars */
+  .genre-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.35rem 0;
+  }
+  .genre-bar-name {
+    font-size: 0.875rem;
+    color: var(--color-text);
+    width: 100px;
+    flex-shrink: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: right;
+  }
+  .genre-bar-track {
+    flex: 1;
+    height: 14px;
+    background: var(--color-background);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .genre-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+    min-width: 2px;
+  }
+  .genre-bar-count {
+    font-size: 0.875rem;
+    color: var(--color-text-light);
+    font-weight: 500;
+    width: 30px;
+    flex-shrink: 0;
+    text-align: right;
+  }
+
+  /* Staggered animation for stat cards */
+  .stagger-children > * {
+    opacity: 0;
+    transform: translateY(10px);
+    animation: fade-in-up 0.4s ease forwards;
+  }
+  .stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
+  .stagger-children > *:nth-child(2) { animation-delay: 0.1s; }
+  .stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
+  .stagger-children > *:nth-child(4) { animation-delay: 0.2s; }
+  .stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
+  .stagger-children > *:nth-child(6) { animation-delay: 0.3s; }
+
+  @keyframes fade-in-up {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--color-text-light);
+    font-size: 0.875rem;
+  }
+</style>
+{{end}}
+
+{{define "content"}}
+<div class="flex flex-col gap-6 animate-fade-in-up">
+
+  <!-- Welcome header -->
+  <header class="text-center py-6">
+    <h1 class="text-4xl md:text-5xl font-heading text-primary mb-3 leading-tight">
+      Dashboard
+    </h1>
+    <p class="text-text-light/80 text-lg max-w-2xl mx-auto font-accent text-xl">
+      Welcome back, {{if .Username}}{{.Username}}{{else}}reader{{end}}!
+    </p>
+    <div class="vine-divider max-w-md mx-auto mt-4" aria-hidden="true"></div>
+  </header>
+
+  <!-- Stat cards row -->
+  {{if .StatCards}}
+  <section aria-label="Library statistics">
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 stagger-children">
+      {{range .StatCards}}
+      <a href="{{.Link}}" class="stat-card" aria-label="{{.Label}}: {{.Value}}">
+        <span class="stat-icon" aria-hidden="true">{{.Icon}}</span>
+        <span class="stat-value">{{.Value}}</span>
+        <span class="stat-label">{{.Label}}</span>
+      </a>
+      {{end}}
+    </div>
+  </section>
+  {{else}}
+  <section aria-label="Library statistics">
+    <div class="empty-state">
+      <p>No statistics available yet. Add books to your collection to see stats here.</p>
+    </div>
+  </section>
+  {{end}}
+
+  <!-- Top 5 Most Read & Top 5 Highest Rated -->
+  {{if or .Sections}}
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    {{range $i, $section := .Sections}}
+    {{if and (eq $i 0) (eq (len $.Sections) 6)}}
+    <!-- First section: Most Read -->
+    {{end}}
+    {{if and (eq $i 1) (eq (len $.Sections) 6)}}
+    <!-- Second section: Highest Rated -->
+    {{end}}
+    {{if and (eq $i 2) (eq (len $.Sections) 6)}}
+    <!-- Third section: Recently Added -->
+    {{end}}
+    {{if and (eq $i 3) (eq (len $.Sections) 6)}}
+    <!-- Fourth section: Most Wanted -->
+    {{end}}
+    <div class="section-card">
+      <h2>{{.Icon}} {{.Title}}</h2>
+      {{if .Rows}}
+        {{range .Rows}}
+        <div class="section-row">
+          <span class="section-row-label">{{.Label}}</span>
+          {{if .Link}}
+            <a href="{{.Link}}" class="section-row-value section-row-link">{{.Value}}</a>
+          {{else}}
+            <span class="section-row-value">{{.Value}}</span>
+          {{end}}
+        </div>
+        {{end}}
+      {{else}}
+        <div class="empty-state" style="padding: 1rem 0;">
+          <p>No data yet</p>
+        </div>
+      {{end}}
+      {{if .Link}}
+        <a href="{{.Link}}" class="section-link">View all →</a>
+      {{end}}
+    </div>
+    {{end}}
+  </div>
+  {{end}}
+
+  <!-- Reading by Reader & Genre Breakdown -->
+  {{if or .ReaderBreakdown .GenreBreakdown .BookTypeBreakdown}}
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Reading by Reader -->
+    {{if .ReaderBreakdown}}
+    <div class="section-card">
+      <h2>👥 Reading by Reader</h2>
+      {{range .ReaderBreakdown}}
+      <div class="reader-bar-container">
+        <span class="reader-bar-name" title="{{.Reader}}">{{.Reader}}</span>
+        <div class="reader-bar-track">
+          <div class="reader-bar-fill" style="width: {{.Width}}"></div>
+        </div>
+        <span class="reader-bar-count">{{.Count}}</span>
+      </div>
+      {{end}}
+    </div>
+    {{else}}
+    <div class="section-card">
+      <h2>👥 Reading by Reader</h2>
+      <div class="empty-state" style="padding: 1rem 0;"><p>No reading logs yet</p></div>
+    </div>
+    {{end}}
+
+    <!-- Genre Breakdown -->
+    {{if .GenreBreakdown}}
+    <div class="section-card">
+      <h2>🏷️ Genre Breakdown</h2>
+      {{range .GenreBreakdown}}
+      <div class="genre-bar-container">
+        <span class="genre-bar-name" title="{{.Genre}}">{{.Genre}}</span>
+        <div class="genre-bar-track">
+          <div class="genre-bar-fill" style="width: {{.Width}}"></div>
+        </div>
+        <span class="genre-bar-count">{{.Count}}</span>
+      </div>
+      {{end}}
+    </div>
+    {{else}}
+    <div class="section-card">
+      <h2>🏷️ Genre Breakdown</h2>
+      <div class="empty-state" style="padding: 1rem 0;"><p>No genres assigned yet</p></div>
+    </div>
+    {{end}}
+  </div>
+  {{end}}
+
+  <!-- Books by Book Type & Collection Stats -->
+  {{if or .BookTypeBreakdown .Sections}}
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Books by Book Type -->
+    {{if .BookTypeBreakdown}}
+    <div class="section-card">
+      <h2>📚 Books by Book Type</h2>
+      {{range .BookTypeBreakdown}}
+      <div class="genre-bar-container">
+        <span class="genre-bar-name" title="{{.BookType}}">{{.BookType}}</span>
+        <div class="genre-bar-track">
+          <div class="genre-bar-fill" style="width: {{.Width}}"></div>
+        </div>
+        <span class="genre-bar-count">{{.Count}}</span>
+      </div>
+      {{end}}
+    </div>
+    {{else}}
+    <div class="section-card">
+      <h2>📚 Books by Book Type</h2>
+      <div class="empty-state" style="padding: 1rem 0;"><p>No book types assigned yet</p></div>
+    </div>
+    {{end}}
+
+    <!-- Collection Stats -->
+    {{range .Sections}}
+    {{if eq .Icon "📊"}}
+    <div class="section-card">
+      <h2>{{.Icon}} {{.Title}}</h2>
+      {{if .Rows}}
+        {{range .Rows}}
+        <div class="section-row">
+          <span class="section-row-label">{{.Label}}</span>
+          <span class="section-row-value">{{.Value}}</span>
+        </div>
+        {{end}}
+      {{else}}
+        <div class="empty-state" style="padding: 1rem 0;"><p>No data yet</p></div>
+      {{end}}
+    </div>
+    {{end}}
+    {{end}}
+  </div>
+  {{end}}
+
+</div>
+{{end}}

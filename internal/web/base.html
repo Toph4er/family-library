@@ -81,6 +81,9 @@
 
           <!-- Desktop nav links (visible on md+) -->
           <nav class="hidden md:flex items-center gap-6" aria-label="Main navigation">
+            {{if .IsAuthenticated}}
+            <a href="/dashboard" class="text-primary hover:text-text-light transition-colors font-medium text-sm no-underline">Dashboard</a>
+            {{end}}
             <a href="/books" class="text-primary hover:text-text-light transition-colors font-medium text-sm no-underline">Books</a>
             {{if .IsAuthenticated}}
             <a href="/reading-log" class="text-primary hover:text-text-light transition-colors font-medium text-sm no-underline">Reading Log</a>
@@ -132,6 +135,9 @@
     >
       <div class="max-w-7xl mx-auto px-4 pb-2">
         <div class="flex flex-col gap-2 pt-3">
+          {{if .IsAuthenticated}}
+          <a href="/dashboard" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Dashboard</a>
+          {{end}}
           <a href="/books" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Books</a>
           {{if .IsAuthenticated}}
           <a href="/reading-log" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Reading Log</a>
