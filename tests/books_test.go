@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"git.rcsmaine.com/chris/library/internal/handlers"
-	"git.rcsmaine.com/chris/library/internal/repository"
+	"github.com/Toph4er/family-library/internal/handlers"
+	"github.com/Toph4er/family-library/internal/repository"
 )
 
 func TestDeleteBookHandler_Success(t *testing.T) {

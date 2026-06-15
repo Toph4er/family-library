@@ -14,11 +14,11 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/sessions"
 
-	"git.rcsmaine.com/chris/library/internal/auth"
-	sqldb "git.rcsmaine.com/chris/library/internal/db"
-	"git.rcsmaine.com/chris/library/internal/middleware"
-	"git.rcsmaine.com/chris/library/internal/models"
-	"git.rcsmaine.com/chris/library/internal/theme"
+	"github.com/Toph4er/family-library/internal/auth"
+	sqldb "github.com/Toph4er/family-library/internal/db"
+	"github.com/Toph4er/family-library/internal/middleware"
+	"github.com/Toph4er/family-library/internal/models"
+	"github.com/Toph4er/family-library/internal/theme"
 )
 
 // BaseContext holds common template data shared across all page handlers.

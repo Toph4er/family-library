@@ -8,9 +8,9 @@ import (
 
 	"github.com/gorilla/sessions"
 
-	"git.rcsmaine.com/chris/library/internal/auth"
-	"git.rcsmaine.com/chris/library/internal/middleware"
-	"git.rcsmaine.com/chris/library/internal/theme"
+	"github.com/Toph4er/family-library/internal/auth"
+	"github.com/Toph4er/family-library/internal/middleware"
+	"github.com/Toph4er/family-library/internal/theme"
 )
 
 // pageData holds template context for login-related pages.

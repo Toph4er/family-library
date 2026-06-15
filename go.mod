@@ -1,4 +1,4 @@
-module git.rcsmaine.com/chris/library
+module github.com/Toph4er/family-library
 
 go 1.26
 

@@ -15,9 +15,9 @@ import (
 	"sync"
 	"time"
 
-	"git.rcsmaine.com/chris/library/internal/auth"
-	"git.rcsmaine.com/chris/library/internal/models"
-	"git.rcsmaine.com/chris/library/internal/repository"
+	"github.com/Toph4er/family-library/internal/auth"
+	"github.com/Toph4er/family-library/internal/models"
+	"github.com/Toph4er/family-library/internal/repository"
 
 	"github.com/go-chi/chi/v5"
 	"golang.org/x/time/rate"

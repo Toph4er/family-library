@@ -20,9 +20,9 @@ import (
 
 	"github.com/pressly/goose/v3"
 
-	"git.rcsmaine.com/chris/library/internal/api"
-	"git.rcsmaine.com/chris/library/internal/auth"
-	"git.rcsmaine.com/chris/library/internal/db"
+	"github.com/Toph4er/family-library/internal/api"
+	"github.com/Toph4er/family-library/internal/auth"
+	"github.com/Toph4er/family-library/internal/db"
 )
 
 func main() {

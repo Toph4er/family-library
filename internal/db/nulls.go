@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"git.rcsmaine.com/chris/library/internal/models"
+	"github.com/Toph4er/family-library/internal/models"
 )
 
 // NullStrPtr converts a sql.NullString to *string. Returns nil if not valid.

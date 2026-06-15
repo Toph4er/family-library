@@ -12,10 +12,10 @@ import (
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 
-	"git.rcsmaine.com/chris/library/internal/auth"
-	"git.rcsmaine.com/chris/library/internal/handlers"
-	"git.rcsmaine.com/chris/library/internal/middleware"
-	"git.rcsmaine.com/chris/library/internal/repository"
+	"github.com/Toph4er/family-library/internal/auth"
+	"github.com/Toph4er/family-library/internal/handlers"
+	"github.com/Toph4er/family-library/internal/middleware"
+	"github.com/Toph4er/family-library/internal/repository"
 )
 
 // RouterConfig holds optional dependencies for the router.
@@ -44,7 +44,7 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 	// -- CORS --
 	corsOrigin := os.Getenv("CORS_ORIGIN")
 	if corsOrigin == "" {
-		corsOrigin = "https://library.rcsmaine.com"
+		corsOrigin = "https://example.com"
 	}
 
 	r.Use(cors.Handler(cors.Options{

@@ -12,9 +12,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"git.rcsmaine.com/chris/library/internal/auth"
-	"git.rcsmaine.com/chris/library/internal/handlers"
-	"git.rcsmaine.com/chris/library/internal/middleware"
+	"github.com/Toph4er/family-library/internal/auth"
+	"github.com/Toph4er/family-library/internal/handlers"
+	"github.com/Toph4er/family-library/internal/middleware"
 )
 
 // buildAdminHTMLRouter creates a chi router that wraps the given handler with

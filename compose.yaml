@@ -2,10 +2,10 @@ services:
   library:
     image: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA:-latest}
     container_name: library
-    hostname: library.rcsmaine.com
+    hostname: example.com
     environment:
-      - VIRTUAL_HOST=library.rcsmaine.com
-      - LETSENCRYPT_HOST=library.rcsmaine.com
+      - VIRTUAL_HOST=${VIRTUAL_HOST}
+      - LETSENCRYPT_HOST=${LETSENCRYPT_HOST}
       - PORT=8080
       - DATABASE_PATH=/app/data/library.db
       - ADMIN_USERNAME=${ADMIN_USERNAME}

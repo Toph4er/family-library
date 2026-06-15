@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"git.rcsmaine.com/chris/library/internal/handlers"
+	"github.com/Toph4er/family-library/internal/handlers"
 )
 
 func TestDeleteWishlistItemHandler_Success(t *testing.T) {

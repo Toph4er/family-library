@@ -25,7 +25,7 @@ func LoadOLConfig() *OLConfig {
 	return &OLConfig{
 		BaseURL:         envOr("OL_BASE_URL", "https://openlibrary.org"),
 		CoversURL:       envOr("OL_COVERS_URL", "https://covers.openlibrary.org"),
-		UserAgent:       envOr("OL_USER_AGENT", "WoodlandLibrary/1.0 (personal children's library collection; contact@woodlandlibrary.local)"),
+		UserAgent:       envOr("OL_USER_AGENT", "family-library/1.0 (https://github.com/Toph4er/family-library)"),
 		HTTPTimeout:     durationOr("OL_HTTP_TIMEOUT", 10*time.Second),
 		CacheTTL:        durationOr("OL_CACHE_TTL", 24*time.Hour),
 		RateLimitPerSec: intOr("OL_RATE_LIMIT_PER_SEC", 2),

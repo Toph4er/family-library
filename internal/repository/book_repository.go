@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"git.rcsmaine.com/chris/library/internal/db"
-	"git.rcsmaine.com/chris/library/internal/models"
+	"github.com/Toph4er/family-library/internal/db"
+	"github.com/Toph4er/family-library/internal/models"
 )
 
 type sqliteBookRepository struct {

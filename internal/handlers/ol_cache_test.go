@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"git.rcsmaine.com/chris/library/internal/db"
+	"github.com/Toph4er/family-library/internal/db"
 )
 
 // TestCachedFetchFromOpenLibrary_HitsCache verifies that a cached entry is
