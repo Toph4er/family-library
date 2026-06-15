@@ -112,33 +112,41 @@
 {{define "scripts"}}
 <script nonce="{{ .Nonce }}">
 (function() {
-  var toggle = document.getElementById('view-toggle');
-  if (!toggle) return;
+  function applyView() {
+    var saved = localStorage.getItem('book_view') || 'full';
+    var toggle = document.getElementById('view-toggle');
+    if (!toggle) return;
 
-  var btns = toggle.querySelectorAll('.view-toggle-btn');
-  var grid = document.getElementById('book-grid');
+    var btns = toggle.querySelectorAll('.view-toggle-btn');
+    var grid = document.getElementById('book-grid');
 
-  function setView(view) {
-    localStorage.setItem('book_view', view);
     if (grid) {
-      grid.classList.toggle('view-compact', view === 'compact');
+      grid.classList.toggle('view-compact', saved === 'compact');
     }
     btns.forEach(function(b) {
-      var active = b.getAttribute('data-view') === view;
+      var active = b.getAttribute('data-view') === saved;
       b.classList.toggle('active', active);
       b.setAttribute('aria-checked', String(active));
     });
   }
 
-  // Apply saved preference
-  var saved = localStorage.getItem('book_view') || 'full';
-  setView(saved);
+  // Apply on initial load
+  applyView();
 
-  // Wire up buttons
-  btns.forEach(function(b) {
-    b.addEventListener('click', function() {
-      setView(b.getAttribute('data-view'));
-    });
+  // Re-apply after HTMX swaps content (pagination, etc.)
+  document.body.addEventListener('htmx:afterSwap', function(event) {
+    if (event.detail.target === document.getElementById('main-content')) {
+      applyView();
+    }
+  });
+
+  // Wire up toggle buttons (delegated, survives HTMX swaps)
+  document.body.addEventListener('click', function(event) {
+    var btn = event.target.closest('.view-toggle-btn');
+    if (!btn) return;
+    var view = btn.getAttribute('data-view');
+    localStorage.setItem('book_view', view);
+    applyView();
   });
 })();
 </script>
