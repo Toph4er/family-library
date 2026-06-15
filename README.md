@@ -184,6 +184,17 @@ You can use any reverse proxy (Traefik, Caddy, manual nginx, etc.) instead. Just
 - The `CORS_ORIGIN` variable matches your domain
 - The `ENV` variable is set to `production` (enables Secure cookie flag)
 
+## Screenshots
+
+### Landing Page
+![Landing Page](screenshots/library-landing.png)
+
+### Dashboard
+![Dashboard](screenshots/library-dashboard.png)
+
+### Book Detail
+![Book Detail](screenshots/library-book-view.png)
+
 ## CI/CD Pipeline
 
 A GitLab CI pipeline is included (`.gitlab-ci.yml`) for automated testing, building, and deployment. It is **not required** for self-hosting — see the Docker instructions above.
