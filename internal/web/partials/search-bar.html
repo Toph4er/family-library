@@ -1,5 +1,5 @@
 {{define "partials/search-bar"}}
-<form action="/books" method="GET" class="relative">
+<form hx-get="/books" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true" class="relative">
   <input type="text"
     name="q"
     value="{{.CurrentQuery}}"

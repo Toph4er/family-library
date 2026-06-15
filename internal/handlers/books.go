@@ -769,29 +769,29 @@ func filterBooksForGuest(r *http.Request, books []models.Book) {
 
 // DeleteBookHandler deletes a book by ID.
 // Used by HTMX hx-delete on the book detail page.
+// Returns an HX-Redirect header so HTMX navigates to /books after deletion.
 func DeleteBookHandler(repo repository.BookRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		idStr := chi.URLParam(r, "id")
 		id, err := strconv.ParseInt(idStr, 10, 64)
 		if err != nil {
-			JSONError(w, http.StatusBadRequest, "invalid book ID")
+			HTMXErrorResponse(w, http.StatusBadRequest, "Invalid book ID")
 			return
 		}
 
 		err = repo.Delete(r.Context(), id)
 		if err != nil {
 			if strings.Contains(err.Error(), "no rows affected") {
-				JSONError(w, http.StatusNotFound, "book not found")
+				HTMXErrorResponse(w, http.StatusNotFound, "Book not found")
 				return
 			}
-			JSONError(w, http.StatusInternalServerError, "database error")
+			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to delete book")
 			return
 		}
 
-		JSONResponse(w, http.StatusOK, map[string]interface{}{
-			"success": true,
-			"message": "book deleted",
-		})
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("HX-Redirect", "/books")
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
