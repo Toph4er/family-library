@@ -22,7 +22,7 @@ backend-test:
         sleep $((i * 5))
       done
     - go vet ./...
-    - go test -coverpkg=git.rcsmaine.com/chris/library/... ./... -coverprofile=coverage.out
+    - go test -coverpkg=github.com/Toph4er/family-library/... ./... -coverprofile=coverage.out
     - go tool cover -func=coverage.out
     - |
       TOTAL_COV=$(go tool cover -func=coverage.out | grep "total:" | awk '{print $3}' | sed 's/%//')
