@@ -642,31 +642,31 @@ func RenderDashboardPage(tmpl *template.Template, db *sql.DB, store *sessions.Co
 
 		// --- Section: Collection Stats ---
 		var firstBookDate, lastReadDate string
-		if err := db.QueryRow("SELECT MIN(created_at) FROM books").Scan(&firstBookDate); err == nil {
-			// firstBookDate populated
+		if err := db.QueryRow("SELECT MIN(created_at) FROM books").Scan(&firstBookDate); err != nil {
+			firstBookDate = ""
 		}
-		if err := db.QueryRow("SELECT MAX(read_at) FROM reading_logs").Scan(&lastReadDate); err == nil {
-			// lastReadDate populated
+		if err := db.QueryRow("SELECT MAX(read_at) FROM reading_logs").Scan(&lastReadDate); err != nil {
+			lastReadDate = ""
 		}
 
 		var totalPages int
-		if err := db.QueryRow("SELECT COALESCE(SUM(page_count), 0) FROM books WHERE page_count IS NOT NULL").Scan(&totalPages); err == nil {
-			// totalPages populated
+		if err := db.QueryRow("SELECT COALESCE(SUM(page_count), 0) FROM books WHERE page_count IS NOT NULL").Scan(&totalPages); err != nil {
+			totalPages = 0
 		}
 
 		var coversUploaded int
-		if err := db.QueryRow("SELECT COUNT(*) FROM books WHERE cover_image_url IS NOT NULL").Scan(&coversUploaded); err == nil {
-			// coversUploaded populated
+		if err := db.QueryRow("SELECT COUNT(*) FROM books WHERE cover_image_url IS NOT NULL").Scan(&coversUploaded); err != nil {
+			coversUploaded = 0
 		}
 
 		var booksReadCount int
-		if err := db.QueryRow("SELECT COUNT(*) FROM books WHERE read_count > 0").Scan(&booksReadCount); err == nil {
-			// booksReadCount populated
+		if err := db.QueryRow("SELECT COUNT(*) FROM books WHERE read_count > 0").Scan(&booksReadCount); err != nil {
+			booksReadCount = 0
 		}
 
 		var booksRatedCount int
-		if err := db.QueryRow("SELECT COUNT(*) FROM books WHERE child_rating IS NOT NULL AND child_rating >= 4").Scan(&booksRatedCount); err == nil {
-			// booksRatedCount populated
+		if err := db.QueryRow("SELECT COUNT(*) FROM books WHERE child_rating IS NOT NULL AND child_rating >= 4").Scan(&booksRatedCount); err != nil {
+			booksRatedCount = 0
 		}
 
 		dash.Sections = append(dash.Sections, SectionCard{
