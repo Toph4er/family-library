@@ -237,7 +237,7 @@ func HTMLUpdateUserHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		fields = append(fields, updateField{column: "updated_at", value: "CURRENT_TIMESTAMP"})
+		fields = append(fields, rawField("updated_at", "CURRENT_TIMESTAMP"))
 
 		setClause, args := buildUpdateClauses(fields)
 		args = append(args, id)

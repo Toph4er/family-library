@@ -1005,7 +1005,7 @@ func HTMLUpdateBookHandler(db *sql.DB) http.HandlerFunc {
 		}
 
 		// Always update timestamp
-		sets = append(sets, updateField{column: "updated_at", value: "CURRENT_TIMESTAMP"})
+		sets = append(sets, rawField("updated_at", "CURRENT_TIMESTAMP"))
 
 		setClause, args := buildUpdateClauses(sets)
 		args = append(args, id)
