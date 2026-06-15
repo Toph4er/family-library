@@ -318,7 +318,7 @@ func HTMLBookSelectorHandler(db *sql.DB) http.HandlerFunc {
 				continue
 			}
 			hasBooks = true
-			bookOptions += fmt.Sprintf(`<a href="#" class="block px-4 py-3 rounded-lg hover:bg-background/50 transition-colors text-sm text-text no-underline" hx-on::click="openLogForm(%d); this.closest('.modal-backdrop').remove(); return false;">%s</a>`, id, template.HTMLEscapeString(title))
+			bookOptions += fmt.Sprintf(`<a href="#" class="block px-4 py-3 rounded-lg hover:bg-background/50 transition-colors text-sm text-text no-underline" hx-on:click="openLogForm(%d); this.closest('.modal-backdrop').remove(); return false;">%s</a>`, id, template.HTMLEscapeString(title))
 		}
 
 		if !hasBooks {
@@ -327,11 +327,11 @@ func HTMLBookSelectorHandler(db *sql.DB) http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		_, _ = w.Write([]byte(`
-<div id="modal-backdrop" class="modal-backdrop" hx-on::click="if(event.target===this)this.closest('.modal-backdrop').remove()">
+<div id="modal-backdrop" class="modal-backdrop" hx-on:click="if(event.target===this)this.closest('.modal-backdrop').remove()">
   <div class="modal-content modal-md p-6" role="dialog" aria-modal="true">
     <div class="flex items-center justify-between mb-4 pb-3 border-b" style="border-color: var(--color-secondary);">
       <h2 class="text-xl font-heading font-semibold text-primary">Select a Book</h2>
-      <button type="button" hx-on::click="this.closest('.modal-backdrop').remove()" class="text-text-light hover:text-text transition-colors text-2xl no-underline" aria-label="Close modal">×</button>
+      <button type="button" hx-on:click="this.closest('.modal-backdrop').remove()" class="text-text-light hover:text-text transition-colors text-2xl no-underline" aria-label="Close modal">×</button>
     </div>
     <div class="max-h-96 overflow-y-auto space-y-2">
       ` + bookOptions +
@@ -401,11 +401,11 @@ func HTMLReadingLogFormHandler(db *sql.DB) http.HandlerFunc {
 
 		// #nosec G705 -- All interpolated values are escaped via template.HTMLEscapeString()
 		_, _ = w.Write([]byte(`
-<div id="modal-backdrop" class="modal-backdrop" hx-on::click="if(event.target===this)document.getElementById('modal-backdrop').remove()">
+<div id="modal-backdrop" class="modal-backdrop" hx-on:click="if(event.target===this)document.getElementById('modal-backdrop').remove()">
   <div class="modal-content modal-md p-6" role="dialog" aria-modal="true">
     <div class="flex items-center justify-between mb-4 pb-3 border-b" style="border-color: rgba(139, 69, 19, 0.1);">
       <h2 class="text-xl font-heading font-semibold text-primary">Log Reading</h2>
-      <button type="button" hx-on::click="document.getElementById('modal-backdrop').remove()" class="text-text-light hover:text-text transition-colors text-2xl no-underline" aria-label="Close modal">×</button>
+      <button type="button" hx-on:click="document.getElementById('modal-backdrop').remove()" class="text-text-light hover:text-text transition-colors text-2xl no-underline" aria-label="Close modal">×</button>
     </div>
     <p class="text-sm text-text-light mb-4">Book: <strong class="text-text">` + template.HTMLEscapeString(bookTitle) + `</strong></p>
     <form hx-post="/reading-logs" hx-target="#modal-target" hx-swap="outerHTML">
@@ -445,7 +445,7 @@ func HTMLReadingLogFormHandler(db *sql.DB) http.HandlerFunc {
         </div>
       </div>
       <div class="flex justify-end gap-3 mt-6">
-        <button type="button" hx-on::click="document.getElementById('modal-backdrop').remove()" class="px-4 py-2 rounded-lg border text-text-light hover:text-text transition-colors no-underline" style="border-color: var(--color-secondary);">Cancel</button>
+        <button type="button" hx-on:click="document.getElementById('modal-backdrop').remove()" class="px-4 py-2 rounded-lg border text-text-light hover:text-text transition-colors no-underline" style="border-color: var(--color-secondary);">Cancel</button>
         <button type="submit" class="px-4 py-2 rounded-lg font-medium text-white" style="background-color: var(--color-primary);">Log Reading</button>
       </div>
     </form>
