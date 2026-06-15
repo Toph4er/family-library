@@ -162,11 +162,11 @@ type ActivityEntry struct {
 
 // DashboardContext holds data for the dashboard page.
 type DashboardContext struct {
-	StatCards     []StatCard
-	Sections      []SectionCard
-	Activity      []ActivityEntry
-	ReaderBreakdown []ReaderBreakdownRow
-	GenreBreakdown  []GenreBreakdownRow
+	StatCards         []StatCard
+	Sections          []SectionCard
+	Activity          []ActivityEntry
+	ReaderBreakdown   []ReaderBreakdownRow
+	GenreBreakdown    []GenreBreakdownRow
 	BookTypeBreakdown []BookTypeBreakdownRow
 }
 
@@ -642,20 +642,32 @@ func RenderDashboardPage(tmpl *template.Template, db *sql.DB, store *sessions.Co
 
 		// --- Section: Collection Stats ---
 		var firstBookDate, lastReadDate string
-		db.QueryRow("SELECT MIN(created_at) FROM books").Scan(&firstBookDate)
-		db.QueryRow("SELECT MAX(read_at) FROM reading_logs").Scan(&lastReadDate)
+		if err := db.QueryRow("SELECT MIN(created_at) FROM books").Scan(&firstBookDate); err == nil {
+			// firstBookDate populated
+		}
+		if err := db.QueryRow("SELECT MAX(read_at) FROM reading_logs").Scan(&lastReadDate); err == nil {
+			// lastReadDate populated
+		}
 
 		var totalPages int
-		db.QueryRow("SELECT COALESCE(SUM(page_count), 0) FROM books WHERE page_count IS NOT NULL").Scan(&totalPages)
+		if err := db.QueryRow("SELECT COALESCE(SUM(page_count), 0) FROM books WHERE page_count IS NOT NULL").Scan(&totalPages); err == nil {
+			// totalPages populated
+		}
 
 		var coversUploaded int
-		db.QueryRow("SELECT COUNT(*) FROM books WHERE cover_image_url IS NOT NULL").Scan(&coversUploaded)
+		if err := db.QueryRow("SELECT COUNT(*) FROM books WHERE cover_image_url IS NOT NULL").Scan(&coversUploaded); err == nil {
+			// coversUploaded populated
+		}
 
 		var booksReadCount int
-		db.QueryRow("SELECT COUNT(*) FROM books WHERE read_count > 0").Scan(&booksReadCount)
+		if err := db.QueryRow("SELECT COUNT(*) FROM books WHERE read_count > 0").Scan(&booksReadCount); err == nil {
+			// booksReadCount populated
+		}
 
 		var booksRatedCount int
-		db.QueryRow("SELECT COUNT(*) FROM books WHERE child_rating IS NOT NULL AND child_rating >= 4").Scan(&booksRatedCount)
+		if err := db.QueryRow("SELECT COUNT(*) FROM books WHERE child_rating IS NOT NULL AND child_rating >= 4").Scan(&booksRatedCount); err == nil {
+			// booksRatedCount populated
+		}
 
 		dash.Sections = append(dash.Sections, SectionCard{
 			Icon:  "📊",
