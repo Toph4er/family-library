@@ -60,34 +60,41 @@ type BookDetailContext struct {
 
 // BookFormContext holds data for the add/edit book form page.
 type BookFormContext struct {
-	BookID           int64
-	IsEdit           bool
-	BookTitle        string
-	CancelURL        string
-	ActionURL        string
-	Title            string
-	Subtitle         string
-	Authors          string
-	Illustrators     string
-	ISBN             string
-	Publisher        string
-	PublicationYear  string
-	PageCount        string
-	BookType         string
-	Condition        string
-	Genres           string
-	Themes           string
-	Awards           string
-	ReadingLevels    string
-	GiftFrom         string
-	GiftRelationship string
-	DateReceived     string
-	Location         string
-	AgeRange         string
-	CoverImageURL    string
-	Notes            string
-	ChildRating      int
-	Quantity         int
+	BookID            int64
+	IsEdit            bool
+	BookTitle         string
+	CancelURL         string
+	ActionURL         string
+	Title             string
+	Subtitle          string
+	Authors           string
+	Illustrators      string
+	ISBN              string
+	Publisher         string
+	PublicationYear   string
+	PageCount         string
+	BookType          string
+	Condition         string
+	Genres            string
+	Themes            string
+	Awards            string
+	ReadingLevels     string
+	DeweyDecimalClass string
+	Language          string
+	Series            string
+	AgeRange          string
+	SubjectPlaces     string
+	SubjectPeople     string
+	SubjectTimes      string
+	Description       string
+	GiftFrom          string
+	GiftRelationship  string
+	DateReceived      string
+	Location          string
+	CoverImageURL     string
+	Notes             string
+	ChildRating       int
+	Quantity          int
 }
 
 // WishlistListContext holds data for the wishlist listing page.
@@ -1190,12 +1197,19 @@ func RenderBookFormPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 				Genres:           derefString(book.Genres),
 				Themes:           derefString(book.Themes),
 				Awards:           derefString(book.Awards),
-				ReadingLevels:    derefString(book.ReadingLevels),
-				GiftFrom:         derefString(book.GiftFrom),
+				ReadingLevels:     derefString(book.ReadingLevels),
+				DeweyDecimalClass: derefString(book.DeweyDecimalClass),
+				Language:          derefString(book.Language),
+				Series:            derefString(book.Series),
+				AgeRange:          derefString(book.AgeRange),
+				SubjectPlaces:     derefString(book.SubjectPlaces),
+				SubjectPeople:     derefString(book.SubjectPeople),
+				SubjectTimes:      derefString(book.SubjectTimes),
+				Description:       derefString(book.Description),
+				GiftFrom:          derefString(book.GiftFrom),
 				GiftRelationship: derefString(book.GiftRelationship),
 				DateReceived:     derefString(book.DateReceived),
 				Location:         derefString(book.Location),
-				AgeRange:         derefString(book.AgeRange),
 				CoverImageURL:    derefString(book.CoverImageURL),
 				Notes:            derefString(book.Notes),
 				ChildRating:      derefInt(book.ChildRating),

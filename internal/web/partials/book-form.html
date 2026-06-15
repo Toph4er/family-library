@@ -107,6 +107,45 @@
       <input type="text" id="reading_levels" name="reading_levels" value="{{.ReadingLevels}}" placeholder="Ages 6-8, Grade 1 (comma-separated)" class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">
     </div>
     
+
+    <!-- Additional metadata fields -->
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label for="dewey_decimal_class" class="block text-sm font-medium text-text mb-1">Dewey Decimal</label>
+        <input type="text" id="dewey_decimal_class" name="dewey_decimal_class" value="{{.DeweyDecimalClass}}" placeholder="e.g., E" class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">
+      </div>
+      <div>
+        <label for="language" class="block text-sm font-medium text-text mb-1">Language</label>
+        <input type="text" id="language" name="language" value="{{.Language}}" placeholder="e.g., English" class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label for="series" class="block text-sm font-medium text-text mb-1">Series</label>
+        <input type="text" id="series" name="series" value="{{.Series}}" placeholder="e.g., Diary of a Wimpy Kid" class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">
+      </div>
+      <div>
+        <label for="age_range" class="block text-sm font-medium text-text mb-1">Age Range</label>
+        <input type="text" id="age_range" name="age_range" value="{{.AgeRange}}" placeholder="e.g., 4-8 years" class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">
+      </div>
+    </div>
+    <div>
+      <label for="subject_places" class="block text-sm font-medium text-text mb-1">Subject Places</label>
+      <input type="text" id="subject_places" name="subject_places" value="{{.SubjectPlaces}}" placeholder="Comma-separated" class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">
+    </div>
+    <div>
+      <label for="subject_people" class="block text-sm font-medium text-text mb-1">Subject People</label>
+      <input type="text" id="subject_people" name="subject_people" value="{{.SubjectPeople}}" placeholder="Comma-separated" class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">
+    </div>
+    <div>
+      <label for="subject_times" class="block text-sm font-medium text-text mb-1">Subject Times</label>
+      <input type="text" id="subject_times" name="subject_times" value="{{.SubjectTimes}}" placeholder="Comma-separated" class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">
+    </div>
+    <div>
+      <label for="description" class="block text-sm font-medium text-text mb-1">Description</label>
+      <textarea id="description" name="description" rows="3" class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">{{.Description}}</textarea>
+    </div>
+
     <!-- Child rating -->
     <div>
       <label class="block text-sm font-medium text-text mb-1">Child Rating</label>
@@ -221,7 +260,7 @@ function lookupISBN() {
 }
 
 function populateForm(data) {
-  var fields = ['title','subtitle','authors','illustrators','publisher','publication_year','page_count','book_type','genres','themes','cover_image_url'];
+  var fields = ['title','subtitle','authors','illustrators','publisher','publication_year','page_count','book_type','genres','themes','dewey_decimal_class','language','series','age_range','subject_places','subject_people','subject_times','description','cover_image_url'];
   fields.forEach(function(f) {
     var el = document.getElementById(f);
     if (el && data[f] !== undefined && data[f] !== null && data[f] !== '') el.value = data[f];
