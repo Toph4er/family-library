@@ -799,24 +799,18 @@ func DeleteBookHandler(repo repository.BookRepository) http.HandlerFunc {
 // Used by the star rating UI on the book form page.
 func RateChildHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req struct {
-			BookID int64 `json:"book_id"`
-			Rating int   `json:"rating"`
-		}
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			JSONError(w, http.StatusBadRequest, "invalid request body")
-			return
-		}
-		if req.BookID <= 0 {
+		bookID, err := strconv.ParseInt(r.FormValue("book_id"), 10, 64)
+		if err != nil || bookID <= 0 {
 			JSONError(w, http.StatusBadRequest, "book_id is required")
 			return
 		}
-		if req.Rating < 1 || req.Rating > 5 {
+		rating, err := strconv.Atoi(r.FormValue("rating"))
+		if err != nil || rating < 1 || rating > 5 {
 			JSONError(w, http.StatusBadRequest, "rating must be between 1 and 5")
 			return
 		}
 
-		result, err := db.Exec("UPDATE books SET child_rating = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", req.Rating, req.BookID)
+		result, err := db.Exec("UPDATE books SET child_rating = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", rating, bookID)
 		if err != nil {
 			JSONError(w, http.StatusInternalServerError, "database error")
 			return
