@@ -411,7 +411,7 @@ func HTMLReadingLogFormHandler(db *sql.DB) http.HandlerFunc {
     <form hx-post="/reading-logs" hx-target="#modal-target" hx-swap="outerHTML">
       <input type="hidden" name="book_id" value="` + bookIDStr + `">
       <div class="space-y-4">
-        <div class="grid grid-cols-2 gap-3">
+        <div id="page-fields" class="grid grid-cols-2 gap-3">
           <div>
             <label for="rl-start-page" class="block text-sm font-medium text-text mb-1">Start Page</label>
             <input type="number" id="rl-start-page" name="start_page" min="1"` + maxPage + ` class="w-full px-3 py-2 rounded-lg border bg-surface text-sm" style="border-color: var(--color-secondary);" placeholder="1">
@@ -423,7 +423,7 @@ func HTMLReadingLogFormHandler(db *sql.DB) http.HandlerFunc {
         </div>
         <div>
           <label class="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" name="entire_book" value="true" class="w-4 h-4 rounded border-secondary text-primary focus:ring-primary/20" onchange="document.getElementById('page-fields').style.display = this.checked ? 'none' : ''">
+            <input type="checkbox" name="entire_book" value="true" class="w-4 h-4 rounded border-secondary text-primary focus:ring-primary/20" hx-on:change="var f=document.getElementById('page-fields'); if(f)f.style.display=this.checked?'none':''">
             <span class="text-sm text-text">Read entire book</span>
           </label>
         </div>
@@ -433,7 +433,7 @@ func HTMLReadingLogFormHandler(db *sql.DB) http.HandlerFunc {
         </div>
         <div>
           <label for="rl-reader" class="block text-sm font-medium text-text mb-1">Reader <span class="text-error">*</span></label>
-          <select id="rl-reader" name="reader_name" required class="w-full px-3 py-2 rounded-lg border bg-surface text-sm" style="border-color: var(--color-secondary);">
+          <select id="rl-reader" name="reader_name" required class="w-full px-3 py-2 rounded-lg border bg-surface text-sm" style="border-color: var(--color-secondary);" hx-on:change="var o=document.getElementById('rl-reader-other'); if(o)o.classList.toggle('hidden',this.value!=='other'); if(this.value==='other'&&o)o.focus()">
             <option value="">Select reader...</option>` + fmOptions + `
             <option value="other">Other (type manually)</option>
           </select>
@@ -450,26 +450,7 @@ func HTMLReadingLogFormHandler(db *sql.DB) http.HandlerFunc {
       </div>
     </form>
   </div>
-</div>
-<script>
-  // Handle "other" reader selection
-  var readerSelect = document.getElementById('rl-reader');
-  var readerOther = document.getElementById('rl-reader-other');
-  if (readerSelect && readerOther) {
-    readerSelect.addEventListener('change', function() {
-      readerOther.classList.toggle('hidden', this.value !== 'other');
-      if (this.value === 'other') readerOther.focus();
-    });
-  }
-  // Handle entire book checkbox
-  var entireBook = document.querySelector('input[name="entire_book"]');
-  if (entireBook) {
-    entireBook.addEventListener('change', function() {
-      var fields = document.getElementById('page-fields');
-      if (fields) fields.style.display = this.checked ? 'none' : '';
-    });
-  }
-</script>`))
+</div>`))
 	}
 }
 
