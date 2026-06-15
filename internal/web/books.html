@@ -134,10 +134,8 @@
   applyView();
 
   // Re-apply after HTMX swaps content (pagination, etc.)
-  document.body.addEventListener('htmx:afterSwap', function(event) {
-    if (event.detail.target === document.getElementById('main-content')) {
-      applyView();
-    }
+  document.body.addEventListener('htmx:afterSettle', function() {
+    setTimeout(applyView, 0);
   });
 
   // Wire up toggle buttons (delegated, survives HTMX swaps)
