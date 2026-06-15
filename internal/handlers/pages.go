@@ -1192,11 +1192,11 @@ func RenderBookFormPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 					}
 					return ""
 				}(),
-				BookType:         derefString(book.BookType),
-				Condition:        derefString(book.Condition),
-				Genres:           derefString(book.Genres),
-				Themes:           derefString(book.Themes),
-				Awards:           derefString(book.Awards),
+				BookType:          derefString(book.BookType),
+				Condition:         derefString(book.Condition),
+				Genres:            derefString(book.Genres),
+				Themes:            derefString(book.Themes),
+				Awards:            derefString(book.Awards),
 				ReadingLevels:     derefString(book.ReadingLevels),
 				DeweyDecimalClass: derefString(book.DeweyDecimalClass),
 				Language:          derefString(book.Language),
@@ -1207,12 +1207,12 @@ func RenderBookFormPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 				SubjectTimes:      derefString(book.SubjectTimes),
 				Description:       derefString(book.Description),
 				GiftFrom:          derefString(book.GiftFrom),
-				GiftRelationship: derefString(book.GiftRelationship),
-				DateReceived:     derefString(book.DateReceived),
-				Location:         derefString(book.Location),
-				CoverImageURL:    derefString(book.CoverImageURL),
-				Notes:            derefString(book.Notes),
-				ChildRating:      derefInt(book.ChildRating),
+				GiftRelationship:  derefString(book.GiftRelationship),
+				DateReceived:      derefString(book.DateReceived),
+				Location:          derefString(book.Location),
+				CoverImageURL:     derefString(book.CoverImageURL),
+				Notes:             derefString(book.Notes),
+				ChildRating:       derefInt(book.ChildRating),
 				Quantity: func() int {
 					if book.Quantity > 0 {
 						return book.Quantity
