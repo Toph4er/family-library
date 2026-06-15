@@ -17,8 +17,8 @@
       {{end}}
       {{if .ChildRating}}
       <div class="book-card-rating flex items-center gap-1" aria-label="Child rating: {{.ChildRating}} out of 5 stars">
-        {{range seq 1 .ChildRating}}<svg class="w-4 h-4 text-accent" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>{{end}}
-        {{range seq 1 (sub 5 .ChildRating)}}<svg class="w-4 h-4 text-text-light/30" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>{{end}}
+        {{range seq 1 .ChildRating}}{{template "partials/star-icon" (dict "Class" "w-4 h-4 text-accent")}}{{end}}
+        {{range seq 1 (sub 5 .ChildRating)}}{{template "partials/star-icon" (dict "Class" "w-4 h-4 text-text-light/30")}}{{end}}
       </div>
       {{end}}
       {{if .Genres}}
