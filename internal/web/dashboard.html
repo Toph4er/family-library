@@ -321,7 +321,6 @@
   {{end}}
 
   <!-- Books by Book Type & Collection Stats -->
-  {{if or .BookTypeBreakdown .Sections}}
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <!-- Books by Book Type -->
     {{if .BookTypeBreakdown}}
@@ -345,12 +344,10 @@
     {{end}}
 
     <!-- Collection Stats -->
-    {{range .Sections}}
-    {{if eq .Icon "📊"}}
     <div class="section-card">
-      <h2>{{.Icon}} {{.Title}}</h2>
-      {{if .Rows}}
-        {{range .Rows}}
+      <h2>📊 Collection Stats</h2>
+      {{if .CollectionStats}}
+        {{range .CollectionStats}}
         <div class="section-row">
           <span class="section-row-label">{{.Label}}</span>
           <span class="section-row-value">{{.Value}}</span>
@@ -360,10 +357,7 @@
         <div class="empty-state" style="padding: 1rem 0;"><p>No data yet</p></div>
       {{end}}
     </div>
-    {{end}}
-    {{end}}
   </div>
-  {{end}}
 
 </div>
 {{end}}

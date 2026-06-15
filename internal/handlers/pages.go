@@ -164,6 +164,7 @@ type ActivityEntry struct {
 type DashboardContext struct {
 	StatCards         []StatCard
 	Sections          []SectionCard
+	CollectionStats   []SectionRow
 	Activity          []ActivityEntry
 	ReaderBreakdown   []ReaderBreakdownRow
 	GenreBreakdown    []GenreBreakdownRow
@@ -669,18 +670,14 @@ func RenderDashboardPage(tmpl *template.Template, db *sql.DB, store *sessions.Co
 			booksRatedCount = 0
 		}
 
-		dash.Sections = append(dash.Sections, SectionCard{
-			Icon:  "📊",
-			Title: "Collection Stats",
-			Rows: []SectionRow{
-				{Label: "First book added", Value: formatDate(firstBookDate)},
-				{Label: "Last read date", Value: formatDate(lastReadDate)},
-				{Label: "Total pages cataloged", Value: formatNumber(totalPages) + " pages"},
-				{Label: "Covers uploaded", Value: fmt.Sprintf("%d/%d", coversUploaded, bookCount)},
-				{Label: "Books read ≥1 time", Value: fmt.Sprintf("%d/%d", booksReadCount, bookCount)},
-				{Label: "Books rated ≥4★", Value: fmt.Sprintf("%d/%d", booksRatedCount, bookCount)},
-			},
-		})
+		dash.CollectionStats = []SectionRow{
+			{Label: "First book added", Value: formatDate(firstBookDate)},
+			{Label: "Last read date", Value: formatDate(lastReadDate)},
+			{Label: "Total pages cataloged", Value: formatNumber(totalPages) + " pages"},
+			{Label: "Covers uploaded", Value: fmt.Sprintf("%d/%d", coversUploaded, bookCount)},
+			{Label: "Books read ≥1 time", Value: fmt.Sprintf("%d/%d", booksReadCount, bookCount)},
+			{Label: "Books rated ≥4★", Value: fmt.Sprintf("%d/%d", booksRatedCount, bookCount)},
+		}
 
 		// --- Section: Books Read This Month ---
 		var booksReadThisMonth int
