@@ -192,8 +192,8 @@ You can use any reverse proxy (Traefik, Caddy, manual nginx, etc.) instead. Just
 ### Dashboard
 ![Dashboard](screenshots/library-dashboard.png)
 
-### Book Detail
-![Book Detail](screenshots/library-book-view.png)
+### Book Collection
+![Book Collection](screenshots/library-book-view.png)
 
 ## CI/CD Pipeline
 
