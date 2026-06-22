@@ -46,8 +46,8 @@ func TestHTMLLoginHandler_Success(t *testing.T) {
 	}
 
 	// Should set HX-Redirect header for HTMX
-	if redirect := rec.Header().Get("HX-Redirect"); redirect != "/books" {
-		t.Fatalf("expected HX-Redirect=/books, got %q", redirect)
+	if redirect := rec.Header().Get("HX-Redirect"); redirect != "/dashboard" {
+		t.Fatalf("expected HX-Redirect=/dashboard, got %q", redirect)
 	}
 
 	// Verify session cookie was set
@@ -115,8 +115,8 @@ func TestHTMLGuestLoginHandler_Success(t *testing.T) {
 		t.Fatalf("expected status 200, got %d: %s", rec.Code, rec.Body.String())
 	}
 
-	if redirect := rec.Header().Get("HX-Redirect"); redirect != "/books" {
-		t.Fatalf("expected HX-Redirect=/books, got %q", redirect)
+	if redirect := rec.Header().Get("HX-Redirect"); redirect != "/dashboard" {
+		t.Fatalf("expected HX-Redirect=/dashboard, got %q", redirect)
 	}
 
 	cookie := getSessionCookie(rec)

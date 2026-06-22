@@ -59,12 +59,12 @@ func getCSRFToken(w http.ResponseWriter, store *sessions.CookieStore, sessionNam
 }
 
 // RenderLoginPage renders the admin login page template.
-// Already-authenticated users are redirected to /books.
+// Already-authenticated users are redirected to /dashboard.
 func RenderLoginPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// If already authenticated, redirect to books
+		// If already authenticated, redirect to dashboard
 		if user := auth.GetUserFromContext(r); user != nil {
-			http.Redirect(w, r, "/books", http.StatusFound)
+			http.Redirect(w, r, "/dashboard", http.StatusFound)
 			return
 		}
 
@@ -72,7 +72,7 @@ func RenderLoginPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 		session, err := store.Get(r, sessionName)
 		if err == nil {
 			if _, ok := session.Values[auth.UserIDKey]; ok {
-				http.Redirect(w, r, "/books", http.StatusFound)
+				http.Redirect(w, r, "/dashboard", http.StatusFound)
 				return
 			}
 		}
@@ -98,12 +98,12 @@ func RenderLoginPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 }
 
 // RenderGuestLoginPage renders the guest login page template.
-// Already-authenticated users are redirected to /books.
+// Already-authenticated users are redirected to /dashboard.
 func RenderGuestLoginPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// If already authenticated, redirect to books
+		// If already authenticated, redirect to dashboard
 		if user := auth.GetUserFromContext(r); user != nil {
-			http.Redirect(w, r, "/books", http.StatusFound)
+			http.Redirect(w, r, "/dashboard", http.StatusFound)
 			return
 		}
 
@@ -111,7 +111,7 @@ func RenderGuestLoginPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 		session, err := store.Get(r, sessionName)
 		if err == nil {
 			if _, ok := session.Values[auth.UserIDKey]; ok {
-				http.Redirect(w, r, "/books", http.StatusFound)
+				http.Redirect(w, r, "/dashboard", http.StatusFound)
 				return
 			}
 		}
@@ -160,7 +160,7 @@ func RenderLogoutSuccess(tmpl *template.Template, db *sql.DB, authSvc *auth.Auth
 }
 
 // HTMLLoginHandler handles admin login via HTMX (form-encoded, returns HTML).
-// On success: sets HX-Redirect header to /books.
+// On success: sets HX-Redirect header to /dashboard.
 // On failure: returns an HTML error fragment for HTMX to swap into the DOM.
 func HTMLLoginHandler(authSvc *auth.Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -193,15 +193,15 @@ func HTMLLoginHandler(authSvc *auth.Auth) http.HandlerFunc {
 			return
 		}
 
-		// Success — tell HTMX to redirect to /books
+		// Success — tell HTMX to redirect to /dashboard
 		_ = user
-		w.Header().Set("HX-Redirect", "/books")
+		w.Header().Set("HX-Redirect", "/dashboard")
 		w.WriteHeader(http.StatusOK)
 	}
 }
 
 // HTMLGuestLoginHandler handles guest login via HTMX (form-encoded, returns HTML).
-// On success: sets HX-Redirect header to /books.
+// On success: sets HX-Redirect header to /dashboard.
 // On failure: returns an HTML error fragment for HTMX to swap into the DOM.
 func HTMLGuestLoginHandler(authSvc *auth.Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -232,8 +232,8 @@ func HTMLGuestLoginHandler(authSvc *auth.Auth) http.HandlerFunc {
 			return
 		}
 
-		// Success — tell HTMX to redirect to /books
-		w.Header().Set("HX-Redirect", "/books")
+		// Success — tell HTMX to redirect to /dashboard
+		w.Header().Set("HX-Redirect", "/dashboard")
 		w.WriteHeader(http.StatusOK)
 	}
 }
