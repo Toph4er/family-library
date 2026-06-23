@@ -7,7 +7,7 @@ require (
 	github.com/go-chi/cors v1.2.2
 	github.com/gorilla/sessions v1.4.0
 	github.com/pressly/goose/v3 v3.27.1
-	golang.org/x/crypto v0.51.0
+	golang.org/x/crypto v0.52.0
 	golang.org/x/time v0.15.0
 	modernc.org/sqlite v1.52.0
 )
@@ -23,7 +23,7 @@ require (
 	github.com/sethvargo/go-retry v0.3.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/sys v0.44.0 // indirect
+	golang.org/x/sys v0.45.0 // indirect
 	golang.org/x/tools v0.44.0 // indirect
 	modernc.org/libc v1.72.3 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
