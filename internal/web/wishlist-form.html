@@ -41,29 +41,49 @@
   <form hx-post="{{.WishlistActionURL}}" hx-swap="outerHTML" hx-target="#error-container" hx-indicator="#loading-indicator" class="space-y-5">
     <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 
-    <!-- Basic fields -->
+    <!-- ISBN (first field - lookup auto-fills the rest) -->
     <div>
-      <label for="title" class="block text-sm font-medium text-text mb-1">Title <span class="text-error" aria-hidden="true">*</span></label>
-      <input type="text" id="title" name="title" value="{{.WishlistTitle}}" required
-        class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary"
-        aria-required="true">
+      <label for="isbn" class="block text-sm font-medium text-text mb-1">ISBN</label>
+      <div class="flex gap-2">
+        <input type="text" id="isbn" name="isbn" value="{{.WishlistISBN}}" placeholder="978-0-12345-678-9" class="flex-1 px-3 py-2 rounded-lg border bg-surface border-secondary">
+        <button type="button" id="isbn-lookup-btn"
+          class="bg-primary text-white p-2 rounded-lg hover:opacity-90 transition-opacity shrink-0"
+          aria-label="Lookup ISBN">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+        <button type="button" id="isbn-scan-btn"
+          class="bg-secondary text-white p-2 rounded-lg hover:opacity-90 transition-opacity shrink-0"
+          aria-label="Scan ISBN">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/></svg>
+        </button>
+      </div>
+      <div id="isbn-lookup-status" class="mt-1 text-sm hidden" role="status" aria-live="polite"></div>
     </div>
 
-    <div>
-      <label for="author" class="block text-sm font-medium text-text mb-1">Author</label>
-      <input type="text" id="author" name="author" value="{{.Author}}" placeholder="e.g., J.K. Rowling"
-        class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">
+    <!-- Title + Author (responsive grid) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label for="title" class="block text-sm font-medium text-text mb-1">Title <span class="text-error" aria-hidden="true">*</span></label>
+        <input type="text" id="title" name="title" value="{{.WishlistTitle}}" required
+          class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary"
+          aria-required="true">
+      </div>
+      <div>
+        <label for="author" class="block text-sm font-medium text-text mb-1">Author</label>
+        <input type="text" id="author" name="author" value="{{.Author}}" placeholder="e.g., J.K. Rowling"
+          class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">
+      </div>
     </div>
 
     <div class="grid grid-cols-2 gap-4">
       <div>
-        <label for="isbn" class="block text-sm font-medium text-text mb-1">ISBN</label>
-        <input type="text" id="isbn" name="isbn" value="{{.WishlistISBN}}" placeholder="978-0-12345-678-9"
+        <label for="priority" class="block text-sm font-medium text-text mb-1">Priority (1–5)</label>
+        <input type="number" id="priority" name="priority" value="{{.Priority}}" min="1" max="5"
           class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">
       </div>
       <div>
-        <label for="priority" class="block text-sm font-medium text-text mb-1">Priority (1–5)</label>
-        <input type="number" id="priority" name="priority" value="{{.Priority}}" min="1" max="5"
+        <label for="cover_image_url" class="block text-sm font-medium text-text mb-1">Cover Image URL</label>
+        <input type="url" id="cover_image_url" name="cover_image_url" value="{{.WishlistCoverImageURL}}"
           class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">
       </div>
     </div>
@@ -88,13 +108,6 @@
       </div>
     </div>
 
-    <!-- Additional fields -->
-    <div>
-      <label for="cover_image_url" class="block text-sm font-medium text-text mb-1">Cover Image URL</label>
-      <input type="url" id="cover_image_url" name="cover_image_url" value="{{.WishlistCoverImageURL}}"
-        class="w-full px-3 py-2 rounded-lg border bg-surface border-secondary">
-    </div>
-
     <div>
       <label for="notes" class="block text-sm font-medium text-text mb-1">Notes</label>
       <textarea id="notes" name="notes" rows="3"
@@ -113,4 +126,173 @@
   </form>
 
 </div>
+
+<!-- Scanner modal -->
+<div id="scanner-modal" class="modal-backdrop modal-hidden">
+  <div class="modal-content modal-sm p-6" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-between mb-4 pb-3 border-b border-secondary/10">
+      <h2 class="text-xl font-heading font-semibold text-primary">Scan ISBN</h2>
+      <button type="button" id="scanner-close-btn" class="text-text-light hover:text-text transition-colors text-2xl no-underline" aria-label="Close modal">×</button>
+    </div>
+    <div id="scanner-viewfinder" class="w-full h-48 bg-background rounded-lg flex items-center justify-center mb-4">
+      <p class="text-text-light/60 text-sm">Initializing camera...</p>
+    </div>
+    <div class="flex justify-end gap-3">
+      <button type="button" id="scanner-cancel-btn" class="px-4 py-2 rounded-lg border border-secondary text-text-light hover:text-text transition-colors no-underline">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script nonce="{{ .Nonce }}">
+function showStatus(msg, isError) {
+  var el = document.getElementById('isbn-lookup-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'mt-1 text-sm ' + (isError ? 'text-error' : 'text-success');
+  el.classList.remove('hidden');
+}
+
+function lookupISBN() {
+  var isbn = document.getElementById('isbn').value.trim();
+  if (!isbn) { showStatus('Please enter an ISBN', true); return; }
+  var btn = document.getElementById('isbn-lookup-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<svg class="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>';
+  fetch('/api/v1/wishlist/lookup-isbn?isbn=' + encodeURIComponent(isbn), {
+    headers: { 'X-CSRF-Token': document.querySelector('input[name="csrf_token"]').value }
+  })
+  .then(function(r) {
+    if (!r.ok) throw new Error('Lookup failed (' + r.status + ')');
+    return r.json();
+  })
+  .then(function(data) {
+    if (data.success || data.title) { populateForm(data); showStatus('Book data loaded!', false); }
+    else { showStatus(data.error || 'Lookup failed', true); }
+  })
+  .catch(function(err) { showStatus(err.message, true); })
+  .finally(function() {
+    btn.disabled = false;
+    btn.innerHTML = '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
+  });
+}
+
+function populateForm(data) {
+  var fields = ['title','authors','publisher','publication_year','page_count','cover_image_url'];
+  fields.forEach(function(f) {
+    var el = document.getElementById(f);
+    if (el && data[f] !== undefined && data[f] !== null && data[f] !== '') {
+      if (f === 'authors') {
+        el.value = data[f];
+      } else {
+        el.value = data[f];
+      }
+    }
+  });
+
+  // Auto-generate Amazon and ThriftBooks URLs from ISBN
+  var isbn = document.getElementById('isbn').value.trim();
+  if (isbn) {
+    var amazonEl = document.getElementById('amazon_url');
+    if (amazonEl && !amazonEl.value) {
+      amazonEl.value = 'https://www.amazon.com/s?k=' + encodeURIComponent(isbn);
+    }
+    var thriftbooksEl = document.getElementById('thriftbooks_url');
+    if (thriftbooksEl && !thriftbooksEl.value) {
+      thriftbooksEl.value = 'https://www.thriftbooks.com/w/?isbn=' + encodeURIComponent(isbn);
+    }
+  }
+}
+
+var html5QrcodeScanner = null;
+
+function openScannerModal() {
+  document.getElementById('scanner-modal').classList.remove('modal-hidden');
+  initScanner();
+}
+
+function closeScannerModal() {
+  document.getElementById('scanner-modal').classList.add('modal-hidden');
+  if (html5QrcodeScanner) {
+    html5QrcodeScanner.stop().catch(function(){});
+    html5QrcodeScanner = null;
+  }
+}
+
+function onScanSuccess(decodedText) {
+  var isbn = decodedText.replace(/[^0-9Xx]/g, '');
+  if (isbn.length >= 10) {
+    document.getElementById('isbn').value = isbn;
+    closeScannerModal();
+    lookupISBN();
+  }
+}
+
+function initScanner() {
+  if (typeof Html5Qrcode === 'undefined') {
+    var script = document.createElement('script');
+    script.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
+    script.onload = function() { startScanner(); };
+    script.onerror = function() {
+      document.getElementById('scanner-viewfinder').innerHTML = '<p class="text-text-light/60 text-sm">Camera library unavailable</p>';
+    };
+    document.head.appendChild(script);
+  } else {
+    startScanner();
+  }
+}
+
+function startScanner() {
+  html5QrcodeScanner = new Html5Qrcode('scanner-viewfinder');
+  html5QrcodeScanner.start(
+    { facingMode: 'environment' },
+    { fps: 10, qrbox: { width: 250, height: 150 } },
+    onScanSuccess,
+    function() {}
+  ).catch(function(err) {
+    document.getElementById('scanner-viewfinder').innerHTML = '<p class="text-text-light/60 text-sm">Camera not available — enter ISBN manually</p>';
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  // ISBN lookup button
+  var lookupBtn = document.getElementById('isbn-lookup-btn');
+  if (lookupBtn) {
+    lookupBtn.addEventListener('click', function() { lookupISBN(); });
+  }
+
+  // ISBN scan button
+  var scanBtn = document.getElementById('isbn-scan-btn');
+  if (scanBtn) {
+    scanBtn.addEventListener('click', function() { openScannerModal(); });
+  }
+
+  // ISBN input: Enter key triggers lookup
+  var isbnInput = document.getElementById('isbn');
+  if (isbnInput) {
+    isbnInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); lookupISBN(); }
+    });
+  }
+
+  // Scanner modal: close button (×)
+  var closeBtn = document.getElementById('scanner-close-btn');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', function() { closeScannerModal(); });
+  }
+
+  // Scanner modal: cancel button
+  var cancelBtn = document.getElementById('scanner-cancel-btn');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', function() { closeScannerModal(); });
+  }
+
+  // Scanner modal: backdrop click closes
+  var modal = document.getElementById('scanner-modal');
+  if (modal) {
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) { closeScannerModal(); }
+    });
+  }
+});
+</script>
 {{end}}

@@ -215,6 +215,11 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 				authSvc.RequireAdmin(handlers.DeleteBookHandler(bookRepo)).ServeHTTP(w, r)
 			})
 
+			// Wishlist ISBN lookup (auth, returns JSON metadata for client-side form population)
+			r.Get("/wishlist/lookup-isbn", func(w http.ResponseWriter, r *http.Request) {
+				authSvc.RequireAdmin(handlers.LookupISBNHandler(database)).ServeHTTP(w, r)
+			})
+
 			// Wishlist (all require auth)
 			r.Route("/wishlist", func(r chi.Router) {
 				r.Use(authSvc.RequireAuth)
