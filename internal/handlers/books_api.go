@@ -12,6 +12,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/Toph4er/family-library/internal/repository"
+	"github.com/Toph4er/family-library/internal/validation"
 )
 
 // defaultGuestVisibleFields returns the default JSON blob for guest visibility.
@@ -59,8 +60,11 @@ func defaultGuestVisibleFields() string {
 func LookupISBNHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		isbn := strings.ReplaceAll(strings.TrimSpace(r.URL.Query().Get("isbn")), "-", "")
-		if isbn == "" {
-			JSONError(w, http.StatusBadRequest, "isbn query parameter is required")
+
+		var errs validation.Errors
+		errs.Required("isbn", isbn)
+		if errs.HasErrors() {
+			JSONError(w, http.StatusBadRequest, errs.First())
 			return
 		}
 		force := r.URL.Query().Get("force") == "true"
@@ -138,12 +142,15 @@ func RateChildHandler(db *sql.DB) http.HandlerFunc {
 			}
 		}
 
-		if bookID <= 0 {
-			JSONError(w, http.StatusBadRequest, "book_id is required")
-			return
+		var errs validation.Errors
+		errs.Positive("book_id", bookID)
+		if rating != 0 {
+			errs.InRange("rating", rating, 1, 5)
+		} else {
+			errs.Required("rating", "")
 		}
-		if rating < 1 || rating > 5 {
-			JSONError(w, http.StatusBadRequest, "rating must be between 1 and 5")
+		if errs.HasErrors() {
+			JSONError(w, http.StatusBadRequest, errs.First())
 			return
 		}
 

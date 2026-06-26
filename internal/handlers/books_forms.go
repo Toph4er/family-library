@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+
+	"github.com/Toph4er/family-library/internal/validation"
 )
 
 // HTMLCreateBookHandler handles POST /books/create.
@@ -18,14 +20,13 @@ func HTMLCreateBookHandler(db *sql.DB) http.HandlerFunc {
 		}
 
 		title := strings.TrimSpace(r.FormValue("title"))
-		if title == "" {
-			HTMXErrorResponse(w, http.StatusBadRequest, "Title is required")
-			return
-		}
-
 		isbn := strings.ReplaceAll(strings.TrimSpace(r.FormValue("isbn")), "-", "")
-		if isbn == "" {
-			HTMXErrorResponse(w, http.StatusBadRequest, "ISBN is required")
+
+		var errs validation.Errors
+		errs.Required("Title", title)
+		errs.Required("ISBN", isbn)
+		if errs.HasErrors() {
+			HTMXErrorResponse(w, http.StatusBadRequest, errs.First())
 			return
 		}
 
@@ -125,13 +126,13 @@ func HTMLUpdateBookHandler(db *sql.DB) http.HandlerFunc {
 		}
 
 		title := strings.TrimSpace(r.FormValue("title"))
-		if title == "" {
-			HTMXErrorResponse(w, http.StatusBadRequest, "Title is required")
-			return
-		}
 		isbn := strings.ReplaceAll(strings.TrimSpace(r.FormValue("isbn")), "-", "")
-		if isbn == "" {
-			HTMXErrorResponse(w, http.StatusBadRequest, "ISBN is required")
+
+		var errs validation.Errors
+		errs.Required("Title", title)
+		errs.Required("ISBN", isbn)
+		if errs.HasErrors() {
+			HTMXErrorResponse(w, http.StatusBadRequest, errs.First())
 			return
 		}
 

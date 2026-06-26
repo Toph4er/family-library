@@ -13,6 +13,7 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"github.com/Toph4er/family-library/internal/models"
+	"github.com/Toph4er/family-library/internal/validation"
 )
 
 const familyMemberColumns = `id, name, relation, created_at, updated_at`
@@ -128,16 +129,13 @@ func HTMLCreateFamilyMemberHandler(db *sql.DB) http.HandlerFunc {
 		name := strings.TrimSpace(r.FormValue("name"))
 		relation := strings.TrimSpace(r.FormValue("relation"))
 
-		if name == "" {
+		var errs validation.Errors
+		errs.Required("Name", name)
+		errs.Required("Relation", relation)
+		if errs.HasErrors() {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte(htmlErrorFragment("Name is required")))
-			return
-		}
-		if relation == "" {
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte(htmlErrorFragment("Relation is required")))
+			_, _ = w.Write([]byte(htmlErrorFragment(errs.First())))
 			return
 		}
 
@@ -175,16 +173,13 @@ func HTMLUpdateFamilyMemberHandler(db *sql.DB) http.HandlerFunc {
 		name := strings.TrimSpace(r.FormValue("name"))
 		relation := strings.TrimSpace(r.FormValue("relation"))
 
-		if name == "" {
+		var errs validation.Errors
+		errs.Required("Name", name)
+		errs.Required("Relation", relation)
+		if errs.HasErrors() {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte(htmlErrorFragment("Name is required")))
-			return
-		}
-		if relation == "" {
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte(htmlErrorFragment("Relation is required")))
+			_, _ = w.Write([]byte(htmlErrorFragment(errs.First())))
 			return
 		}
 

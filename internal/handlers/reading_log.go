@@ -16,6 +16,7 @@ import (
 
 	pages "github.com/Toph4er/family-library/internal/handlers/pages"
 	"github.com/Toph4er/family-library/internal/models"
+	"github.com/Toph4er/family-library/internal/validation"
 )
 
 const readingLogColumns = `rl.id, rl.book_id, rl.start_page, rl.end_page, rl.total_pages, rl.entire_book, rl.read_at, rl.reader_name, rl.notes, rl.created_at`
@@ -67,8 +68,11 @@ func CreateReadingLogHandler(db *sql.DB) http.HandlerFunc {
 			JSONError(w, http.StatusBadRequest, "book_id is required")
 			return
 		}
-		if strings.TrimSpace(req.ReaderName) == "" {
-			JSONError(w, http.StatusBadRequest, "reader_name is required")
+
+		var errs validation.Errors
+		errs.Required("reader_name", strings.TrimSpace(req.ReaderName))
+		if errs.HasErrors() {
+			JSONError(w, http.StatusBadRequest, errs.First())
 			return
 		}
 
@@ -204,8 +208,10 @@ func UpdateReadingLogHandler(db *sql.DB) http.HandlerFunc {
 		}
 		if req.ReaderName != nil {
 			val := strings.TrimSpace(*req.ReaderName)
-			if val == "" {
-				JSONError(w, http.StatusBadRequest, "reader_name cannot be empty")
+			var errs validation.Errors
+			errs.Required("reader_name", val)
+			if errs.HasErrors() {
+				JSONError(w, http.StatusBadRequest, errs.First())
 				return
 			}
 			fields = append(fields, updateField{column: "reader_name", value: val})
@@ -480,9 +486,11 @@ func HTMLCreateReadingLogHandler(db *sql.DB) http.HandlerFunc {
 			readerName = strings.TrimSpace(r.FormValue("reader_name_manual"))
 		}
 		if readerName == "" {
+			var errs validation.Errors
+			errs.Required("reader_name", "")
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte(htmlErrorFragment("Reader name is required")))
+			_, _ = w.Write([]byte(htmlErrorFragment(errs.First())))
 			return
 		}
 

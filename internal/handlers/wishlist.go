@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	sqldb "github.com/Toph4er/family-library/internal/db"
+	"github.com/Toph4er/family-library/internal/validation"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -92,8 +93,6 @@ func FulfillWishlistItemHandler(db *sql.DB) http.HandlerFunc {
 }
 
 // HTMLCreateWishlistItemHandler creates a wishlist item from form-encoded data.
-// On success: returns a success toast and redirects the wishlist list.
-// On failure: returns an HTML error fragment.
 func HTMLCreateWishlistItemHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseForm(); err != nil {
@@ -104,10 +103,13 @@ func HTMLCreateWishlistItemHandler(db *sql.DB) http.HandlerFunc {
 		}
 
 		title := strings.TrimSpace(r.FormValue("title"))
-		if title == "" {
+
+		var errs validation.Errors
+		errs.Required("Title", title)
+		if errs.HasErrors() {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte(htmlErrorFragment("Title is required")))
+			_, _ = w.Write([]byte(htmlErrorFragment(errs.First())))
 			return
 		}
 
@@ -146,8 +148,6 @@ func HTMLCreateWishlistItemHandler(db *sql.DB) http.HandlerFunc {
 }
 
 // HTMLUpdateWishlistItemHandler updates a wishlist item from form-encoded data.
-// On success: redirects to the wishlist page.
-// On failure: returns an HTML error fragment.
 func HTMLUpdateWishlistItemHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		idStr := chi.URLParam(r, "id")
@@ -167,10 +167,13 @@ func HTMLUpdateWishlistItemHandler(db *sql.DB) http.HandlerFunc {
 		}
 
 		title := strings.TrimSpace(r.FormValue("title"))
-		if title == "" {
+
+		var errs validation.Errors
+		errs.Required("Title", title)
+		if errs.HasErrors() {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte(htmlErrorFragment("Title is required")))
+			_, _ = w.Write([]byte(htmlErrorFragment(errs.First())))
 			return
 		}
 
