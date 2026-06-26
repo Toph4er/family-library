@@ -186,14 +186,14 @@ func (s *DashboardService) Get(ctx context.Context) (*DashboardData, error) {
 	var recent []SectionRow
 	for rows.Next() {
 		var title string
-		var createdAt time.Time
+		var createdAt string
 		if err := rows.Scan(&title, &createdAt); err != nil {
 			rows.Close()
 			return nil, fmt.Errorf("scan recently added: %w", err)
 		}
 		recent = append(recent, SectionRow{
 			Label: title,
-			Value: createdAt.Format("Jan 2, 2006"),
+			Value: parseDate(createdAt),
 		})
 	}
 	rows.Close()
@@ -313,13 +313,12 @@ func (s *DashboardService) Get(ctx context.Context) (*DashboardData, error) {
 	}
 	data.BookTypeBreakdown = bookTypeRows
 
-	// --- Collection Stats ---
-	var firstBookDate sql.NullTime
+	// --- Collection Stats (scan dates as strings since SQLite returns text) ---
+	var firstBookDate, lastReadDate sql.NullString
 	if err := queryRowContext(ctx, s.db, "SELECT MIN(created_at) FROM books", &firstBookDate); err != nil {
 		return nil, fmt.Errorf("first book date: %w", err)
 	}
 
-	var lastReadDate sql.NullTime
 	if err := queryRowContext(ctx, s.db, "SELECT MAX(read_at) FROM reading_logs", &lastReadDate); err != nil {
 		return nil, fmt.Errorf("last read date: %w", err)
 	}
@@ -349,8 +348,8 @@ func (s *DashboardService) Get(ctx context.Context) (*DashboardData, error) {
 	}
 
 	data.CollectionStats = []SectionRow{
-		{Label: "First book added", Value: formatDate(firstBookDate)},
-		{Label: "Last read date", Value: formatDate(lastReadDate)},
+		{Label: "First book added", Value: parseNullableDate(firstBookDate)},
+		{Label: "Last read date", Value: parseNullableDate(lastReadDate)},
 		{Label: "Total pages cataloged", Value: strconv.Itoa(totalPages) + " pages"},
 		{Label: "Covers uploaded", Value: fmt.Sprintf("%d/%d", coversUploaded, bookCount)},
 		{Label: "Books read ≥1 time", Value: fmt.Sprintf("%d/%d", booksReadCount, bookCount)},
@@ -425,9 +424,20 @@ func barWidth(value, max int) string {
 	return fmt.Sprintf("%.0f%%", float64(value)/float64(max)*100)
 }
 
-func formatDate(t sql.NullTime) string {
-	if !t.Valid || t.Time.IsZero() {
+func parseNullableDate(s sql.NullString) string {
+	if !s.Valid || s.String == "" {
 		return "—"
 	}
-	return t.Time.Format("Jan 2, 2006")
+	return parseDate(s.String)
+}
+
+func parseDate(s string) string {
+	if s == "" {
+		return "—"
+	}
+	t, err := time.Parse("2006-01-02 15:04:05", s)
+	if err != nil {
+		return s
+	}
+	return t.Format("Jan 2, 2006")
 }
