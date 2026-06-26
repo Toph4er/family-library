@@ -44,13 +44,13 @@ func HTMLUpdateSettingHandler(db *sql.DB) http.HandlerFunc {
 			val, key,
 		)
 		if err != nil {
-			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to update setting")
+			HTMXErrorResponse(w, r, http.StatusInternalServerError, "Failed to update setting")
 			return
 		}
 
 		rowsAffected, err := result.RowsAffected()
 		if err != nil {
-			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to verify update")
+			HTMXErrorResponse(w, r, http.StatusInternalServerError, "Failed to verify update")
 			return
 		}
 		if rowsAffected == 0 {
@@ -109,13 +109,13 @@ func HTMLUpdateGuestVisibilityHandler(db *sql.DB) http.HandlerFunc {
 		// Read current visibility blob
 		var blob string
 		if err := db.QueryRow("SELECT value FROM settings WHERE key = ?", "default_guest_visibility").Scan(&blob); err != nil {
-			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to read settings")
+			HTMXErrorResponse(w, r, http.StatusInternalServerError, "Failed to read settings")
 			return
 		}
 
 		var visibility map[string]bool
 		if err := json.Unmarshal([]byte(blob), &visibility); err != nil {
-			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to parse settings")
+			HTMXErrorResponse(w, r, http.StatusInternalServerError, "Failed to parse settings")
 			return
 		}
 
@@ -123,7 +123,7 @@ func HTMLUpdateGuestVisibilityHandler(db *sql.DB) http.HandlerFunc {
 
 		newBlob, err := json.Marshal(visibility)
 		if err != nil {
-			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to encode settings")
+			HTMXErrorResponse(w, r, http.StatusInternalServerError, "Failed to encode settings")
 			return
 		}
 
@@ -132,7 +132,7 @@ func HTMLUpdateGuestVisibilityHandler(db *sql.DB) http.HandlerFunc {
 			string(newBlob), "default_guest_visibility",
 		)
 		if err != nil {
-			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to update settings")
+			HTMXErrorResponse(w, r, http.StatusInternalServerError, "Failed to update settings")
 			return
 		}
 

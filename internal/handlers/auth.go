@@ -88,11 +88,11 @@ func RenderLoginPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if pages.IsHTMXRequest(r) {
 			if err := tmpl.ExecuteTemplate(w, "content", data); err != nil {
-				HTMXError(w, http.StatusInternalServerError)
+				HTMXError(w, r, http.StatusInternalServerError)
 			}
 		} else {
 			if err := tmpl.ExecuteTemplate(w, "login.html", data); err != nil {
-				HTMXError(w, http.StatusInternalServerError)
+				HTMXError(w, r, http.StatusInternalServerError)
 			}
 		}
 	}
@@ -127,11 +127,11 @@ func RenderGuestLoginPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if pages.IsHTMXRequest(r) {
 			if err := tmpl.ExecuteTemplate(w, "content", data); err != nil {
-				HTMXError(w, http.StatusInternalServerError)
+				HTMXError(w, r, http.StatusInternalServerError)
 			}
 		} else {
 			if err := tmpl.ExecuteTemplate(w, "guest-login.html", data); err != nil {
-				HTMXError(w, http.StatusInternalServerError)
+				HTMXError(w, r, http.StatusInternalServerError)
 			}
 		}
 	}
@@ -150,11 +150,11 @@ func RenderLogoutSuccess(tmpl *template.Template, db *sql.DB, authSvc *auth.Auth
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if pages.IsHTMXRequest(r) {
 			if err := tmpl.ExecuteTemplate(w, "content", data); err != nil {
-				HTMXError(w, http.StatusInternalServerError)
+				HTMXError(w, r, http.StatusInternalServerError)
 			}
 		} else {
 			if err := tmpl.ExecuteTemplate(w, "logout.html", data); err != nil {
-				HTMXError(w, http.StatusInternalServerError)
+				HTMXError(w, r, http.StatusInternalServerError)
 			}
 		}
 	}
@@ -190,7 +190,7 @@ func HTMLLoginHandler(authSvc *auth.Auth) http.HandlerFunc {
 				_, _ = w.Write([]byte(htmlErrorFragment(apiErr.Message))) // #nosec G705 -- apiErr.Message is from internal auth service, not user input; htmlErrorFragment escapes output
 				return
 			}
-			HTMXErrorResponse(w, http.StatusInternalServerError, "Internal server error")
+			HTMXErrorResponse(w, r, http.StatusInternalServerError, "Internal server error")
 			return
 		}
 
@@ -229,7 +229,7 @@ func HTMLGuestLoginHandler(authSvc *auth.Auth) http.HandlerFunc {
 				_, _ = w.Write([]byte(htmlErrorFragment(apiErr.Message))) // #nosec G705 -- apiErr.Message is from internal auth service, not user input; htmlErrorFragment escapes output
 				return
 			}
-			HTMXErrorResponse(w, http.StatusInternalServerError, "Internal server error")
+			HTMXErrorResponse(w, r, http.StatusInternalServerError, "Internal server error")
 			return
 		}
 

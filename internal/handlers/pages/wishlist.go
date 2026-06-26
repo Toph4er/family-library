@@ -20,7 +20,7 @@ func RenderWishlistPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 
 		rows, err := db.Query("SELECT id, isbn, title, author, reason, priority, amazon_url, thriftbooks_url, notes, fulfilled, requested_by, requested_at, fulfilled_at, cover_image_url FROM wishlist ORDER BY priority DESC, requested_at DESC")
 		if err != nil {
-			renderHTMXError(w, http.StatusInternalServerError)
+			renderHTMXError(w, r, http.StatusInternalServerError)
 			return
 		}
 		defer rows.Close()
@@ -34,7 +34,7 @@ func RenderWishlistPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 			var requestedAtStr, fulfilledAtStr sql.NullString
 			var coverImageURL sql.NullString
 			if err := rows.Scan(&item.ID, &isbn, &item.Title, &author, &reason, &item.Priority, &amazonURL, &thriftbooksURL, &notes, &fulfilled, &requestedBy, &requestedAtStr, &fulfilledAtStr, &coverImageURL); err != nil {
-				renderHTMXError(w, http.StatusInternalServerError)
+				renderHTMXError(w, r, http.StatusInternalServerError)
 				return
 			}
 			if isbn.Valid {
@@ -73,7 +73,7 @@ func RenderWishlistPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 			items = append(items, item)
 		}
 		if err = rows.Err(); err != nil {
-			renderHTMXError(w, http.StatusInternalServerError)
+			renderHTMXError(w, r, http.StatusInternalServerError)
 			return
 		}
 
@@ -145,7 +145,7 @@ func RenderWishlistFormPage(tmpl *template.Template, db *sql.DB, store *sessions
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if err := tmpl.ExecuteTemplate(w, "wishlist-form.html", data); err != nil {
-			renderHTMXError(w, http.StatusInternalServerError)
+			renderHTMXError(w, r, http.StatusInternalServerError)
 		}
 	}
 }

@@ -25,23 +25,23 @@ func DeleteWishlistItemHandler(db *sql.DB) http.HandlerFunc {
 		idStr := chi.URLParam(r, "id")
 		id, err := strconv.ParseInt(idStr, 10, 64)
 		if err != nil {
-			JSONError(w, http.StatusBadRequest, "invalid wishlist item ID")
+			JSONError(w, r, http.StatusBadRequest, "invalid wishlist item ID")
 			return
 		}
 
 		result, err := db.Exec("DELETE FROM wishlist WHERE id = ?", id)
 		if err != nil {
-			JSONError(w, http.StatusInternalServerError, "database error")
+			JSONError(w, r, http.StatusInternalServerError, "database error")
 			return
 		}
 
 		rowsAffected, err := result.RowsAffected()
 		if err != nil {
-			JSONError(w, http.StatusInternalServerError, "database error")
+			JSONError(w, r, http.StatusInternalServerError, "database error")
 			return
 		}
 		if rowsAffected == 0 {
-			JSONError(w, http.StatusNotFound, "wishlist item not found")
+			JSONError(w, r, http.StatusNotFound, "wishlist item not found")
 			return
 		}
 
@@ -58,7 +58,7 @@ func FulfillWishlistItemHandler(db *sql.DB) http.HandlerFunc {
 		idStr := chi.URLParam(r, "id")
 		id, err := strconv.ParseInt(idStr, 10, 64)
 		if err != nil {
-			JSONError(w, http.StatusBadRequest, "invalid wishlist item ID")
+			JSONError(w, r, http.StatusBadRequest, "invalid wishlist item ID")
 			return
 		}
 
@@ -66,17 +66,17 @@ func FulfillWishlistItemHandler(db *sql.DB) http.HandlerFunc {
 
 		result, err := db.Exec(query, id)
 		if err != nil {
-			JSONError(w, http.StatusInternalServerError, "database error")
+			JSONError(w, r, http.StatusInternalServerError, "database error")
 			return
 		}
 
 		rowsAffected, err := result.RowsAffected()
 		if err != nil {
-			JSONError(w, http.StatusInternalServerError, "database error")
+			JSONError(w, r, http.StatusInternalServerError, "database error")
 			return
 		}
 		if rowsAffected == 0 {
-			JSONError(w, http.StatusNotFound, "wishlist item not found")
+			JSONError(w, r, http.StatusNotFound, "wishlist item not found")
 			return
 		}
 
@@ -84,7 +84,7 @@ func FulfillWishlistItemHandler(db *sql.DB) http.HandlerFunc {
 		row := db.QueryRow(`SELECT `+wishlistColumns+` FROM wishlist WHERE id = ?`, id)
 		item, err := sqldb.ScanWishlistItem(row)
 		if err != nil {
-			JSONError(w, http.StatusInternalServerError, "database error")
+			JSONError(w, r, http.StatusInternalServerError, "database error")
 			return
 		}
 
@@ -138,7 +138,7 @@ func HTMLCreateWishlistItemHandler(db *sql.DB) http.HandlerFunc {
 		_, err := db.Exec(query, title, author, isbn, reason, priority,
 			amazonURL, thriftbooksURL, coverImageURL, notes)
 		if err != nil {
-			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to add to wishlist")
+			HTMXErrorResponse(w, r, http.StatusInternalServerError, "Failed to add to wishlist")
 			return
 		}
 
@@ -203,7 +203,7 @@ func HTMLUpdateWishlistItemHandler(db *sql.DB) http.HandlerFunc {
 		result, err := db.Exec(query, title, author, isbn, reason, priority,
 			amazonURL, thriftbooksURL, coverImageURL, notes, id)
 		if err != nil {
-			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to update wishlist item")
+			HTMXErrorResponse(w, r, http.StatusInternalServerError, "Failed to update wishlist item")
 			return
 		}
 

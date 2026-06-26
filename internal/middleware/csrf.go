@@ -73,34 +73,34 @@ func CSRFProtection(store *sessions.CookieStore, sessionName string) func(http.H
 			// — load session —
 			session, err := store.Get(r, sessionName)
 			if err != nil {
-				writeJSONError(w, http.StatusForbidden, "CSRF token missing")
+				writeJSONError(w, r, http.StatusForbidden, "CSRF token missing")
 				return
 			}
 
 			// — read stored token —
 			sessionToken, ok := session.Values[CSRFTokenKey].(string)
 			if !ok || sessionToken == "" {
-				writeJSONError(w, http.StatusForbidden, "CSRF token missing")
+				writeJSONError(w, r, http.StatusForbidden, "CSRF token missing")
 				return
 			}
 
 			// — read header token —
 			headerToken := r.Header.Get("X-CSRF-Token")
 			if headerToken == "" {
-				writeJSONError(w, http.StatusForbidden, "CSRF token missing")
+				writeJSONError(w, r, http.StatusForbidden, "CSRF token missing")
 				return
 			}
 
 			// — constant-time comparison —
 			if subtle.ConstantTimeCompare([]byte(sessionToken), []byte(headerToken)) != 1 {
-				writeJSONError(w, http.StatusForbidden, "CSRF token invalid")
+				writeJSONError(w, r, http.StatusForbidden, "CSRF token invalid")
 				return
 			}
 
 			// — rotate token —
 			newToken, err := GenerateCSRFToken()
 			if err != nil {
-				writeJSONError(w, http.StatusInternalServerError, "internal server error")
+				writeJSONError(w, r, http.StatusInternalServerError, "internal server error")
 				return
 			}
 			session.Values[CSRFTokenKey] = newToken
@@ -122,7 +122,10 @@ func CSRFProtection(store *sessions.CookieStore, sessionName string) func(http.H
 	}
 }
 
-func writeJSONError(w http.ResponseWriter, status int, message string) {
+func writeJSONError(w http.ResponseWriter, r *http.Request, status int, message string) {
+	if status >= 500 {
+		slog.Error("server error", "method", r.Method, "path", r.URL.Path, "status", status, "message", message)
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(map[string]string{"error": message})

@@ -24,7 +24,7 @@ func RenderDashboardPage(tmpl *template.Template, dashSvc *services.DashboardSer
 		data, err := dashSvc.Get(r.Context())
 		if err != nil {
 			slog.Error("dashboard service error", "error", err)
-			renderHTMXError(w, 500)
+			renderHTMXError(w, r, 500)
 			return
 		}
 

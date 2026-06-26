@@ -29,7 +29,7 @@ func ListReadingLogsHandler(db *sql.DB) http.HandlerFunc {
 		query := `SELECT ` + readingLogColumns + `, b.title FROM reading_logs rl JOIN books b ON b.id = rl.book_id ORDER BY rl.read_at DESC`
 		rows, err := db.Query(query)
 		if err != nil {
-			JSONError(w, http.StatusInternalServerError, "database error")
+			JSONError(w, r, http.StatusInternalServerError, "database error")
 			return
 		}
 		defer rows.Close()
@@ -40,14 +40,14 @@ func ListReadingLogsHandler(db *sql.DB) http.HandlerFunc {
 			var entireBook int
 			err := rows.Scan(&rl.ID, &rl.BookID, &rl.StartPage, &rl.EndPage, &rl.TotalPages, &entireBook, &rl.ReadAt, &rl.ReaderName, &rl.Notes, &rl.CreatedAt, &rl.BookTitle)
 			if err != nil {
-				JSONError(w, http.StatusInternalServerError, "database error")
+				JSONError(w, r, http.StatusInternalServerError, "database error")
 				return
 			}
 			rl.EntireBook = entireBook != 0
 			logs = append(logs, rl)
 		}
 		if err = rows.Err(); err != nil {
-			JSONError(w, http.StatusInternalServerError, "database error")
+			JSONError(w, r, http.StatusInternalServerError, "database error")
 			return
 		}
 
@@ -60,19 +60,19 @@ func CreateReadingLogHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req models.CreateReadingLogRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			JSONError(w, http.StatusBadRequest, "invalid request body")
+			JSONError(w, r, http.StatusBadRequest, "invalid request body")
 			return
 		}
 
 		if req.BookID == 0 {
-			JSONError(w, http.StatusBadRequest, "book_id is required")
+			JSONError(w, r, http.StatusBadRequest, "book_id is required")
 			return
 		}
 
 		var errs validation.Errors
 		errs.Required("reader_name", strings.TrimSpace(req.ReaderName))
 		if errs.HasErrors() {
-			JSONError(w, http.StatusBadRequest, errs.First())
+			JSONError(w, r, http.StatusBadRequest, errs.First())
 			return
 		}
 
@@ -80,11 +80,11 @@ func CreateReadingLogHandler(db *sql.DB) http.HandlerFunc {
 		var bookTitle string
 		err := db.QueryRow("SELECT title FROM books WHERE id = ?", req.BookID).Scan(&bookTitle)
 		if errors.Is(err, sql.ErrNoRows) {
-			JSONError(w, http.StatusNotFound, "book not found")
+			JSONError(w, r, http.StatusNotFound, "book not found")
 			return
 		}
 		if err != nil {
-			JSONError(w, http.StatusInternalServerError, "database error")
+			JSONError(w, r, http.StatusInternalServerError, "database error")
 			return
 		}
 
@@ -112,13 +112,13 @@ func CreateReadingLogHandler(db *sql.DB) http.HandlerFunc {
 			req.BookID, req.StartPage, req.EndPage, totalPages, entireBook, readAt, strings.TrimSpace(req.ReaderName), req.Notes,
 		)
 		if err != nil {
-			JSONError(w, http.StatusInternalServerError, "database error")
+			JSONError(w, r, http.StatusInternalServerError, "database error")
 			return
 		}
 
 		id, err := result.LastInsertId()
 		if err != nil {
-			JSONError(w, http.StatusInternalServerError, "database error")
+			JSONError(w, r, http.StatusInternalServerError, "database error")
 			return
 		}
 
@@ -131,7 +131,7 @@ func CreateReadingLogHandler(db *sql.DB) http.HandlerFunc {
 			return &r, err
 		}()
 		if err != nil {
-			JSONError(w, http.StatusInternalServerError, "database error")
+			JSONError(w, r, http.StatusInternalServerError, "database error")
 			return
 		}
 
@@ -145,13 +145,13 @@ func UpdateReadingLogHandler(db *sql.DB) http.HandlerFunc {
 		idStr := chi.URLParam(r, "id")
 		id, err := strconv.ParseInt(idStr, 10, 64)
 		if err != nil {
-			JSONError(w, http.StatusBadRequest, "invalid ID")
+			JSONError(w, r, http.StatusBadRequest, "invalid ID")
 			return
 		}
 
 		var req models.UpdateReadingLogRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			JSONError(w, http.StatusBadRequest, "invalid request body")
+			JSONError(w, r, http.StatusBadRequest, "invalid request body")
 			return
 		}
 
@@ -211,7 +211,7 @@ func UpdateReadingLogHandler(db *sql.DB) http.HandlerFunc {
 			var errs validation.Errors
 			errs.Required("reader_name", val)
 			if errs.HasErrors() {
-				JSONError(w, http.StatusBadRequest, errs.First())
+				JSONError(w, r, http.StatusBadRequest, errs.First())
 				return
 			}
 			fields = append(fields, updateField{column: "reader_name", value: val})
@@ -230,11 +230,11 @@ func UpdateReadingLogHandler(db *sql.DB) http.HandlerFunc {
 				return &r, err
 			}()
 			if errors.Is(err, sql.ErrNoRows) {
-				JSONError(w, http.StatusNotFound, "reading log not found")
+				JSONError(w, r, http.StatusNotFound, "reading log not found")
 				return
 			}
 			if err != nil {
-				JSONError(w, http.StatusInternalServerError, "database error")
+				JSONError(w, r, http.StatusInternalServerError, "database error")
 				return
 			}
 			JSONResponse(w, http.StatusOK, rl)
@@ -247,13 +247,13 @@ func UpdateReadingLogHandler(db *sql.DB) http.HandlerFunc {
 		query := "UPDATE reading_logs SET " + setClause + " WHERE id = ?"
 		result, err := db.Exec(query, args...)
 		if err != nil {
-			JSONError(w, http.StatusInternalServerError, "database error")
+			JSONError(w, r, http.StatusInternalServerError, "database error")
 			return
 		}
 
 		rowsAffected, _ := result.RowsAffected()
 		if rowsAffected == 0 {
-			JSONError(w, http.StatusNotFound, "reading log not found")
+			JSONError(w, r, http.StatusNotFound, "reading log not found")
 			return
 		}
 
@@ -266,7 +266,7 @@ func UpdateReadingLogHandler(db *sql.DB) http.HandlerFunc {
 			return &r, err
 		}()
 		if err != nil {
-			JSONError(w, http.StatusInternalServerError, "database error")
+			JSONError(w, r, http.StatusInternalServerError, "database error")
 			return
 		}
 
@@ -280,19 +280,19 @@ func DeleteReadingLogHandler(db *sql.DB) http.HandlerFunc {
 		idStr := chi.URLParam(r, "id")
 		id, err := strconv.ParseInt(idStr, 10, 64)
 		if err != nil {
-			JSONError(w, http.StatusBadRequest, "invalid ID")
+			JSONError(w, r, http.StatusBadRequest, "invalid ID")
 			return
 		}
 
 		result, err := db.Exec("DELETE FROM reading_logs WHERE id = ?", id)
 		if err != nil {
-			JSONError(w, http.StatusInternalServerError, "database error")
+			JSONError(w, r, http.StatusInternalServerError, "database error")
 			return
 		}
 
 		rowsAffected, _ := result.RowsAffected()
 		if rowsAffected == 0 {
-			JSONError(w, http.StatusNotFound, "reading log not found")
+			JSONError(w, r, http.StatusNotFound, "reading log not found")
 			return
 		}
 
@@ -311,7 +311,7 @@ func HTMLBookSelectorHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		rows, err := db.Query("SELECT id, title FROM books ORDER BY title ASC LIMIT 50")
 		if err != nil {
-			HTMXError(w, http.StatusInternalServerError)
+			HTMXError(w, r, http.StatusInternalServerError)
 			return
 		}
 		defer rows.Close()
@@ -376,14 +376,14 @@ func HTMLReadingLogFormHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 		if err != nil {
-			HTMXError(w, http.StatusInternalServerError)
+			HTMXError(w, r, http.StatusInternalServerError)
 			return
 		}
 
 		// Load family members for reader dropdown
 		fmRows, err := db.Query("SELECT id, name, relation FROM family_members ORDER BY name ASC")
 		if err != nil {
-			HTMXError(w, http.StatusInternalServerError)
+			HTMXError(w, r, http.StatusInternalServerError)
 			return
 		}
 		defer fmRows.Close()
@@ -556,7 +556,7 @@ func HTMLCreateReadingLogHandler(db *sql.DB) http.HandlerFunc {
 			bookID, startPage, endPage, totalPages, entireBook, readAt, readerName, notesPtr,
 		)
 		if err != nil {
-			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to create reading log entry")
+			HTMXErrorResponse(w, r, http.StatusInternalServerError, "Failed to create reading log entry")
 			return
 		}
 
@@ -580,7 +580,7 @@ func HTMLDeleteReadingLogHandler(db *sql.DB) http.HandlerFunc {
 
 		result, err := db.Exec("DELETE FROM reading_logs WHERE id = ?", id)
 		if err != nil {
-			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to delete reading log entry")
+			HTMXErrorResponse(w, r, http.StatusInternalServerError, "Failed to delete reading log entry")
 			return
 		}
 
@@ -614,7 +614,7 @@ func RenderReadingLogPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 		query := `SELECT rl.id, rl.book_id, b.title, rl.start_page, rl.end_page, rl.total_pages, rl.entire_book, rl.read_at, rl.reader_name, rl.notes, rl.created_at FROM reading_logs rl JOIN books b ON b.id = rl.book_id ORDER BY rl.read_at DESC`
 		rows, err := db.Query(query)
 		if err != nil {
-			HTMXError(w, http.StatusInternalServerError)
+			HTMXError(w, r, http.StatusInternalServerError)
 			return
 		}
 		defer rows.Close()
@@ -625,14 +625,14 @@ func RenderReadingLogPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 			var entireBook int
 			err := rows.Scan(&rl.ID, &rl.BookID, &rl.BookTitle, &rl.StartPage, &rl.EndPage, &rl.TotalPages, &entireBook, &rl.ReadAt, &rl.ReaderName, &rl.Notes, &rl.CreatedAt)
 			if err != nil {
-				HTMXError(w, http.StatusInternalServerError)
+				HTMXError(w, r, http.StatusInternalServerError)
 				return
 			}
 			rl.EntireBook = entireBook != 0
 			logs = append(logs, rl)
 		}
 		if err = rows.Err(); err != nil {
-			HTMXError(w, http.StatusInternalServerError)
+			HTMXError(w, r, http.StatusInternalServerError)
 			return
 		}
 		ctx.ReadingLogs = logs
@@ -640,7 +640,7 @@ func RenderReadingLogPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 		// Load family members for the "Log Reading" modal
 		fmRows, err := db.Query("SELECT id, name, relation FROM family_members ORDER BY name ASC")
 		if err != nil {
-			HTMXError(w, http.StatusInternalServerError)
+			HTMXError(w, r, http.StatusInternalServerError)
 			return
 		}
 		defer fmRows.Close()
@@ -656,7 +656,7 @@ func RenderReadingLogPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 		// Load recent books for quick logging
 		bookRows, err := db.Query("SELECT id, title FROM books ORDER BY created_at DESC LIMIT 20")
 		if err != nil {
-			HTMXError(w, http.StatusInternalServerError)
+			HTMXError(w, r, http.StatusInternalServerError)
 			return
 		}
 		defer bookRows.Close()

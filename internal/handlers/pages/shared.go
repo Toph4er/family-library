@@ -30,7 +30,10 @@ func BuildPageContextForTest(r *http.Request, store *sessions.CookieStore, sessi
 
 // renderHTMXError writes an HTTP error status code for HTMX requests.
 // HTMX only cares about the status code — no body is sent.
-func renderHTMXError(w http.ResponseWriter, status int) {
+func renderHTMXError(w http.ResponseWriter, r *http.Request, status int) {
+	if status >= 500 {
+		slog.Error("server error", "method", r.Method, "path", r.URL.Path, "status", status)
+	}
 	w.WriteHeader(status)
 }
 
@@ -157,13 +160,13 @@ func renderPage(w http.ResponseWriter, r *http.Request, tmpl *template.Template,
 		// HTMX request — render only the content block, not the base layout.
 		if err := tmpl.ExecuteTemplate(w, "content", data); err != nil {
 			slog.Error("template error", "page", pageName, "error", err)
-			renderHTMXError(w, http.StatusInternalServerError)
+			renderHTMXError(w, r, http.StatusInternalServerError)
 		}
 	} else {
 		// Full page request — render the page template (which includes base).
 		if err := tmpl.ExecuteTemplate(w, pageName, data); err != nil {
 			slog.Error("template error", "page", pageName, "error", err)
-			renderHTMXError(w, http.StatusInternalServerError)
+			renderHTMXError(w, r, http.StatusInternalServerError)
 		}
 	}
 }

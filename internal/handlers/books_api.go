@@ -64,7 +64,7 @@ func LookupISBNHandler(db *sql.DB) http.HandlerFunc {
 		var errs validation.Errors
 		errs.Required("isbn", isbn)
 		if errs.HasErrors() {
-			JSONError(w, http.StatusBadRequest, errs.First())
+			JSONError(w, r, http.StatusBadRequest, errs.First())
 			return
 		}
 		force := r.URL.Query().Get("force") == "true"
@@ -72,11 +72,11 @@ func LookupISBNHandler(db *sql.DB) http.HandlerFunc {
 		book, coverSource, apiErr := cachedFetchFromOpenLibrary(db, isbn, force)
 		if apiErr != nil {
 			slog.Error("Open Library lookup failed", "isbn", isbn, "error", apiErr)
-			JSONError(w, http.StatusBadGateway, fmt.Sprintf("book lookup unavailable: %v", apiErr))
+			JSONError(w, r, http.StatusBadGateway, fmt.Sprintf("book lookup unavailable: %v", apiErr))
 			return
 		}
 		if book == nil {
-			JSONError(w, http.StatusNotFound, "book not found")
+			JSONError(w, r, http.StatusNotFound, "book not found")
 			return
 		}
 
@@ -91,17 +91,17 @@ func DeleteBookHandler(repo repository.BookRepository) http.HandlerFunc {
 		idStr := chi.URLParam(r, "id")
 		id, err := strconv.ParseInt(idStr, 10, 64)
 		if err != nil {
-			HTMXErrorResponse(w, http.StatusBadRequest, "Invalid book ID")
+			HTMXErrorResponse(w, r, http.StatusBadRequest, "Invalid book ID")
 			return
 		}
 
 		err = repo.Delete(r.Context(), id)
 		if err != nil {
 			if strings.Contains(err.Error(), "no rows affected") {
-				HTMXErrorResponse(w, http.StatusNotFound, "Book not found")
+				HTMXErrorResponse(w, r, http.StatusNotFound, "Book not found")
 				return
 			}
-			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to delete book")
+			HTMXErrorResponse(w, r, http.StatusInternalServerError, "Failed to delete book")
 			return
 		}
 
@@ -123,7 +123,7 @@ func RateChildHandler(db *sql.DB) http.HandlerFunc {
 				Rating int   `json:"rating"`
 			}
 			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-				JSONError(w, http.StatusBadRequest, "invalid request body")
+				JSONError(w, r, http.StatusBadRequest, "invalid request body")
 				return
 			}
 			bookID = req.BookID
@@ -132,12 +132,12 @@ func RateChildHandler(db *sql.DB) http.HandlerFunc {
 			var err error
 			bookID, err = strconv.ParseInt(r.FormValue("book_id"), 10, 64)
 			if err != nil || bookID <= 0 {
-				JSONError(w, http.StatusBadRequest, "book_id is required")
+				JSONError(w, r, http.StatusBadRequest, "book_id is required")
 				return
 			}
 			rating, err = strconv.Atoi(r.FormValue("rating"))
 			if err != nil || rating < 1 || rating > 5 {
-				JSONError(w, http.StatusBadRequest, "rating must be between 1 and 5")
+				JSONError(w, r, http.StatusBadRequest, "rating must be between 1 and 5")
 				return
 			}
 		}
@@ -150,19 +150,19 @@ func RateChildHandler(db *sql.DB) http.HandlerFunc {
 			errs.Required("rating", "")
 		}
 		if errs.HasErrors() {
-			JSONError(w, http.StatusBadRequest, errs.First())
+			JSONError(w, r, http.StatusBadRequest, errs.First())
 			return
 		}
 
 		result, err := db.Exec("UPDATE books SET child_rating = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", rating, bookID)
 		if err != nil {
-			JSONError(w, http.StatusInternalServerError, "database error")
+			JSONError(w, r, http.StatusInternalServerError, "database error")
 			return
 		}
 
 		rowsAffected, _ := result.RowsAffected()
 		if rowsAffected == 0 {
-			JSONError(w, http.StatusNotFound, "book not found")
+			JSONError(w, r, http.StatusNotFound, "book not found")
 			return
 		}
 

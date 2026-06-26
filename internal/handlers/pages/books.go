@@ -54,13 +54,13 @@ func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 				q,
 			).Scan(&total)
 			if err != nil {
-				renderHTMXError(w, http.StatusInternalServerError)
+				renderHTMXError(w, r, http.StatusInternalServerError)
 				return
 			}
 		} else {
 			err := db.QueryRow("SELECT COUNT(*) FROM books").Scan(&total)
 			if err != nil {
-				renderHTMXError(w, http.StatusInternalServerError)
+				renderHTMXError(w, r, http.StatusInternalServerError)
 				return
 			}
 		}
@@ -100,7 +100,7 @@ func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 			)
 		}
 		if err != nil {
-			renderHTMXError(w, http.StatusInternalServerError)
+			renderHTMXError(w, r, http.StatusInternalServerError)
 			return
 		}
 		defer rows.Close()
@@ -111,7 +111,7 @@ func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 			var author, isbn, coverImage sql.NullString
 			var createdAt string
 			if err := rows.Scan(&book.ID, &book.Title, &author, &isbn, &coverImage, &createdAt); err != nil {
-				renderHTMXError(w, http.StatusInternalServerError)
+				renderHTMXError(w, r, http.StatusInternalServerError)
 				return
 			}
 			if author.Valid {
@@ -127,7 +127,7 @@ func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 			books = append(books, book)
 		}
 		if err = rows.Err(); err != nil {
-			renderHTMXError(w, http.StatusInternalServerError)
+			renderHTMXError(w, r, http.StatusInternalServerError)
 			return
 		}
 
@@ -269,7 +269,7 @@ func RenderBookFormPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if err := tmpl.ExecuteTemplate(w, "book-form.html", data); err != nil {
-			renderHTMXError(w, http.StatusInternalServerError)
+			renderHTMXError(w, r, http.StatusInternalServerError)
 		}
 	}
 }

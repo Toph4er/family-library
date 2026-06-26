@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"html/template"
+	"log/slog"
 	"net/http"
 )
 
@@ -13,8 +14,11 @@ func JSONResponse(w http.ResponseWriter, status int, data interface{}) {
 	_ = json.NewEncoder(w).Encode(data)
 }
 
-// JSONError sends a JSON error response
-func JSONError(w http.ResponseWriter, status int, message string) {
+// JSONError sends a JSON error response. Logs 5xx errors with request context.
+func JSONError(w http.ResponseWriter, r *http.Request, status int, message string) {
+	if status >= 500 {
+		slog.Error("server error", "method", r.Method, "path", r.URL.Path, "status", status, "message", message)
+	}
 	JSONResponse(w, status, map[string]interface{}{
 		"success": false,
 		"error":   message,
@@ -24,13 +28,21 @@ func JSONError(w http.ResponseWriter, status int, message string) {
 // HTMXError sends a 4xx/5xx response for HTMX requests.
 // HTMX only cares about the status code — the body is ignored
 // unless hx-push-url or swap options are configured to render it.
-func HTMXError(w http.ResponseWriter, status int) {
+// Logs 5xx errors with request context.
+func HTMXError(w http.ResponseWriter, r *http.Request, status int) {
+	if status >= 500 {
+		slog.Error("server error", "method", r.Method, "path", r.URL.Path, "status", status)
+	}
 	w.WriteHeader(status)
 }
 
 // HTMXErrorResponse sends a status code with an error message body.
 // Used when the client may display the message (e.g., via hx-on::after-request).
-func HTMXErrorResponse(w http.ResponseWriter, status int, message string) {
+// Logs 5xx errors with request context.
+func HTMXErrorResponse(w http.ResponseWriter, r *http.Request, status int, message string) {
+	if status >= 500 {
+		slog.Error("server error", "method", r.Method, "path", r.URL.Path, "status", status, "message", message)
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
 	_, _ = w.Write([]byte(htmlErrorFragment(message)))

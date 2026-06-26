@@ -15,7 +15,7 @@ import (
 func HTMLCreateBookHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseForm(); err != nil {
-			HTMXErrorResponse(w, http.StatusBadRequest, "Invalid request")
+			HTMXErrorResponse(w, r, http.StatusBadRequest, "Invalid request")
 			return
 		}
 
@@ -26,7 +26,7 @@ func HTMLCreateBookHandler(db *sql.DB) http.HandlerFunc {
 		errs.Required("Title", title)
 		errs.Required("ISBN", isbn)
 		if errs.HasErrors() {
-			HTMXErrorResponse(w, http.StatusBadRequest, errs.First())
+			HTMXErrorResponse(w, r, http.StatusBadRequest, errs.First())
 			return
 		}
 
@@ -98,10 +98,10 @@ func HTMLCreateBookHandler(db *sql.DB) http.HandlerFunc {
 		)
 		if err != nil {
 			if strings.Contains(err.Error(), "UNIQUE constraint failed") {
-				HTMXErrorResponse(w, http.StatusConflict, "A book with this ISBN already exists")
+				HTMXErrorResponse(w, r, http.StatusConflict, "A book with this ISBN already exists")
 				return
 			}
-			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to create book")
+			HTMXErrorResponse(w, r, http.StatusInternalServerError, "Failed to create book")
 		}
 
 		id, _ := result.LastInsertId()
@@ -116,12 +116,12 @@ func HTMLUpdateBookHandler(db *sql.DB) http.HandlerFunc {
 		idStr := chi.URLParam(r, "id")
 		id, err := strconv.ParseInt(idStr, 10, 64)
 		if err != nil {
-			HTMXErrorResponse(w, http.StatusBadRequest, "Invalid book ID")
+			HTMXErrorResponse(w, r, http.StatusBadRequest, "Invalid book ID")
 			return
 		}
 
 		if err := r.ParseForm(); err != nil {
-			HTMXErrorResponse(w, http.StatusBadRequest, "Invalid request")
+			HTMXErrorResponse(w, r, http.StatusBadRequest, "Invalid request")
 			return
 		}
 
@@ -132,7 +132,7 @@ func HTMLUpdateBookHandler(db *sql.DB) http.HandlerFunc {
 		errs.Required("Title", title)
 		errs.Required("ISBN", isbn)
 		if errs.HasErrors() {
-			HTMXErrorResponse(w, http.StatusBadRequest, errs.First())
+			HTMXErrorResponse(w, r, http.StatusBadRequest, errs.First())
 			return
 		}
 
@@ -185,15 +185,15 @@ func HTMLUpdateBookHandler(db *sql.DB) http.HandlerFunc {
 		result, err := db.Exec(query, args...)
 		if err != nil {
 			if strings.Contains(err.Error(), "UNIQUE constraint failed") {
-				HTMXErrorResponse(w, http.StatusConflict, "A book with this ISBN already exists")
+				HTMXErrorResponse(w, r, http.StatusConflict, "A book with this ISBN already exists")
 				return
 			}
-			HTMXErrorResponse(w, http.StatusInternalServerError, "Failed to update book")
+			HTMXErrorResponse(w, r, http.StatusInternalServerError, "Failed to update book")
 		}
 
 		rowsAffected, _ := result.RowsAffected()
 		if rowsAffected == 0 {
-			HTMXErrorResponse(w, http.StatusNotFound, "Book not found")
+			HTMXErrorResponse(w, r, http.StatusNotFound, "Book not found")
 			return
 		}
 

@@ -31,7 +31,7 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 		// Load settings
 		rows, err := db.Query("SELECT key, value FROM settings ORDER BY key ASC")
 		if err != nil {
-			renderHTMXError(w, http.StatusInternalServerError)
+			renderHTMXError(w, r, http.StatusInternalServerError)
 			return
 		}
 		defer rows.Close()
@@ -40,7 +40,7 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 		for rows.Next() {
 			var key, value string
 			if err := rows.Scan(&key, &value); err != nil {
-				renderHTMXError(w, http.StatusInternalServerError)
+				renderHTMXError(w, r, http.StatusInternalServerError)
 				return
 			}
 			if _, sensitive := SensitiveKeys[key]; sensitive {
@@ -49,7 +49,7 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 			settings[key] = value
 		}
 		if err = rows.Err(); err != nil {
-			renderHTMXError(w, http.StatusInternalServerError)
+			renderHTMXError(w, r, http.StatusInternalServerError)
 			return
 		}
 		ctx.Settings = settings
@@ -57,7 +57,7 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 		// Load users
 		userRows, err := db.Query("SELECT id, username, role, display_name, created_at FROM users ORDER BY id")
 		if err != nil {
-			renderHTMXError(w, http.StatusInternalServerError)
+			renderHTMXError(w, r, http.StatusInternalServerError)
 			return
 		}
 		defer userRows.Close()
@@ -67,7 +67,7 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 			var id int64
 			var username, role, displayName, createdAt string
 			if err := userRows.Scan(&id, &username, &role, &displayName, &createdAt); err != nil {
-				renderHTMXError(w, http.StatusInternalServerError)
+				renderHTMXError(w, r, http.StatusInternalServerError)
 				return
 			}
 			users = append(users, map[string]interface{}{
@@ -79,7 +79,7 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 			})
 		}
 		if err = userRows.Err(); err != nil {
-			renderHTMXError(w, http.StatusInternalServerError)
+			renderHTMXError(w, r, http.StatusInternalServerError)
 			return
 		}
 		ctx.Users = users
@@ -87,7 +87,7 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 		// Load family members
 		fmRows, err := db.Query("SELECT id, name, relation, created_at, updated_at FROM family_members ORDER BY name ASC")
 		if err != nil {
-			renderHTMXError(w, http.StatusInternalServerError)
+			renderHTMXError(w, r, http.StatusInternalServerError)
 			return
 		}
 		defer fmRows.Close()
@@ -97,7 +97,7 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 			var fm models.FamilyMember
 			var createdAt, updatedAt string
 			if err := fmRows.Scan(&fm.ID, &fm.Name, &fm.Relation, &createdAt, &updatedAt); err != nil {
-				renderHTMXError(w, http.StatusInternalServerError)
+				renderHTMXError(w, r, http.StatusInternalServerError)
 				return
 			}
 			fm.CreatedAt = createdAt
@@ -105,7 +105,7 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 			familyMembers = append(familyMembers, fm)
 		}
 		if err = fmRows.Err(); err != nil {
-			renderHTMXError(w, http.StatusInternalServerError)
+			renderHTMXError(w, r, http.StatusInternalServerError)
 			return
 		}
 		ctx.FamilyMembers = familyMembers
