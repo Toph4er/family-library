@@ -263,28 +263,9 @@ func (s *DashboardService) Get(ctx context.Context) (*DashboardData, error) {
 	}
 	data.ReaderBreakdown = readerRows
 
-	// --- Genre Breakdown (skip rows with malformed JSON) ---
-	rows, err = s.db.QueryContext(ctx, `
-		SELECT j.value AS genre, COUNT(*) AS cnt
-		FROM books
-		JOIN json_each(books.genres) AS j ON ISJSON(books.genres)
-		GROUP BY j.value ORDER BY cnt DESC LIMIT 10
-	`)
-	if err != nil {
-		return nil, fmt.Errorf("genre breakdown: %w", err)
-	}
-
-	var genreRows []GenreBreakdownRow
-	for rows.Next() {
-		var genre string
-		var count int
-		if err := rows.Scan(&genre, &count); err != nil {
-			rows.Close()
-			return nil, fmt.Errorf("scan genres: %w", err)
-		}
-		genreRows = append(genreRows, GenreBreakdownRow{Genre: genre, Count: count})
-	}
-	rows.Close()
+	// --- Genre Breakdown (best-effort; skip if JSON is malformed) ---
+	genreRows, _ := s.getGenreBreakdown(ctx) // ignore error — don't fail dashboard for bad data
+	data.GenreBreakdown = genreRows
 
 	if len(genreRows) > 0 {
 		maxCount := genreRows[0].Count
@@ -297,7 +278,6 @@ func (s *DashboardService) Get(ctx context.Context) (*DashboardData, error) {
 			genreRows[i].Width = barWidth(genreRows[i].Count, maxCount)
 		}
 	}
-	data.GenreBreakdown = genreRows
 
 	// --- Books by Book Type ---
 	rows, err = s.db.QueryContext(ctx, `
@@ -396,6 +376,32 @@ func (s *DashboardService) Get(ctx context.Context) (*DashboardData, error) {
 	})
 
 	return data, nil
+}
+
+// getGenreBreakdown returns genre counts. Returns empty slice on error instead of failing —
+// some books may have malformed JSON in the genres column.
+func (s *DashboardService) getGenreBreakdown(ctx context.Context) ([]GenreBreakdownRow, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT j.value AS genre, COUNT(*) AS cnt
+		FROM books, json_each(books.genres) AS j
+		GROUP BY j.value ORDER BY cnt DESC LIMIT 10
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("genre breakdown: %w", err)
+	}
+
+	var genreRows []GenreBreakdownRow
+	for rows.Next() {
+		var genre string
+		var count int
+		if err := rows.Scan(&genre, &count); err != nil {
+			rows.Close()
+			return nil, fmt.Errorf("scan genres: %w", err)
+		}
+		genreRows = append(genreRows, GenreBreakdownRow{Genre: genre, Count: count})
+	}
+	rows.Close()
+	return genreRows, nil
 }
 
 // --- helpers ---
