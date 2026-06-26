@@ -263,11 +263,12 @@ func (s *DashboardService) Get(ctx context.Context) (*DashboardData, error) {
 	}
 	data.ReaderBreakdown = readerRows
 
-	// --- Genre Breakdown ---
+	// --- Genre Breakdown (skip rows with malformed JSON) ---
 	rows, err = s.db.QueryContext(ctx, `
-		SELECT genre.value AS genre, COUNT(*) AS cnt
-		FROM books, json_each(books.genres) AS genre
-		GROUP BY genre ORDER BY cnt DESC LIMIT 10
+		SELECT j.value AS genre, COUNT(*) AS cnt
+		FROM books
+		JOIN json_each(books.genres) AS j ON ISJSON(books.genres)
+		GROUP BY j.value ORDER BY cnt DESC LIMIT 10
 	`)
 	if err != nil {
 		return nil, fmt.Errorf("genre breakdown: %w", err)
