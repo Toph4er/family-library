@@ -8,7 +8,6 @@ import (
 	"html/template"
 	"log/slog"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gorilla/sessions"
@@ -240,35 +239,4 @@ func svgIcon(name string) template.HTML {
 	default:
 		return ""
 	}
-}
-
-func pluralS(n int, plural, singular string) string {
-	if n == 1 {
-		return singular
-	}
-	return plural
-}
-
-func formatDate(s string) string {
-	if s == "" {
-		return "—"
-	}
-	t, err := time.Parse("2006-01-02 15:04:05", s)
-	if err != nil {
-		return s
-	}
-	return t.Format("Jan 2, 2006")
-}
-
-func formatNumber(n int) string {
-	if n < 0 {
-		return "0"
-	}
-	if n >= 1000000 {
-		return fmt.Sprintf("%.1fM", float64(n)/1000000)
-	}
-	if n >= 1000 {
-		return fmt.Sprintf("%d", n)
-	}
-	return strconv.Itoa(n)
 }

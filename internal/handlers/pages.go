@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/sessions"
 
 	pages "github.com/Toph4er/family-library/internal/handlers/pages"
+	"github.com/Toph4er/family-library/internal/services"
 )
 
 // --- Page renderers (delegated to pages package) ---
@@ -22,7 +23,8 @@ func RenderLandingPage(tmpl *template.Template, db *sql.DB, store *sessions.Cook
 }
 
 func RenderDashboardPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
-	return pages.RenderDashboardPage(tmpl, db, store, sessionName)
+	dashSvc := services.NewDashboardService(db)
+	return pages.RenderDashboardPage(tmpl, dashSvc, store, sessionName)
 }
 
 func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
