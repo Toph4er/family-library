@@ -67,7 +67,7 @@ func main() {
 
 	// -- Run migrations if requested --
 	if *migrate {
-		if err := runMigrations(database); err != nil {
+		if err := runMigrations(database.DB); err != nil {
 			slog.Error("Migration failed", "error", err)
 			os.Exit(1)
 		}
@@ -75,7 +75,7 @@ func main() {
 	}
 
 	// -- Initialize auth --
-	authSvc := auth.New(database, []byte(sessionSecret))
+	authSvc := auth.New(database.DB, []byte(sessionSecret))
 
 	// -- Seed initial admin user --
 	adminUsername := os.Getenv("ADMIN_USERNAME")

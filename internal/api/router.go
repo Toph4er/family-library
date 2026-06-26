@@ -2,7 +2,6 @@
 package api
 
 import (
-	"database/sql"
 	"html/template"
 	"net/http"
 	"os"
@@ -11,6 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/jmoiron/sqlx"
 
 	"github.com/Toph4er/family-library/internal/auth"
 	"github.com/Toph4er/family-library/internal/handlers"
@@ -25,7 +25,7 @@ type RouterConfig struct {
 
 // NewRouter constructs and returns the application router with all routes
 // and middleware configured.
-func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Handler {
+func NewRouter(database *sqlx.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Handler {
 	r := chi.NewRouter()
 
 	bookRepo := repository.NewBookRepository(database)
@@ -60,42 +60,42 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 	r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("internal/web"))))
 
 	// -- Health check (public) --
-	healthHandler := handlers.NewHealthHandler(database)
+	healthHandler := handlers.NewHealthHandler(database.DB)
 	r.Get("/health", healthHandler.Check)
 
 	// -- Page routes (template-rendered) --
-	r.Get("/login", handlers.RenderLoginPage(cfg.Templates["login"], database, authSvc.Store(), auth.SessionID))
-	r.Get("/guest-login", handlers.RenderGuestLoginPage(cfg.Templates["guest-login"], database, authSvc.Store(), auth.SessionID))
-	r.Get("/logout", handlers.RenderLogoutSuccess(cfg.Templates["logout"], database, authSvc))
+	r.Get("/login", handlers.RenderLoginPage(cfg.Templates["login"], database.DB, authSvc.Store(), auth.SessionID))
+	r.Get("/guest-login", handlers.RenderGuestLoginPage(cfg.Templates["guest-login"], database.DB, authSvc.Store(), auth.SessionID))
+	r.Get("/logout", handlers.RenderLogoutSuccess(cfg.Templates["logout"], database.DB, authSvc))
 	r.Get("/dashboard", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAuthHTML(handlers.RenderDashboardPage(cfg.Templates["dashboard"], database, authSvc.Store(), auth.SessionID)).ServeHTTP(w, r)
+		authSvc.RequireAuthHTML(handlers.RenderDashboardPage(cfg.Templates["dashboard"], database.DB, authSvc.Store(), auth.SessionID)).ServeHTTP(w, r)
 	})
 
 	// -- HTMX UI routes (form-encoded, return HTML fragments or HX-Redirect) --
 	r.Post("/auth/login", handlers.HTMLLoginHandler(authSvc))
 	r.Post("/auth/guest-login", handlers.HTMLGuestLoginHandler(authSvc))
 	r.Put("/settings/update/{key}", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLUpdateSettingHandler(database)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLUpdateSettingHandler(database.DB)).ServeHTTP(w, r)
 	})
 	r.Post("/settings/guest-visibility/update", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLUpdateGuestVisibilityHandler(database)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLUpdateGuestVisibilityHandler(database.DB)).ServeHTTP(w, r)
 	})
 
 	// User management (HTMX, under /settings)
 	r.Get("/settings/users/new-form", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLUserFormHandler(database)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLUserFormHandler(database.DB)).ServeHTTP(w, r)
 	})
 	r.Get("/settings/users/{id}/edit", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLUserFormHandler(database)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLUserFormHandler(database.DB)).ServeHTTP(w, r)
 	})
 	r.Post("/settings/users", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLCreateUserHandler(database)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLCreateUserHandler(database.DB)).ServeHTTP(w, r)
 	})
 	r.Put("/settings/users/{id}", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLUpdateUserHandler(database)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLUpdateUserHandler(database.DB)).ServeHTTP(w, r)
 	})
 	r.Delete("/settings/users/{id}", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLDeleteUserHandler(database)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLDeleteUserHandler(database.DB)).ServeHTTP(w, r)
 	})
 
 	// Family member management (HTMX, under /settings)
@@ -106,28 +106,28 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 		authSvc.RequireAdminHTML(handlers.HTMLFamilyMemberFormHandler(database)).ServeHTTP(w, r)
 	})
 	r.Post("/settings/family-members", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLCreateFamilyMemberHandler(database)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLCreateFamilyMemberHandler(database.DB)).ServeHTTP(w, r)
 	})
 	r.Put("/settings/family-members/{id}", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLUpdateFamilyMemberHandler(database)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLUpdateFamilyMemberHandler(database.DB)).ServeHTTP(w, r)
 	})
 	r.Delete("/settings/family-members/{id}", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLDeleteFamilyMemberHandler(database)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLDeleteFamilyMemberHandler(database.DB)).ServeHTTP(w, r)
 	})
 
 	// / — public landing page; authenticated users are redirected to /books
-	r.Get("/", handlers.RenderLandingPage(cfg.Templates["landing"], database, authSvc.Store(), auth.SessionID))
+	r.Get("/", handlers.RenderLandingPage(cfg.Templates["landing"], database.DB, authSvc.Store(), auth.SessionID))
 
 	// Protected page routes use HTML-aware middleware (redirects instead of JSON)
 	r.Get("/books", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAuthHTML(handlers.RenderBooksPage(cfg.Templates["books"], database, authSvc.Store(), auth.SessionID)).ServeHTTP(w, r)
+		authSvc.RequireAuthHTML(handlers.RenderBooksPage(cfg.Templates["books"], database.DB, authSvc.Store(), auth.SessionID)).ServeHTTP(w, r)
 	})
 	r.Get("/books/{id}", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAuthHTML(handlers.RenderBookDetailPage(cfg.Templates["book-detail"], database, authSvc.Store(), auth.SessionID)).ServeHTTP(w, r)
+		authSvc.RequireAuthHTML(handlers.RenderBookDetailPage(cfg.Templates["book-detail"], database.DB, authSvc.Store(), auth.SessionID)).ServeHTTP(w, r)
 	})
 	// Standalone book form pages (admin only)
 	r.Get("/books/add-book", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.RenderBookFormPage(cfg.Templates["book-form"], database, authSvc.Store(), auth.SessionID, false, 0)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.RenderBookFormPage(cfg.Templates["book-form"], database.DB, authSvc.Store(), auth.SessionID, false, 0)).ServeHTTP(w, r)
 	})
 	r.Get("/books/{id}/edit-book", func(w http.ResponseWriter, r *http.Request) {
 		authSvc.RequireAdminHTML(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -137,21 +137,21 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 				http.NotFound(w, r)
 				return
 			}
-			handlers.RenderBookFormPage(cfg.Templates["book-form"], database, authSvc.Store(), auth.SessionID, true, id).ServeHTTP(w, r)
+			handlers.RenderBookFormPage(cfg.Templates["book-form"], database.DB, authSvc.Store(), auth.SessionID, true, id).ServeHTTP(w, r)
 		})).ServeHTTP(w, r)
 	})
 
 	// Book form POST handlers (admin only)
 	r.Post("/books/create", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLCreateBookHandler(database)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLCreateBookHandler(database.DB)).ServeHTTP(w, r)
 	})
 	r.Post("/books/{id}/update", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLUpdateBookHandler(database)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLUpdateBookHandler(database.DB)).ServeHTTP(w, r)
 	})
 	// Wishlist (open to guests for viewing; admin-only for management)
-	r.Get("/wishlist", handlers.RenderWishlistPage(cfg.Templates["wishlist"], database, authSvc.Store(), auth.SessionID))
+	r.Get("/wishlist", handlers.RenderWishlistPage(cfg.Templates["wishlist"], database.DB, authSvc.Store(), auth.SessionID))
 	r.Get("/wishlist/add", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.RenderWishlistFormPage(cfg.Templates["wishlist-form"], database, authSvc.Store(), auth.SessionID, false, 0)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.RenderWishlistFormPage(cfg.Templates["wishlist-form"], database.DB, authSvc.Store(), auth.SessionID, false, 0)).ServeHTTP(w, r)
 	})
 	r.Get("/wishlist/{id}/edit", func(w http.ResponseWriter, r *http.Request) {
 		authSvc.RequireAdminHTML(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -161,34 +161,34 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 				http.NotFound(w, r)
 				return
 			}
-			handlers.RenderWishlistFormPage(cfg.Templates["wishlist-form"], database, authSvc.Store(), auth.SessionID, true, id).ServeHTTP(w, r)
+			handlers.RenderWishlistFormPage(cfg.Templates["wishlist-form"], database.DB, authSvc.Store(), auth.SessionID, true, id).ServeHTTP(w, r)
 		})).ServeHTTP(w, r)
 	})
 	r.Post("/wishlist/create", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLCreateWishlistItemHandler(database)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLCreateWishlistItemHandler(database.DB)).ServeHTTP(w, r)
 	})
 	r.Post("/wishlist/{id}/update", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLUpdateWishlistItemHandler(database)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLUpdateWishlistItemHandler(database.DB)).ServeHTTP(w, r)
 	})
 	r.Get("/settings", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.RenderSettingsPage(cfg.Templates["settings"], database, authSvc.Store(), auth.SessionID)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.RenderSettingsPage(cfg.Templates["settings"], database.DB, authSvc.Store(), auth.SessionID)).ServeHTTP(w, r)
 	})
 
 	// Reading log (Guests can view; admin-only for write operations)
 	r.Get("/reading-log", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAuthHTML(handlers.RenderReadingLogPage(cfg.Templates["reading-log"], database, authSvc.Store(), auth.SessionID)).ServeHTTP(w, r)
+		authSvc.RequireAuthHTML(handlers.RenderReadingLogPage(cfg.Templates["reading-log"], database.DB, authSvc.Store(), auth.SessionID)).ServeHTTP(w, r)
 	})
 	r.Get("/reading-logs/book-selector", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLBookSelectorHandler(database)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLBookSelectorHandler(database.DB)).ServeHTTP(w, r)
 	})
 	r.Get("/reading-logs/{book_id}/new-form", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLReadingLogFormHandler(database)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLReadingLogFormHandler(database.DB)).ServeHTTP(w, r)
 	})
 	r.Post("/reading-logs", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLCreateReadingLogHandler(database)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLCreateReadingLogHandler(database.DB)).ServeHTTP(w, r)
 	})
 	r.Delete("/reading-logs/{id}", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLDeleteReadingLogHandler(database)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(handlers.HTMLDeleteReadingLogHandler(database.DB)).ServeHTTP(w, r)
 	})
 
 	// -- API routes --
@@ -198,12 +198,12 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 
 		// ISBN lookup (admin, returns JSON metadata for client-side form population)
 		r.Get("/books/lookup-isbn", func(w http.ResponseWriter, r *http.Request) {
-			authSvc.RequireAdmin(handlers.LookupISBNHandler(database)).ServeHTTP(w, r)
+			authSvc.RequireAdmin(handlers.LookupISBNHandler(database.DB)).ServeHTTP(w, r)
 		})
 
 		// Rate child (admin, updates child_rating for a book)
 		r.Post("/books/rate-child", func(w http.ResponseWriter, r *http.Request) {
-			authSvc.RequireAdmin(handlers.RateChildHandler(database)).ServeHTTP(w, r)
+			authSvc.RequireAdmin(handlers.RateChildHandler(database.DB)).ServeHTTP(w, r)
 		})
 
 		// CSRF-protected routes (middleware applied before any routes on this sub-mux)
@@ -217,17 +217,17 @@ func NewRouter(database *sql.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Han
 
 			// Wishlist ISBN lookup (auth, returns JSON metadata for client-side form population)
 			r.Get("/wishlist/lookup-isbn", func(w http.ResponseWriter, r *http.Request) {
-				authSvc.RequireAdmin(handlers.LookupISBNHandler(database)).ServeHTTP(w, r)
+				authSvc.RequireAdmin(handlers.LookupISBNHandler(database.DB)).ServeHTTP(w, r)
 			})
 
 			// Wishlist (all require auth)
 			r.Route("/wishlist", func(r chi.Router) {
 				r.Use(authSvc.RequireAuth)
 				r.Delete("/{id}", func(w http.ResponseWriter, r *http.Request) {
-					authSvc.RequireAdmin(handlers.DeleteWishlistItemHandler(database)).ServeHTTP(w, r)
+					authSvc.RequireAdmin(handlers.DeleteWishlistItemHandler(database.DB)).ServeHTTP(w, r)
 				})
 				r.Post("/{id}/fulfill", func(w http.ResponseWriter, r *http.Request) {
-					authSvc.RequireAdmin(handlers.FulfillWishlistItemHandler(database)).ServeHTTP(w, r)
+					authSvc.RequireAdmin(handlers.FulfillWishlistItemHandler(database.DB)).ServeHTTP(w, r)
 				})
 			})
 		})

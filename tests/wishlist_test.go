@@ -20,7 +20,7 @@ func TestDeleteWishlistItemHandler_Success(t *testing.T) {
 	}
 	id, _ := result.LastInsertId()
 
-	handler := handlers.DeleteWishlistItemHandler(env.db)
+	handler := handlers.DeleteWishlistItemHandler(env.db.DB)
 	req := httptest.NewRequest("DELETE", "/wishlist/1", nil)
 	req = setURLParam(req, "id", fmt.Sprintf("%d", id))
 	rec := httptest.NewRecorder()
@@ -51,7 +51,7 @@ func TestDeleteWishlistItemHandler_Success(t *testing.T) {
 func TestDeleteWishlistItemHandler_NotFound(t *testing.T) {
 	env := setupTestEnv(t)
 
-	handler := handlers.DeleteWishlistItemHandler(env.db)
+	handler := handlers.DeleteWishlistItemHandler(env.db.DB)
 	req := httptest.NewRequest("DELETE", "/wishlist/999", nil)
 	req = setURLParam(req, "id", "999")
 	rec := httptest.NewRecorder()
@@ -66,7 +66,7 @@ func TestDeleteWishlistItemHandler_NotFound(t *testing.T) {
 func TestDeleteWishlistItemHandler_InvalidID(t *testing.T) {
 	env := setupTestEnv(t)
 
-	handler := handlers.DeleteWishlistItemHandler(env.db)
+	handler := handlers.DeleteWishlistItemHandler(env.db.DB)
 	req := httptest.NewRequest("DELETE", "/wishlist/abc", nil)
 	req = setURLParam(req, "id", "abc")
 	rec := httptest.NewRecorder()
@@ -88,7 +88,7 @@ func TestFulfillWishlistItemHandler_Success(t *testing.T) {
 	}
 	id, _ := result.LastInsertId()
 
-	handler := handlers.FulfillWishlistItemHandler(env.db)
+	handler := handlers.FulfillWishlistItemHandler(env.db.DB)
 	req := httptest.NewRequest("POST", "/wishlist/1/fulfill", nil)
 	req = setURLParam(req, "id", fmt.Sprintf("%d", id))
 	rec := httptest.NewRecorder()
@@ -113,7 +113,7 @@ func TestFulfillWishlistItemHandler_Success(t *testing.T) {
 func TestFulfillWishlistItemHandler_NotFound(t *testing.T) {
 	env := setupTestEnv(t)
 
-	handler := handlers.FulfillWishlistItemHandler(env.db)
+	handler := handlers.FulfillWishlistItemHandler(env.db.DB)
 	req := httptest.NewRequest("POST", "/wishlist/999/fulfill", nil)
 	req = setURLParam(req, "id", "999")
 	rec := httptest.NewRecorder()
@@ -128,7 +128,7 @@ func TestFulfillWishlistItemHandler_NotFound(t *testing.T) {
 func TestFulfillWishlistItemHandler_InvalidID(t *testing.T) {
 	env := setupTestEnv(t)
 
-	handler := handlers.FulfillWishlistItemHandler(env.db)
+	handler := handlers.FulfillWishlistItemHandler(env.db.DB)
 	req := httptest.NewRequest("POST", "/wishlist/abc/fulfill", nil)
 	req = setURLParam(req, "id", "abc")
 	rec := httptest.NewRecorder()

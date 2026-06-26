@@ -12,7 +12,7 @@ import (
 func TestHealthHandler_OK(t *testing.T) {
 	env := setupTestEnv(t)
 
-	h := handlers.NewHealthHandler(env.db)
+	h := handlers.NewHealthHandler(env.db.DB)
 	req := httptest.NewRequest("GET", "/health", nil)
 	rec := httptest.NewRecorder()
 
@@ -33,7 +33,7 @@ func TestHealthHandler_OK(t *testing.T) {
 func TestHealthHandler_ContentType(t *testing.T) {
 	env := setupTestEnv(t)
 
-	h := handlers.NewHealthHandler(env.db)
+	h := handlers.NewHealthHandler(env.db.DB)
 	req := httptest.NewRequest("GET", "/health", nil)
 	rec := httptest.NewRecorder()
 

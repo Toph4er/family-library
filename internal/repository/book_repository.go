@@ -2,19 +2,20 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
+
+	"github.com/jmoiron/sqlx"
 
 	"github.com/Toph4er/family-library/internal/db"
 	"github.com/Toph4er/family-library/internal/models"
 )
 
 type sqliteBookRepository struct {
-	db *sql.DB
+	db *sqlx.DB
 }
 
-func NewBookRepository(database *sql.DB) BookRepository {
+func NewBookRepository(database *sqlx.DB) BookRepository {
 	return &sqliteBookRepository{db: database}
 }
 
@@ -51,13 +52,13 @@ func (r *sqliteBookRepository) Create(ctx context.Context, book *models.Book) er
 	id, _ := result.LastInsertId()
 	book.ID = id
 
-	row := r.db.QueryRowContext(ctx, "SELECT "+db.BookColumns+" FROM books WHERE id = ?", book.ID) // #nosec G202 -- BookColumns is a constant
-	fetched, err := db.ScanBook(row)
-	if err != nil {
+	if err := r.db.GetContext(ctx, book, "SELECT "+db.BookColumns+" FROM books WHERE id = ?", book.ID); err != nil { // #nosec G202 -- BookColumns is a constant
 		return fmt.Errorf("fetch created book: %w", err)
 	}
 
-	*book = *fetched
+	if book.Quantity == 0 {
+		book.Quantity = 1
+	}
 
 	return nil
 }
@@ -264,21 +265,8 @@ func (r *sqliteBookRepository) List(ctx context.Context, filter string, page, pe
 		}
 
 		dataQuery := `SELECT ` + db.BookColumns + ` FROM books_fts JOIN books ON books_fts.rowid = books.id WHERE books_fts MATCH ? ORDER BY books.title ASC LIMIT ? OFFSET ?` // #nosec G202 -- BookColumns is a constant
-		rows, err := r.db.QueryContext(ctx, dataQuery, filter, perPage, offset)
-		if err != nil {
+		if err := r.db.SelectContext(ctx, &books, dataQuery, filter, perPage, offset); err != nil {
 			return nil, 0, fmt.Errorf("search books: %w", err)
-		}
-		defer rows.Close()
-
-		for rows.Next() {
-			b, err := db.ScanBook(rows)
-			if err != nil {
-				return nil, 0, fmt.Errorf("scan book: %w", err)
-			}
-			books = append(books, *b)
-		}
-		if err := rows.Err(); err != nil {
-			return nil, 0, fmt.Errorf("search iteration: %w", err)
 		}
 	} else {
 		if err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM books").Scan(&total); err != nil {
@@ -286,21 +274,8 @@ func (r *sqliteBookRepository) List(ctx context.Context, filter string, page, pe
 		}
 
 		dataQuery := `SELECT ` + db.BookColumns + ` FROM books ORDER BY title ASC LIMIT ? OFFSET ?` // #nosec G202 -- BookColumns is a constant
-		rows, err := r.db.QueryContext(ctx, dataQuery, perPage, offset)
-		if err != nil {
+		if err := r.db.SelectContext(ctx, &books, dataQuery, perPage, offset); err != nil {
 			return nil, 0, fmt.Errorf("list books: %w", err)
-		}
-		defer rows.Close()
-
-		for rows.Next() {
-			b, err := db.ScanBook(rows)
-			if err != nil {
-				return nil, 0, fmt.Errorf("scan book: %w", err)
-			}
-			books = append(books, *b)
-		}
-		if err := rows.Err(); err != nil {
-			return nil, 0, fmt.Errorf("list books iteration: %w", err)
 		}
 	}
 
@@ -343,23 +318,9 @@ func (r *sqliteBookRepository) Search(ctx context.Context, query string, fields 
 		return nil, 0, fmt.Errorf("count search results: %w", err)
 	}
 
-	rows, err := r.db.QueryContext(ctx, dataQuery, ftsQuery, perPage, offset)
-	if err != nil {
-		return nil, 0, fmt.Errorf("search books: %w", err)
-	}
-	defer rows.Close()
-
 	var books []models.Book
-	for rows.Next() {
-		b, err := db.ScanBook(rows)
-		if err != nil {
-			return nil, 0, fmt.Errorf("scan search result: %w", err)
-		}
-		books = append(books, *b)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, 0, fmt.Errorf("search iteration: %w", err)
+	if err := r.db.SelectContext(ctx, &books, dataQuery, ftsQuery, perPage, offset); err != nil {
+		return nil, 0, fmt.Errorf("search books: %w", err)
 	}
 
 	return books, total, nil

@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jmoiron/sqlx"
 
-	sqldb "github.com/Toph4er/family-library/internal/db"
 	"github.com/Toph4er/family-library/internal/models"
 )
 
@@ -20,7 +20,7 @@ const familyMemberColumns = `id, name, relation, created_at, updated_at`
 // --- HTMX HTML Handlers ---
 
 // HTMLFamilyMemberFormHandler returns a modal HTML fragment for adding/editing a family member.
-func HTMLFamilyMemberFormHandler(db *sql.DB) http.HandlerFunc {
+func HTMLFamilyMemberFormHandler(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		idStr := chi.URLParam(r, "id")
 		isEdit := idStr != ""
@@ -34,17 +34,16 @@ func HTMLFamilyMemberFormHandler(db *sql.DB) http.HandlerFunc {
 				_, _ = w.Write([]byte(htmlErrorFragment("Invalid ID")))
 				return
 			}
-			row := db.QueryRow("SELECT "+familyMemberColumns+" FROM family_members WHERE id = ?", id)
-			m, err := sqldb.ScanFamilyMember(row)
-			if errors.Is(err, sql.ErrNoRows) {
-				http.NotFound(w, r)
-				return
-			}
-			if err != nil {
+			var m models.FamilyMember
+			if err := db.Get(&m, "SELECT "+familyMemberColumns+" FROM family_members WHERE id = ?", id); err != nil {
+				if errors.Is(err, sql.ErrNoRows) {
+					http.NotFound(w, r)
+					return
+				}
 				HTMXError(w, http.StatusInternalServerError)
 				return
 			}
-			member = *m
+			member = m
 		}
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")

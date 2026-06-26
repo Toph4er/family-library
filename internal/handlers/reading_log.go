@@ -15,6 +15,7 @@ import (
 	"github.com/gorilla/sessions"
 
 	"github.com/Toph4er/family-library/internal/models"
+	pages "github.com/Toph4er/family-library/internal/handlers/pages"
 )
 
 const readingLogColumns = `rl.id, rl.book_id, rl.start_page, rl.end_page, rl.total_pages, rl.entire_book, rl.read_at, rl.reader_name, rl.notes, rl.created_at`
@@ -593,8 +594,8 @@ func HTMLDeleteReadingLogHandler(db *sql.DB) http.HandlerFunc {
 // RenderReadingLogPage renders the reading log page.
 func RenderReadingLogPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		base := buildBaseContext(r, store, sessionName, db)
-		ctx := pageContext{BaseContext: base}
+		base := pages.BuildBaseContext(r, store, sessionName, db)
+		ctx := pages.PageContext{BaseContext: base}
 
 		if !ctx.IsAuthenticated {
 			http.Redirect(w, r, "/login", http.StatusFound)
@@ -665,6 +666,6 @@ func RenderReadingLogPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 		}
 		ctx.RecentBooks = books
 
-		renderPage(w, r, tmpl, "reading-log.html", ctx)
+		pages.RenderPage(w, r, tmpl, "reading-log.html", ctx)
 	}
 }

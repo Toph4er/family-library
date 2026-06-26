@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/sessions"
 
 	"github.com/Toph4er/family-library/internal/auth"
+	pages "github.com/Toph4er/family-library/internal/handlers/pages"
 	"github.com/Toph4er/family-library/internal/middleware"
 	"github.com/Toph4er/family-library/internal/theme"
 )
@@ -82,10 +83,10 @@ func RenderLoginPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 			Year:        time.Now().Year(),
 			CSRFToken:   token,
 			Nonce:       middleware.GetCSPNonce(r),
-			ActiveTheme: loadActiveTheme(db),
+			ActiveTheme: pages.LoadActiveTheme(db),
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if isHTMXRequest(r) {
+		if pages.IsHTMXRequest(r) {
 			if err := tmpl.ExecuteTemplate(w, "content", data); err != nil {
 				HTMXError(w, http.StatusInternalServerError)
 			}
@@ -121,10 +122,10 @@ func RenderGuestLoginPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 			Year:        time.Now().Year(),
 			CSRFToken:   token,
 			Nonce:       middleware.GetCSPNonce(r),
-			ActiveTheme: loadActiveTheme(db),
+			ActiveTheme: pages.LoadActiveTheme(db),
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if isHTMXRequest(r) {
+		if pages.IsHTMXRequest(r) {
 			if err := tmpl.ExecuteTemplate(w, "content", data); err != nil {
 				HTMXError(w, http.StatusInternalServerError)
 			}
@@ -144,10 +145,10 @@ func RenderLogoutSuccess(tmpl *template.Template, db *sql.DB, authSvc *auth.Auth
 		data := pageData{
 			Year:        time.Now().Year(),
 			Nonce:       middleware.GetCSPNonce(r),
-			ActiveTheme: loadActiveTheme(db),
+			ActiveTheme: pages.LoadActiveTheme(db),
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if isHTMXRequest(r) {
+		if pages.IsHTMXRequest(r) {
 			if err := tmpl.ExecuteTemplate(w, "content", data); err != nil {
 				HTMXError(w, http.StatusInternalServerError)
 			}

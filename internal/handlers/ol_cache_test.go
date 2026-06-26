@@ -49,7 +49,7 @@ func TestCachedFetchFromOpenLibrary_HitsCache(t *testing.T) {
 	}
 
 	// Fetch without force — should hit the cache.
-	book, coverSource, err := cachedFetchFromOpenLibrary(database, testISBN, false)
+	book, coverSource, err := cachedFetchFromOpenLibrary(database.DB, testISBN, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -105,7 +105,7 @@ func TestCachedFetchFromOpenLibrary_StaleCache(t *testing.T) {
 	// A stale cache entry should be bypassed. Since we can't hit the real
 	// OL API in tests, we expect an error (the API call will fail).
 	// The important thing is that it doesn't return the stale cached data.
-	book, _, err := cachedFetchFromOpenLibrary(database, testISBN, false)
+	book, _, err := cachedFetchFromOpenLibrary(database.DB, testISBN, false)
 	if err == nil && book != nil && book.Title == "Stale Book" {
 		t.Fatal("stale cache entry should not have been returned")
 	}
@@ -155,7 +155,7 @@ func TestCachedFetchFromOpenLibrary_FreshCache(t *testing.T) {
 		t.Fatalf("failed to seed cache: %v", err)
 	}
 
-	book, _, err := cachedFetchFromOpenLibrary(database, testISBN, false)
+	book, _, err := cachedFetchFromOpenLibrary(database.DB, testISBN, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -188,7 +188,7 @@ func TestCachedFetchFromOpenLibrary_MissWithNoNetwork(t *testing.T) {
 	}
 
 	// Non-existent ISBN — no cache entry.
-	book, _, err := cachedFetchFromOpenLibrary(database, "0000000000000", false)
+	book, _, err := cachedFetchFromOpenLibrary(database.DB, "0000000000000", false)
 	// We expect either an error (network unavailable) or nil (not found).
 	// Both are acceptable; the key is the function doesn't panic.
 	_ = book

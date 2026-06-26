@@ -9,13 +9,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/Toph4er/family-library/internal/handlers/pages"
 	"github.com/Toph4er/family-library/internal/theme"
 )
-
-// sensitiveKeys lists setting keys that must never be exposed in list responses.
-var sensitiveKeys = map[string]struct{}{
-	"guest_password_hash": {},
-}
 
 // HTMLUpdateSettingHandler updates a single setting by key via HTMX (form-encoded, returns HTML).
 // On success: returns an HTML fragment with a "✓ Saved" toast trigger.
@@ -27,7 +23,7 @@ func HTMLUpdateSettingHandler(db *sql.DB) http.HandlerFunc {
 		key := chi.URLParam(r, "key")
 
 		// Block updates to sensitive keys
-		if _, sensitive := sensitiveKeys[key]; sensitive {
+		if _, sensitive := pages.SensitiveKeys[key]; sensitive {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			w.WriteHeader(http.StatusForbidden)
 			_, _ = w.Write([]byte(htmlErrorFragment("Cannot update this setting via this endpoint")))

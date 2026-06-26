@@ -169,7 +169,7 @@ func TestHTMLCreateBookHandler_Success(t *testing.T) {
 	req := httptest.NewRequest("POST", "/books/create", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	r := buildAdminHTMLRouter(t, env, "POST", "/books/create", handlers.HTMLCreateBookHandler(env.db))
+	r := buildAdminHTMLRouter(t, env, "POST", "/books/create", handlers.HTMLCreateBookHandler(env.db.DB))
 
 	cookie := loginAndGetCookie(t, env)
 	req.Header.Set("Cookie", cookie)
@@ -211,7 +211,7 @@ func TestHTMLCreateBookHandler_MissingTitle(t *testing.T) {
 	req := httptest.NewRequest("POST", "/books/create", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	r := buildAdminHTMLRouter(t, env, "POST", "/books/create", handlers.HTMLCreateBookHandler(env.db))
+	r := buildAdminHTMLRouter(t, env, "POST", "/books/create", handlers.HTMLCreateBookHandler(env.db.DB))
 
 	cookie := loginAndGetCookie(t, env)
 	req.Header.Set("Cookie", cookie)
@@ -240,7 +240,7 @@ func TestHTMLCreateBookHandler_DuplicateISBN(t *testing.T) {
 	req := httptest.NewRequest("POST", "/books/create", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	r := buildAdminHTMLRouter(t, env, "POST", "/books/create", handlers.HTMLCreateBookHandler(env.db))
+	r := buildAdminHTMLRouter(t, env, "POST", "/books/create", handlers.HTMLCreateBookHandler(env.db.DB))
 
 	cookie := loginAndGetCookie(t, env)
 	req.Header.Set("Cookie", cookie)
@@ -262,7 +262,7 @@ func TestHTMLCreateBookHandler_NotAuthenticated(t *testing.T) {
 	req := httptest.NewRequest("POST", "/books/create", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	r := buildAdminHTMLRouter(t, env, "POST", "/books/create", handlers.HTMLCreateBookHandler(env.db))
+	r := buildAdminHTMLRouter(t, env, "POST", "/books/create", handlers.HTMLCreateBookHandler(env.db.DB))
 
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
@@ -296,7 +296,7 @@ func TestHTMLUpdateBookHandler_Success(t *testing.T) {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req = setURLParam(req, "id", fmt.Sprintf("%d", id))
 
-	r := buildAdminHTMLRouter(t, env, "POST", "/books/{id}/update", handlers.HTMLUpdateBookHandler(env.db))
+	r := buildAdminHTMLRouter(t, env, "POST", "/books/{id}/update", handlers.HTMLUpdateBookHandler(env.db.DB))
 
 	cookie := loginAndGetCookie(t, env)
 	req.Header.Set("Cookie", cookie)
@@ -346,7 +346,7 @@ func TestHTMLUpdateBookHandler_ClearFieldToNull(t *testing.T) {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req = setURLParam(req, "id", fmt.Sprintf("%d", id))
 
-	r := buildAdminHTMLRouter(t, env, "POST", "/books/{id}/update", handlers.HTMLUpdateBookHandler(env.db))
+	r := buildAdminHTMLRouter(t, env, "POST", "/books/{id}/update", handlers.HTMLUpdateBookHandler(env.db.DB))
 
 	cookie := loginAndGetCookie(t, env)
 	req.Header.Set("Cookie", cookie)
@@ -385,7 +385,7 @@ func TestHTMLUpdateBookHandler_NotFound(t *testing.T) {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req = setURLParam(req, "id", "999")
 
-	r := buildAdminHTMLRouter(t, env, "POST", "/books/{id}/update", handlers.HTMLUpdateBookHandler(env.db))
+	r := buildAdminHTMLRouter(t, env, "POST", "/books/{id}/update", handlers.HTMLUpdateBookHandler(env.db.DB))
 
 	cookie := loginAndGetCookie(t, env)
 	req.Header.Set("Cookie", cookie)
@@ -410,7 +410,7 @@ func TestHTMLUpdateSettingHandler_Success(t *testing.T) {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req = setURLParam(req, "key", "cover_image_provider")
 
-	r := buildAdminHTMLRouter(t, env, "PUT", "/settings/update/{key}", handlers.HTMLUpdateSettingHandler(env.db))
+	r := buildAdminHTMLRouter(t, env, "PUT", "/settings/update/{key}", handlers.HTMLUpdateSettingHandler(env.db.DB))
 
 	cookie := loginAndGetCookie(t, env)
 	req.Header.Set("Cookie", cookie)
@@ -443,7 +443,7 @@ func TestHTMLUpdateSettingHandler_SensitiveKey(t *testing.T) {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req = setURLParam(req, "key", "guest_password_hash")
 
-	r := buildAdminHTMLRouter(t, env, "PUT", "/settings/update/{key}", handlers.HTMLUpdateSettingHandler(env.db))
+	r := buildAdminHTMLRouter(t, env, "PUT", "/settings/update/{key}", handlers.HTMLUpdateSettingHandler(env.db.DB))
 
 	cookie := loginAndGetCookie(t, env)
 	req.Header.Set("Cookie", cookie)
@@ -466,7 +466,7 @@ func TestHTMLUpdateSettingHandler_NotFound(t *testing.T) {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req = setURLParam(req, "key", "nonexistent")
 
-	r := buildAdminHTMLRouter(t, env, "PUT", "/settings/update/{key}", handlers.HTMLUpdateSettingHandler(env.db))
+	r := buildAdminHTMLRouter(t, env, "PUT", "/settings/update/{key}", handlers.HTMLUpdateSettingHandler(env.db.DB))
 
 	cookie := loginAndGetCookie(t, env)
 	req.Header.Set("Cookie", cookie)
@@ -489,7 +489,7 @@ func TestHTMLUpdateGuestVisibilityHandler_Success(t *testing.T) {
 	req := httptest.NewRequest("POST", "/settings/guest-visibility/update", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 
-	r := buildAdminHTMLRouter(t, env, "POST", "/settings/guest-visibility/update", handlers.HTMLUpdateGuestVisibilityHandler(env.db))
+	r := buildAdminHTMLRouter(t, env, "POST", "/settings/guest-visibility/update", handlers.HTMLUpdateGuestVisibilityHandler(env.db.DB))
 
 	cookie := loginAndGetCookie(t, env)
 	req.Header.Set("Cookie", cookie)
@@ -518,7 +518,7 @@ func TestHTMLUpdateGuestVisibilityHandler_InvalidJSON(t *testing.T) {
 	req := httptest.NewRequest("POST", "/settings/guest-visibility/update", strings.NewReader("not-json"))
 	req.Header.Set("Content-Type", "application/json")
 
-	r := buildAdminHTMLRouter(t, env, "POST", "/settings/guest-visibility/update", handlers.HTMLUpdateGuestVisibilityHandler(env.db))
+	r := buildAdminHTMLRouter(t, env, "POST", "/settings/guest-visibility/update", handlers.HTMLUpdateGuestVisibilityHandler(env.db.DB))
 
 	cookie := loginAndGetCookie(t, env)
 	req.Header.Set("Cookie", cookie)
@@ -660,7 +660,7 @@ func TestHTMLCreateUserHandler_Success(t *testing.T) {
 	req := httptest.NewRequest("POST", "/settings/users", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	r := buildAdminHTMLRouter(t, env, "POST", "/settings/users", handlers.HTMLCreateUserHandler(env.db))
+	r := buildAdminHTMLRouter(t, env, "POST", "/settings/users", handlers.HTMLCreateUserHandler(env.db.DB))
 
 	cookie := loginAndGetCookie(t, env)
 	req.Header.Set("Cookie", cookie)
@@ -691,7 +691,7 @@ func TestHTMLCreateUserHandler_DuplicateUsername(t *testing.T) {
 	req := httptest.NewRequest("POST", "/settings/users", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	r := buildAdminHTMLRouter(t, env, "POST", "/settings/users", handlers.HTMLCreateUserHandler(env.db))
+	r := buildAdminHTMLRouter(t, env, "POST", "/settings/users", handlers.HTMLCreateUserHandler(env.db.DB))
 
 	cookie := loginAndGetCookie(t, env)
 	req.Header.Set("Cookie", cookie)
@@ -721,7 +721,7 @@ func TestHTMLDeleteUserHandler_Success(t *testing.T) {
 	// Use the actual ID in the URL path so chi extracts the correct value
 	req := httptest.NewRequest("DELETE", "/settings/users/"+fmt.Sprintf("%d", id), nil)
 
-	r := buildAdminHTMLRouter(t, env, "DELETE", "/settings/users/{id}", handlers.HTMLDeleteUserHandler(env.db))
+	r := buildAdminHTMLRouter(t, env, "DELETE", "/settings/users/{id}", handlers.HTMLDeleteUserHandler(env.db.DB))
 
 	cookie := loginAndGetCookie(t, env)
 	req.Header.Set("Cookie", cookie)
@@ -747,7 +747,7 @@ func TestHTMLDeleteUserHandler_NotFound(t *testing.T) {
 	req := httptest.NewRequest("DELETE", "/settings/users/999", nil)
 	req = setURLParam(req, "id", "999")
 
-	r := buildAdminHTMLRouter(t, env, "DELETE", "/settings/users/{id}", handlers.HTMLDeleteUserHandler(env.db))
+	r := buildAdminHTMLRouter(t, env, "DELETE", "/settings/users/{id}", handlers.HTMLDeleteUserHandler(env.db.DB))
 
 	cookie := loginAndGetCookie(t, env)
 	req.Header.Set("Cookie", cookie)
@@ -779,7 +779,7 @@ func TestHTMLCreateWishlistItemHandler_Success(t *testing.T) {
 	req := httptest.NewRequest("POST", "/wishlist/create", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	r := buildAdminHTMLRouter(t, env, "POST", "/wishlist/create", handlers.HTMLCreateWishlistItemHandler(env.db))
+	r := buildAdminHTMLRouter(t, env, "POST", "/wishlist/create", handlers.HTMLCreateWishlistItemHandler(env.db.DB))
 
 	cookie := loginAndGetCookie(t, env)
 	req.Header.Set("Cookie", cookie)
@@ -829,7 +829,7 @@ func TestHTMLCreateWishlistItemHandler_MissingTitle(t *testing.T) {
 	req := httptest.NewRequest("POST", "/wishlist/create", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	r := buildAdminHTMLRouter(t, env, "POST", "/wishlist/create", handlers.HTMLCreateWishlistItemHandler(env.db))
+	r := buildAdminHTMLRouter(t, env, "POST", "/wishlist/create", handlers.HTMLCreateWishlistItemHandler(env.db.DB))
 
 	cookie := loginAndGetCookie(t, env)
 	req.Header.Set("Cookie", cookie)
@@ -851,7 +851,7 @@ func TestHTMLCreateWishlistItemHandler_NotAuthenticated(t *testing.T) {
 	req := httptest.NewRequest("POST", "/wishlist/create", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	r := buildAdminHTMLRouter(t, env, "POST", "/wishlist/create", handlers.HTMLCreateWishlistItemHandler(env.db))
+	r := buildAdminHTMLRouter(t, env, "POST", "/wishlist/create", handlers.HTMLCreateWishlistItemHandler(env.db.DB))
 
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
@@ -885,7 +885,7 @@ func TestHTMLUpdateWishlistItemHandler_Success(t *testing.T) {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req = setURLParam(req, "id", fmt.Sprintf("%d", id))
 
-	r := buildAdminHTMLRouter(t, env, "POST", "/wishlist/{id}/update", handlers.HTMLUpdateWishlistItemHandler(env.db))
+	r := buildAdminHTMLRouter(t, env, "POST", "/wishlist/{id}/update", handlers.HTMLUpdateWishlistItemHandler(env.db.DB))
 
 	cookie := loginAndGetCookie(t, env)
 	req.Header.Set("Cookie", cookie)
@@ -930,7 +930,7 @@ func TestHTMLUpdateWishlistItemHandler_NotFound(t *testing.T) {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req = setURLParam(req, "id", "999")
 
-	r := buildAdminHTMLRouter(t, env, "POST", "/wishlist/{id}/update", handlers.HTMLUpdateWishlistItemHandler(env.db))
+	r := buildAdminHTMLRouter(t, env, "POST", "/wishlist/{id}/update", handlers.HTMLUpdateWishlistItemHandler(env.db.DB))
 
 	cookie := loginAndGetCookie(t, env)
 	req.Header.Set("Cookie", cookie)
@@ -959,7 +959,7 @@ func TestHTMLUpdateWishlistItemHandler_MissingTitle(t *testing.T) {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req = setURLParam(req, "id", fmt.Sprintf("%d", id))
 
-	r := buildAdminHTMLRouter(t, env, "POST", "/wishlist/{id}/update", handlers.HTMLUpdateWishlistItemHandler(env.db))
+	r := buildAdminHTMLRouter(t, env, "POST", "/wishlist/{id}/update", handlers.HTMLUpdateWishlistItemHandler(env.db.DB))
 
 	cookie := loginAndGetCookie(t, env)
 	req.Header.Set("Cookie", cookie)

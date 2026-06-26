@@ -3,7 +3,6 @@ package tests
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -14,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jmoiron/sqlx"
 
 	"github.com/Toph4er/family-library/internal/auth"
 	"github.com/Toph4er/family-library/internal/db"
@@ -28,7 +28,7 @@ const (
 
 // testEnv holds the dependencies for a test.
 type testEnv struct {
-	db   *sql.DB
+	db   *sqlx.DB
 	auth *auth.Auth
 }
 
@@ -73,7 +73,7 @@ func setupTestEnv(t *testing.T) *testEnv {
 
 	// Create auth service with test secret
 	secret := []byte("test-session-secret-that-is-32-bytes!!")
-	authSvc := auth.New(database, secret)
+	authSvc := auth.New(database.DB, secret)
 	authSvc.Store().Options.Secure = false
 
 	return &testEnv{db: database, auth: authSvc}
@@ -81,7 +81,7 @@ func setupTestEnv(t *testing.T) *testEnv {
 
 // runMigrations reads all SQL migration files from the migrations directory
 // and executes the "Up" portion of each in order.
-func runMigrations(t *testing.T, db *sql.DB) {
+func runMigrations(t *testing.T, db *sqlx.DB) {
 	t.Helper()
 
 	migrationsDir := filepath.Join("..", "migrations")

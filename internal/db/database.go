@@ -2,7 +2,7 @@
 package db
 
 import (
-	"database/sql"
+	"github.com/jmoiron/sqlx"
 
 	_ "modernc.org/sqlite"
 )
@@ -12,9 +12,9 @@ import (
 // It enables WAL mode for better concurrency and sets a busy timeout
 // to handle concurrent read/write contention gracefully.
 //
-// The returned *sql.DB is safe for concurrent use by multiple goroutines.
-func Open(path string) (*sql.DB, error) {
-	database, err := sql.Open("sqlite", path)
+// The returned *sqlx.DB wraps *sql.DB and adds struct-mapping support.
+func Open(path string) (*sqlx.DB, error) {
+	database, err := sqlx.Open("sqlite", path)
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +27,7 @@ func Open(path string) (*sql.DB, error) {
 
 	// Enable Write-Ahead Logging for better concurrent read performance
 	// and safer backup behavior.
-	if _, err := database.Exec("PRAGMA journal_mode = WAL"); err != nil {
+	if _, err := database.DB.Exec("PRAGMA journal_mode = WAL"); err != nil {
 		database.Close() // #nosec G104 — cleanup on error path, primary error is returned
 		return nil, err
 	}
@@ -35,13 +35,13 @@ func Open(path string) (*sql.DB, error) {
 	// Set busy timeout to 10 seconds. This tells SQLite how long to wait
 	// before returning a "database is locked" error when another connection
 	// holds a write lock.
-	if _, err := database.Exec("PRAGMA busy_timeout = 10000"); err != nil {
+	if _, err := database.DB.Exec("PRAGMA busy_timeout = 10000"); err != nil {
 		database.Close() // #nosec G104 — cleanup on error path, primary error is returned
 		return nil, err
 	}
 
 	// Enable foreign key enforcement (disabled by default in SQLite).
-	if _, err := database.Exec("PRAGMA foreign_keys = ON"); err != nil {
+	if _, err := database.DB.Exec("PRAGMA foreign_keys = ON"); err != nil {
 		database.Close() // #nosec G104 — cleanup on error path, primary error is returned
 		return nil, err
 	}

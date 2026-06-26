@@ -87,7 +87,7 @@ func TestLookupISBNHandler_Success(t *testing.T) {
 		t.Fatalf("failed to seed isbn_cache: %v", err)
 	}
 
-	handler := handlers.LookupISBNHandler(env.db)
+	handler := handlers.LookupISBNHandler(env.db.DB)
 	req := httptest.NewRequest("GET", fmt.Sprintf("/books/lookup-isbn?isbn=%s", testISBN), nil)
 	rec := httptest.NewRecorder()
 
@@ -107,7 +107,7 @@ func TestLookupISBNHandler_Success(t *testing.T) {
 func TestLookupISBNHandler_MissingISBN(t *testing.T) {
 	env := setupTestEnv(t)
 
-	handler := handlers.LookupISBNHandler(env.db)
+	handler := handlers.LookupISBNHandler(env.db.DB)
 	req := httptest.NewRequest("GET", "/books/lookup-isbn", nil)
 	rec := httptest.NewRecorder()
 
