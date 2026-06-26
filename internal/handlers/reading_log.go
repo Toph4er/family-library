@@ -14,8 +14,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/sessions"
 
-	"github.com/Toph4er/family-library/internal/models"
 	pages "github.com/Toph4er/family-library/internal/handlers/pages"
+	"github.com/Toph4er/family-library/internal/models"
 )
 
 const readingLogColumns = `rl.id, rl.book_id, rl.start_page, rl.end_page, rl.total_pages, rl.entire_book, rl.read_at, rl.reader_name, rl.notes, rl.created_at`

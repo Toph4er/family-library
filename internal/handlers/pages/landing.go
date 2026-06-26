@@ -2,8 +2,8 @@ package pages
 
 import (
 	"database/sql"
-	"net/http"
 	"html/template"
+	"net/http"
 
 	"github.com/gorilla/sessions"
 )

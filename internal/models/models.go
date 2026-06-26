@@ -8,16 +8,16 @@ type Book struct {
 	ISBN               *string `json:"isbn,omitempty" db:"isbn"`
 	Title              string  `json:"title" db:"title"`
 	Subtitle           *string `json:"subtitle,omitempty" db:"subtitle"`
-	Authors            *string `json:"authors,omitempty" db:"authors"`      // JSON array
+	Authors            *string `json:"authors,omitempty" db:"authors"`           // JSON array
 	Illustrators       *string `json:"illustrators,omitempty" db:"illustrators"` // JSON array
 	Publisher          *string `json:"publisher,omitempty" db:"publisher"`
 	PublicationYear    *int    `json:"publication_year,omitempty" db:"publication_year"`
 	PageCount          *int    `json:"page_count,omitempty" db:"page_count"`
 	BookType           *string `json:"book_type,omitempty" db:"book_type"`
 	ReadingLevels      *string `json:"reading_levels,omitempty" db:"reading_levels"` // JSON array
-	Genres             *string `json:"genres,omitempty" db:"genres"`         // JSON array
-	Themes             *string `json:"themes,omitempty" db:"themes"`         // JSON array
-	Awards             *string `json:"awards,omitempty" db:"awards"`         // JSON array
+	Genres             *string `json:"genres,omitempty" db:"genres"`                 // JSON array
+	Themes             *string `json:"themes,omitempty" db:"themes"`                 // JSON array
+	Awards             *string `json:"awards,omitempty" db:"awards"`                 // JSON array
 	GiftFrom           *string `json:"gift_from,omitempty" db:"gift_from"`
 	GiftRelationship   *string `json:"gift_relationship,omitempty" db:"gift_relationship"`
 	DateReceived       *string `json:"date_received,omitempty" db:"date_received"`

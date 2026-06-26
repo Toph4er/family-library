@@ -15,7 +15,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Toph4er/family-library/internal/auth"
 	"github.com/Toph4er/family-library/internal/models"
 	"github.com/Toph4er/family-library/internal/repository"
 
@@ -731,40 +730,6 @@ func defaultGuestVisibleFields() string {
 	}
 	b, _ := json.Marshal(fields)
 	return string(b)
-}
-
-func derefString(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
-}
-
-func derefInt(i *int) int {
-	if i == nil {
-		return 0
-	}
-	return *i
-}
-
-// filterBookForGuest filters a single book for guest visibility if the current
-// user is a guest.
-func filterBookForGuest(r *http.Request, b *models.Book) {
-	if user := auth.GetUserFromContext(r); user != nil && user.IsGuest {
-		b.FilterForGuest()
-	}
-}
-
-// filterBooksForGuest filters a slice of books for guest visibility if the
-// current user is a guest.
-func filterBooksForGuest(r *http.Request, books []models.Book) {
-	user := auth.GetUserFromContext(r)
-	if user == nil || !user.IsGuest {
-		return
-	}
-	for i := range books {
-		books[i].FilterForGuest()
-	}
 }
 
 // DeleteBookHandler deletes a book by ID.
