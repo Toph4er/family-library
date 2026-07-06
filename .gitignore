@@ -26,3 +26,6 @@ coverage/
 # Node
 node_modules/
 internal/web/tailwind.css
+
+# Design docs (local reference only, may contain sensitive info)
+design-docs/
