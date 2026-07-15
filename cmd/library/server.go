@@ -162,9 +162,18 @@ func loadTemplates(dir string) (map[string]*template.Template, error) {
 			if err != nil {
 				return s
 			}
+			// Try space-separated format first
 			t, err := time.ParseInLocation("2006-01-02 15:04:05", s, time.UTC)
 			if err != nil {
-				return s
+				// Try ISO 8601 with Z suffix (e.g. 2026-07-14T20:37:00Z)
+				t, err = time.Parse("2006-01-02T15:04:05Z", s)
+				if err != nil {
+					// Try ISO 8601 without Z
+					t, err = time.Parse("2006-01-02T15:04:05", s)
+					if err != nil {
+						return s
+					}
+				}
 			}
 			return t.In(loc).Format("Jan 2, 2006 at 3:04 PM")
 		},
