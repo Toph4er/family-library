@@ -398,9 +398,12 @@ func HTMLReadingLogFormHandler(db *sql.DB) http.HandlerFunc {
 		}
 
 		// Load user timezone for the datetime-local default
-		userTZ := "America/New_York"
-		if tzErr := db.QueryRow("SELECT value FROM settings WHERE key = ?", "user_timezone").Scan(&userTZ); tzErr != nil {
-			// fallback to default
+		var userTZ string
+		if err := db.QueryRow("SELECT value FROM settings WHERE key = ?", "user_timezone").Scan(&userTZ); err != nil {
+			userTZ = "America/New_York"
+		}
+		if userTZ == "" {
+			userTZ = "America/New_York"
 		}
 		tz, tzErr := time.LoadLocation(userTZ)
 		if tzErr != nil {
@@ -661,9 +664,12 @@ func HTMLReadingLogEditFormHandler(db *sql.DB) http.HandlerFunc {
 		}
 
 		// Load user timezone for the datetime-local default
-		userTZ := "America/New_York"
-		if tzErr := db.QueryRow("SELECT value FROM settings WHERE key = ?", "user_timezone").Scan(&userTZ); tzErr != nil {
-			// fallback to default
+		var userTZ string
+		if err := db.QueryRow("SELECT value FROM settings WHERE key = ?", "user_timezone").Scan(&userTZ); err != nil {
+			userTZ = "America/New_York"
+		}
+		if userTZ == "" {
+			userTZ = "America/New_York"
 		}
 		tz, tzErr := time.LoadLocation(userTZ)
 		if tzErr != nil {
@@ -717,7 +723,13 @@ func HTMLReadingLogEditFormHandler(db *sql.DB) http.HandlerFunc {
     <p class="text-sm text-text-light mb-4">Book: <strong class="text-text">` + template.HTMLEscapeString(rl.BookTitle) + `</strong></p>
     <form hx-put="/reading-logs/` + fmt.Sprintf("%d", id) + `" hx-target="#modal-target" hx-swap="outerHTML">
       <div class="space-y-4">
-        <div id="page-fields" class="grid grid-cols-2 gap-3"` + func() string { if rl.EntireBook { return ` style="display:none"` } else { return "" } }() + `>
+        <div id="page-fields" class="grid grid-cols-2 gap-3"` + func() string {
+			if rl.EntireBook {
+				return ` style="display:none"`
+			} else {
+				return ""
+			}
+		}() + `>
           <div>
             <label for="rl-start-page" class="block text-sm font-medium text-text mb-1">Start Page</label>
             <input type="number" id="rl-start-page" name="start_page" min="1"` + maxPage + ` class="w-full px-3 py-2 rounded-lg border bg-surface text-sm" style="border-color: var(--color-secondary);" placeholder="1" value="` + template.HTMLEscapeString(startPageVal) + `">
@@ -729,7 +741,13 @@ func HTMLReadingLogEditFormHandler(db *sql.DB) http.HandlerFunc {
         </div>
         <div>
           <label class="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" name="entire_book" value="true" class="w-4 h-4 rounded border-secondary text-primary focus:ring-primary/20" hx-on:change="var f=document.getElementById('page-fields'); if(f)f.style.display=this.checked?'none':''"` + func() string { if rl.EntireBook { return ` checked` } else { return "" } }() + `>
+            <input type="checkbox" name="entire_book" value="true" class="w-4 h-4 rounded border-secondary text-primary focus:ring-primary/20" hx-on:change="var f=document.getElementById('page-fields'); if(f)f.style.display=this.checked?'none':''"` + func() string {
+			if rl.EntireBook {
+				return ` checked`
+			} else {
+				return ""
+			}
+		}() + `>
             <span class="text-sm text-text">Read entire book</span>
           </label>
         </div>
@@ -741,13 +759,31 @@ func HTMLReadingLogEditFormHandler(db *sql.DB) http.HandlerFunc {
           <label for="rl-reader" class="block text-sm font-medium text-text mb-1">Reader <span class="text-error">*</span></label>
           <select id="rl-reader" name="reader_name" required class="w-full px-3 py-2 rounded-lg border bg-surface text-sm" style="border-color: var(--color-secondary);" hx-on:change="var o=document.getElementById('rl-reader-other'); if(o)o.classList.toggle('hidden',this.value!=='other'); if(this.value==='other'&&o)o.focus()">
             <option value="">Select reader...</option>` + fmOptions + `
-            <option value="other"` + func() string { if rl.ReaderName == "other" { return " selected" } else { return "" } }() + `>Other (type manually)</option>
+            <option value="other"` + func() string {
+			if rl.ReaderName == "other" {
+				return " selected"
+			} else {
+				return ""
+			}
+		}() + `>Other (type manually)</option>
           </select>
-          <input type="text" id="rl-reader-other" name="reader_name_manual" class="w-full px-3 py-2 rounded-lg border bg-surface text-sm mt-2 hidden" style="border-color: var(--color-secondary);" placeholder="Enter reader name" value="` + func() string { if rl.ReaderName == "other" && rl.Notes != nil { return template.HTMLEscapeString(*rl.Notes) } else { return "" } }() + `">
+          <input type="text" id="rl-reader-other" name="reader_name_manual" class="w-full px-3 py-2 rounded-lg border bg-surface text-sm mt-2 hidden" style="border-color: var(--color-secondary);" placeholder="Enter reader name" value="` + func() string {
+			if rl.ReaderName == "other" && rl.Notes != nil {
+				return template.HTMLEscapeString(*rl.Notes)
+			} else {
+				return ""
+			}
+		}() + `">
         </div>
         <div>
           <label for="rl-notes" class="block text-sm font-medium text-text mb-1">Notes</label>
-          <textarea id="rl-notes" name="notes" rows="2" class="w-full px-3 py-2 rounded-lg border bg-surface text-sm" style="border-color: var(--color-secondary);" placeholder="Optional notes about this reading session...">` + func() string { if rl.Notes != nil { return template.HTMLEscapeString(*rl.Notes) } else { return "" } }() + `</textarea>
+          <textarea id="rl-notes" name="notes" rows="2" class="w-full px-3 py-2 rounded-lg border bg-surface text-sm" style="border-color: var(--color-secondary);" placeholder="Optional notes about this reading session...">` + func() string {
+			if rl.Notes != nil {
+				return template.HTMLEscapeString(*rl.Notes)
+			} else {
+				return ""
+			}
+		}() + `</textarea>
         </div>
       </div>
       <div class="flex justify-end gap-3 mt-6">
@@ -813,15 +849,6 @@ func HTMLUpdateReadingLogHandler(db *sql.DB) http.HandlerFunc {
 		if entireBook {
 			startPage = nil
 			endPage = nil
-		}
-
-		// Calculate total pages
-		totalPages := 0
-		if startPage != nil && endPage != nil {
-			totalPages = *endPage - *startPage + 1
-			if totalPages < 0 {
-				totalPages = 0
-			}
 		}
 
 		// Parse read_at — same UTC conversion logic as create

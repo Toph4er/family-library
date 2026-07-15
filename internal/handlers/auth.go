@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"database/sql"
 	"crypto/subtle"
+	"database/sql"
 	"html/template"
 	"net/http"
 	"time"
