@@ -327,11 +327,11 @@
       <!-- Timestamps -->
       <div>
         <dt class="text-text-light/60 font-medium">Added</dt>
-        <dd class="text-text mt-1">{{formatTime .Book.CreatedAt}}</dd>
+        <dd class="text-text mt-1">{{formatTime .Book.CreatedAt $.UserTimezone}}</dd>
       </div>
       <div>
         <dt class="text-text-light/60 font-medium">Last Updated</dt>
-        <dd class="text-text mt-1">{{formatTime .Book.UpdatedAt}}</dd>
+        <dd class="text-text mt-1">{{formatTime .Book.UpdatedAt $.UserTimezone}}</dd>
       </div>
 
       <!-- Notes — spans full width -->

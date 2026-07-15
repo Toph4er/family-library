@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"crypto/subtle"
 	"html/template"
 	"net/http"
 	"time"
@@ -13,6 +14,77 @@ import (
 	"github.com/Toph4er/family-library/internal/middleware"
 	"github.com/Toph4er/family-library/internal/theme"
 )
+
+// pageData holds template context for login-related pages.
+
+// validateLoginCSRF checks that the CSRF token from the request matches the
+// token stored in the session.  The token is read from the X-CSRF-Token
+// header (set by HTMX via hx-headers) or from the csrf_token form field.
+// On mismatch it writes a 403 JSON error response.
+// Returns true when the token is valid (or when no session cookie is present,
+// meaning the login page was never rendered — in which case there is nothing
+// to protect against).
+func validateLoginCSRF(w http.ResponseWriter, r *http.Request, store *sessions.CookieStore, sessionName string) bool {
+	// HTMX can send the token as a header or as a form field.
+	headerToken := r.Header.Get("X-CSRF-Token")
+	formToken := r.FormValue("csrf_token")
+	token := headerToken
+	if token == "" {
+		token = formToken
+	}
+
+	// If no token was provided at all, check whether a session cookie exists.
+	// No cookie means the login page was never loaded → no CSRF protection needed.
+	// A cookie without a token means the page was loaded but something went wrong.
+	if token == "" {
+		session, err := store.Get(r, sessionName)
+		if err != nil {
+			// No session cookie at all — safe to proceed.
+			return true
+		}
+		if session.IsNew {
+			// No existing session cookie — the login page was never rendered.
+			return true
+		}
+		// Session exists but no token — the page was rendered but the token
+		// wasn't included in the form.  This shouldn't happen in normal flow.
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte(`{"error":"CSRF token missing"}`))
+		return false
+	}
+
+	session, err := store.Get(r, sessionName)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte(`{"error":"CSRF token missing"}`))
+		return false
+	}
+
+	sessionToken, ok := session.Values[middleware.CSRFTokenKey].(string)
+	if !ok || sessionToken == "" {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte(`{"error":"CSRF token missing"}`))
+		return false
+	}
+
+	if !constantTimeEqual(sessionToken, token) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte(`{"error":"CSRF token invalid"}`))
+		return false
+	}
+
+	return true
+}
+
+// constantTimeEqual performs a constant-time string comparison to prevent
+// timing side-channel attacks on CSRF token validation.
+func constantTimeEqual(a, b string) bool {
+	return subtle.ConstantTimeCompare([]byte(a), []byte(b)) == 1
+}
 
 // pageData holds template context for login-related pages.
 type pageData struct {
@@ -172,6 +244,12 @@ func HTMLLoginHandler(authSvc *auth.Auth) http.HandlerFunc {
 			return
 		}
 
+		// Validate CSRF token from session (login pages generate one via
+		// getCSRFToken).  This protects against CSRF-based account takeover.
+		if !validateLoginCSRF(w, r, authSvc.Store(), auth.SessionID) {
+			return
+		}
+
 		username := r.FormValue("username")
 		password := r.FormValue("password")
 
@@ -210,6 +288,12 @@ func HTMLGuestLoginHandler(authSvc *auth.Auth) http.HandlerFunc {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			w.WriteHeader(http.StatusBadRequest)
 			_, _ = w.Write([]byte(htmlErrorFragment("Invalid request")))
+			return
+		}
+
+		// Validate CSRF token from session (guest-login page generates one
+		// via getCSRFToken).  This protects against CSRF-based account takeover.
+		if !validateLoginCSRF(w, r, authSvc.Store(), auth.SessionID) {
 			return
 		}
 

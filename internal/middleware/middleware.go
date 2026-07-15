@@ -203,15 +203,31 @@ func (s *rateLimiterStore) getLimiter(ip string, strict bool) *rate.Limiter {
 	return limiter
 }
 
-// RateLimiter enforces per-IP rate limiting on API requests.
+// RateLimiter enforces per-IP rate limiting on API and auth requests.
 //
-// Auth endpoints (/api/v1/auth/*) are limited to 10 requests per hour.
-// Other API endpoints are limited to 100 requests per minute.
-// Static file requests are not rate-limited.
+// Auth endpoints (/api/v1/auth/* and /auth/login, /auth/guest-login) are
+// limited to 10 requests per hour.  Other API endpoints are limited to
+// 100 requests per minute.  Static file requests and health checks are not
+// rate-limited.
 func RateLimiter(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Skip rate limiting for static files and health checks.
 		if r.URL.Path == "/health" || len(r.URL.Path) >= 7 && r.URL.Path[:7] == "/static" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// Determine if this is a strict (auth) or general (API) path.
+		isAuth := r.URL.Path == "/auth/login" || r.URL.Path == "/auth/guest-login"
+		isAPIAuth := len(r.URL.Path) >= 11 && r.URL.Path[:11] == "/api/v1/auth"
+
+		if isAuth {
+			// Auth endpoints get the stricter limit regardless of prefix.
+			limiter := limiterStore.getLimiter(r.RemoteAddr, true)
+			if !limiter.Allow() {
+				writeRateLimitResponse(w, r)
+				return
+			}
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -222,19 +238,22 @@ func RateLimiter(next http.Handler) http.Handler {
 			return
 		}
 
-		ip := r.RemoteAddr
-		strict := len(r.URL.Path) >= 11 && r.URL.Path[:11] == "/api/v1/auth"
-
-		limiter := limiterStore.getLimiter(ip, strict)
+		strict := isAPIAuth
+		limiter := limiterStore.getLimiter(r.RemoteAddr, strict)
 
 		if !limiter.Allow() {
-			w.Header().Set("Content-Type", "application/json")
-			w.Header().Set("Retry-After", "60")
-			w.WriteHeader(http.StatusTooManyRequests)
-			_, _ = w.Write([]byte(`{"error":"rate limit exceeded","retry_after":60}`))
+			writeRateLimitResponse(w, r)
 			return
 		}
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+// writeRateLimitResponse writes a JSON rate-limit response.
+func writeRateLimitResponse(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Retry-After", "60")
+	w.WriteHeader(http.StatusTooManyRequests)
+	_, _ = w.Write([]byte(`{"error":"rate limit exceeded","retry_after":60}`))
 }

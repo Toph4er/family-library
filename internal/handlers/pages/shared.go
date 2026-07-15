@@ -51,6 +51,7 @@ type BaseContext struct {
 	ActiveTheme     theme.Theme
 	AvailableThemes []theme.Theme
 	ThemeColorsJSON template.HTML
+	UserTimezone    string
 }
 
 // buildBaseContext creates a BaseContext for the given request.
@@ -59,6 +60,7 @@ type BaseContext struct {
 func buildBaseContext(r *http.Request, store *sessions.CookieStore, sessionName string, db *sql.DB) BaseContext {
 	ctx := BaseContext{Year: time.Now().Year()}
 	ctx.Nonce = middleware.GetCSPNonce(r)
+	ctx.UserTimezone = loadUserTimezone(db)
 
 	// Check context first (set by auth middleware on protected routes).
 	if user := auth.GetUserFromContext(r); user != nil {
@@ -131,6 +133,20 @@ func BuildBaseContext(r *http.Request, store *sessions.CookieStore, sessionName 
 // requests (HX-Request header present) or the full page layout otherwise.
 func RenderPage(w http.ResponseWriter, r *http.Request, tmpl *template.Template, pageName string, data interface{}) {
 	renderPage(w, r, tmpl, pageName, data)
+}
+
+// loadUserTimezone reads the user_timezone setting and returns it.
+// Falls back to "America/New_York" if the setting is missing or db is nil.
+func loadUserTimezone(db *sql.DB) string {
+	if db == nil {
+		return "America/New_York"
+	}
+	var val string
+	err := db.QueryRow("SELECT value FROM settings WHERE key = ?", "user_timezone").Scan(&val)
+	if err != nil || val == "" {
+		return "America/New_York"
+	}
+	return val
 }
 
 // loadActiveTheme reads the active_theme setting and returns the resolved Theme.

@@ -18,6 +18,7 @@
     <!-- Login card -->
     <div class="bg-surface rounded-2xl shadow-lg p-8 border border-secondary/10">
       <form hx-post="/auth/guest-login" hx-swap="innerHTML" hx-target="#guest-error">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 
         <div>
           <label for="guest-password" class="block text-sm font-medium text-text mb-1">Guest Password</label>

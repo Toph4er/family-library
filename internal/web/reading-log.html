@@ -68,7 +68,7 @@
                     <line x1="8" y1="2" x2="8" y2="6"/>
                     <line x1="3" y1="10" x2="21" y2="10"/>
                   </svg>
-                  {{formatTime .ReadAt}}
+                  {{formatTime .ReadAt $.UserTimezone}}
                 </span>
                 {{if .EntireBook}}
                 <span class="flex items-center gap-1">
@@ -91,9 +91,22 @@
               <p class="text-sm text-text-light/60 mt-1">{{.Notes}}</p>
               {{end}}
             </div>
-            <!-- Delete button (hidden for Guests) -->
+            <!-- Edit & Delete buttons (hidden for Guests) -->
             {{if not $.IsGuest}}
-            <div class="shrink-0">
+            <div class="shrink-0 flex items-center gap-1">
+              <button type="button"
+                hx-get="/reading-logs/{{.ID}}/edit-form"
+                hx-target="#modal-target"
+                hx-swap="innerHTML"
+                hx-on::after-request="htmx.process(document.getElementById('modal-backdrop'))"
+                class="text-text-light/40 hover:text-primary transition-colors p-1"
+                aria-label="Edit reading log entry"
+              >
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </button>
               <button type="button"
                 hx-delete="/reading-logs/{{.ID}}"
                 hx-confirm="Delete this reading log entry?"

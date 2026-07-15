@@ -154,12 +154,19 @@ func main() {
 // the page's own HTML file, and all shared partials.
 func loadTemplates(dir string) (map[string]*template.Template, error) {
 	funcMap := template.FuncMap{
-		"formatTime": func(s string) string {
-			t, err := time.Parse("2006-01-02 15:04:05", s)
+		"formatTime": func(s string, tzName string) string {
+			if tzName == "" {
+				tzName = "America/New_York"
+			}
+			loc, err := time.LoadLocation(tzName)
 			if err != nil {
 				return s
 			}
-			return t.Format("Jan 2, 2006 at 3:04 PM")
+			t, err := time.ParseInLocation("2006-01-02 15:04:05", s, time.UTC)
+			if err != nil {
+				return s
+			}
+			return t.In(loc).Format("Jan 2, 2006 at 3:04 PM")
 		},
 		"formatISBN": func(isbn interface{}) string {
 			var s string

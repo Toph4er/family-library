@@ -190,6 +190,12 @@ func NewRouter(database *sqlx.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Ha
 	r.Delete("/reading-logs/{id}", func(w http.ResponseWriter, r *http.Request) {
 		authSvc.RequireAdminHTML(handlers.HTMLDeleteReadingLogHandler(database.DB)).ServeHTTP(w, r)
 	})
+	r.Get("/reading-logs/{id}/edit-form", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAdminHTML(handlers.HTMLReadingLogEditFormHandler(database.DB)).ServeHTTP(w, r)
+	})
+	r.Put("/reading-logs/{id}", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAdminHTML(handlers.HTMLUpdateReadingLogHandler(database.DB)).ServeHTTP(w, r)
+	})
 
 	// -- API routes --
 	r.Route("/api/v1", func(r chi.Router) {

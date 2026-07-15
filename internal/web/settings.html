@@ -211,7 +211,7 @@
           <tr class="border-b border-secondary/20" id="family-member-{{.ID}}">
             <td class="py-3 px-4 text-sm font-medium text-text">{{.Name}}</td>
             <td class="py-3 px-4 text-sm text-text-light">{{.Relation}}</td>
-            <td class="py-3 px-4 text-sm text-text-light/60 whitespace-nowrap">{{formatTime .CreatedAt}}</td>
+            <td class="py-3 px-4 text-sm text-text-light/60 whitespace-nowrap">{{formatTime .CreatedAt $.UserTimezone}}</td>
             <td class="py-3 px-4 text-sm">
               <div class="flex items-center gap-2">
                 <button type="button"
