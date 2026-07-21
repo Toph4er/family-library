@@ -23,6 +23,7 @@ type Book struct {
 	DateReceived       *string `json:"date_received,omitempty" db:"date_received"`
 	Condition          *string `json:"condition,omitempty" db:"condition"`
 	Location           *string `json:"location,omitempty" db:"location"`
+	Source             string  `json:"source" db:"source"`
 	Notes              *string `json:"notes,omitempty" db:"notes"`
 	ChildRating        *int    `json:"child_rating,omitempty" db:"child_rating"`
 	Quantity           int     `json:"quantity" db:"quantity"`
