@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -305,11 +306,23 @@ func DeleteReadingLogHandler(db *sql.DB) http.HandlerFunc {
 
 // --- HTMX HTML Handlers ---
 
-// HTMLBookSelectorHandler returns a modal HTML fragment listing recent books for logging a reading session.
-// GET /reading-logs/book-selector
+// HTMLBookSelectorHandler returns a modal HTML fragment listing books for logging a reading session.
+// GET /reading-logs/book-selector?q=<search>
+// When q is present, uses FTS5 to search book titles. Otherwise lists the first 50 books alphabetically.
 func HTMLBookSelectorHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		rows, err := db.Query("SELECT id, title FROM books ORDER BY title ASC LIMIT 50")
+		q := strings.TrimSpace(r.URL.Query().Get("q"))
+
+		var rows *sql.Rows
+		var err error
+		if q != "" {
+			rows, err = db.Query(
+				"SELECT books.id, books.title FROM books_fts JOIN books ON books_fts.rowid = books.id WHERE books_fts MATCH ? ORDER BY books.title ASC LIMIT 50",
+				q,
+			)
+		} else {
+			rows, err = db.Query("SELECT id, title FROM books ORDER BY title ASC LIMIT 50")
+		}
 		if err != nil {
 			HTMXError(w, r, http.StatusInternalServerError)
 			return
@@ -329,7 +342,11 @@ func HTMLBookSelectorHandler(db *sql.DB) http.HandlerFunc {
 		}
 
 		if !hasBooks {
-			bookOptions = `<p class="text-text-light/60 text-sm text-center py-4">No books in the library yet.</p>`
+			if q != "" {
+				bookOptions = `<p class="text-text-light/60 text-sm text-center py-4">No books found matching "<span class="font-medium text-text-light">` + template.HTMLEscapeString(q) + `</span>".</p>`
+			} else {
+				bookOptions = `<p class="text-text-light/60 text-sm text-center py-4">No books in the library yet.</p>`
+			}
 		}
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -340,7 +357,13 @@ func HTMLBookSelectorHandler(db *sql.DB) http.HandlerFunc {
       <h2 class="text-xl font-heading font-semibold text-primary">Select a Book</h2>
       <button type="button" hx-on:click="this.closest('.modal-backdrop').remove()" class="text-text-light hover:text-text transition-colors text-2xl no-underline" aria-label="Close modal">×</button>
     </div>
-    <div class="max-h-96 overflow-y-auto space-y-2">
+    <input type="text" id="book-search-input" placeholder="Search books..."
+           class="w-full px-4 py-2 rounded-lg border bg-surface mb-4"
+           hx-get="/reading-logs/book-selector"
+           hx-trigger="input changed delay:300ms"
+           hx-target="#book-list"
+           hx-swap="innerHTML" />
+    <div id="book-list" class="max-h-96 overflow-y-auto space-y-2">
       ` + bookOptions +
 			`</div>
   </div>
@@ -484,13 +507,42 @@ func HTMLCreateReadingLogHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		bookIDStr := r.FormValue("book_id")
-		bookID, err := strconv.ParseInt(bookIDStr, 10, 64)
-		if err != nil || bookID == 0 {
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte(htmlErrorFragment("Invalid book ID")))
-			return
+		// Check if this is an external book
+		var err error
+		externalTitle := strings.TrimSpace(r.FormValue("external_title"))
+		externalAuthor := strings.TrimSpace(r.FormValue("external_author"))
+		externalLocation := strings.TrimSpace(r.FormValue("external_location"))
+
+		var bookID int64
+		if externalTitle != "" {
+			// Create a new external book
+			err = db.QueryRow(
+				"INSERT INTO books (title, authors, location, source) VALUES (?, ?, ?, 'external') RETURNING id",
+				externalTitle, externalAuthor, externalLocation,
+			).Scan(&bookID)
+			if err != nil {
+				HTMXErrorResponse(w, r, http.StatusInternalServerError, "Failed to create external book")
+				return
+			}
+
+			// Insert into FTS5 table for search
+			_, err = db.Exec(
+				"INSERT INTO books_fts (rowid, title, authors) VALUES (?, ?, ?)",
+				bookID, externalTitle, externalAuthor,
+			)
+			if err != nil {
+				log.Printf("Warning: failed to insert into books_fts: %v", err)
+			}
+		} else {
+			// Use the existing book_id from the form
+			bookIDStr := strings.TrimSpace(r.FormValue("book_id"))
+			bookID, err = strconv.ParseInt(bookIDStr, 10, 64)
+			if err != nil || bookID == 0 {
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				w.WriteHeader(http.StatusBadRequest)
+				_, _ = w.Write([]byte(htmlErrorFragment("Invalid book ID")))
+				return
+			}
 		}
 
 		// Handle reader name: use manual input if "other" was selected, otherwise use select value
