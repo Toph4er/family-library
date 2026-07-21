@@ -51,6 +51,11 @@ func RenderBookFormPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 	return pages.RenderBookFormPage(tmpl, db, store, sessionName, isEdit, bookID)
 }
 
+// BookSearchHandler delegates to the pages package for FTS5 book search.
+func BookSearchHandler(db *sql.DB) http.HandlerFunc {
+	return pages.BookSearchHandler(db)
+}
+
 // --- Test helpers (re-exported from pages package) ---
 
 // PageContextForTest is the exported BaseContext struct for test access.

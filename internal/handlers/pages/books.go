@@ -2,6 +2,7 @@ package pages
 
 import (
 	"database/sql"
+	"encoding/json"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -318,4 +319,51 @@ func canGuestSeeBook(r *http.Request, book *models.Book) bool {
 	// Guests can see all books unless explicitly restricted
 	_ = r
 	return true
+}
+
+// BookSearchHandler returns a JSON list of books matching the FTS5 search query.
+// GET /books/search?q=...
+func BookSearchHandler(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		q := strings.TrimSpace(r.URL.Query().Get("q"))
+		if q == "" {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode([]models.Book{})
+			return
+		}
+
+		rows, err := db.Query(
+			"SELECT books.id, books.title, books.authors, books.source FROM books_fts JOIN books ON books_fts.rowid = books.id WHERE books_fts MATCH ? ORDER BY books.title ASC LIMIT 20",
+			q,
+		)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
+
+		var books []models.Book
+		for rows.Next() {
+			var b models.Book
+			var authors sql.NullString
+			if err := rows.Scan(&b.ID, &b.Title, &authors, &b.Source); err != nil {
+				continue
+			}
+			if authors.Valid {
+				b.Authors = &authors.String
+			}
+			books = append(books, b)
+		}
+		if books == nil {
+			books = []models.Book{}
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(books)
+	}
 }

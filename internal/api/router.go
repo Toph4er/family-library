@@ -122,6 +122,9 @@ func NewRouter(database *sqlx.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Ha
 	r.Get("/books", func(w http.ResponseWriter, r *http.Request) {
 		authSvc.RequireAuthHTML(handlers.RenderBooksPage(cfg.Templates["books"], database.DB, authSvc.Store(), auth.SessionID)).ServeHTTP(w, r)
 	})
+	r.Get("/books/search", func(w http.ResponseWriter, r *http.Request) {
+		handlers.BookSearchHandler(database.DB).ServeHTTP(w, r)
+	})
 	r.Get("/books/{id}", func(w http.ResponseWriter, r *http.Request) {
 		authSvc.RequireAuthHTML(handlers.RenderBookDetailPage(cfg.Templates["book-detail"], database.DB, authSvc.Store(), auth.SessionID)).ServeHTTP(w, r)
 	})
