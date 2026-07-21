@@ -90,7 +90,7 @@ func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 		var err error
 		if q != "" {
 			rows, err = db.Query(
-				"SELECT id, title, authors, isbn, cover_image_url, created_at FROM books_fts JOIN books ON books_fts.rowid = books.id WHERE books_fts MATCH ? ORDER BY books.title ASC LIMIT ? OFFSET ?",
+				"SELECT books.id, books.title, books.authors, books.isbn, books.cover_image_url, books.created_at FROM books_fts JOIN books ON books_fts.rowid = books.id WHERE books_fts MATCH ? ORDER BY books.title ASC LIMIT ? OFFSET ?",
 				q, perPage, offset,
 			)
 		} else {
