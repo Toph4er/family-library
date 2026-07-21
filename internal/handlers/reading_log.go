@@ -390,10 +390,11 @@ func HTMLReadingLogFormHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// Load book title
+		// Load book title, page count, and source
 		var bookTitle string
 		var pageCount *int
-		err = db.QueryRow("SELECT title, page_count FROM books WHERE id = ?", bookID).Scan(&bookTitle, &pageCount)
+		var bookSource string
+		err = db.QueryRow("SELECT title, page_count, COALESCE(source, 'collection') FROM books WHERE id = ?", bookID).Scan(&bookTitle, &pageCount, &bookSource)
 		if errors.Is(err, sql.ErrNoRows) {
 			http.NotFound(w, r)
 			return
@@ -402,6 +403,9 @@ func HTMLReadingLogFormHandler(db *sql.DB) http.HandlerFunc {
 			HTMXError(w, r, http.StatusInternalServerError)
 			return
 		}
+
+		// Determine initial mode: external if book source is 'external'
+		isExternal := bookSource == "external"
 
 		// Load family members for reader dropdown
 		fmRows, err := db.Query("SELECT id, name, relation FROM family_members ORDER BY name ASC")
@@ -452,9 +456,15 @@ func HTMLReadingLogFormHandler(db *sql.DB) http.HandlerFunc {
     </div>
     <p class="text-sm text-text-light mb-4">Book: <strong class="text-text">` + template.HTMLEscapeString(bookTitle) + `</strong></p>
     <form hx-post="/reading-logs" hx-target="#modal-target" hx-swap="outerHTML">
-      <input type="hidden" name="book_id" value="` + bookIDStr + `">
+      <input type="hidden" name="book_id" value="` + bookIDStr + `" id="rl-book-id">
       <div class="space-y-4">
-        <div id="page-fields" class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" id="rl-external-toggle" name="is_external" value="true" class="w-4 h-4 rounded border-secondary text-primary focus:ring-primary/20" ` + func() string { if isExternal { return "checked" } else { return "" } }() + ` hx-on:change="var e=this.checked; document.getElementById('rl-page-fields').style.display=e?'none':''; document.getElementById('rl-collection-fields').style.display=e?'none':''; document.getElementById('rl-external-fields').style.display=e?'':'none'; document.getElementById('rl-external-title').required=e; document.getElementById('rl-reader').required=!e;">
+            <span class="text-sm text-text">Not in collection? Add as external book</span>
+          </label>
+        </div>
+        <div id="rl-page-fields" class="grid grid-cols-2 gap-3" style="display:` + func() string { if isExternal { return "none" } else { return "" } }() + `;">
           <div>
             <label for="rl-start-page" class="block text-sm font-medium text-text mb-1">Start Page</label>
             <input type="number" id="rl-start-page" name="start_page" min="1"` + maxPage + ` class="w-full px-3 py-2 rounded-lg border bg-surface text-sm" style="border-color: var(--color-secondary);" placeholder="1">
@@ -464,23 +474,39 @@ func HTMLReadingLogFormHandler(db *sql.DB) http.HandlerFunc {
             <input type="number" id="rl-end-page" name="end_page" min="1"` + maxPage + ` class="w-full px-3 py-2 rounded-lg border bg-surface text-sm" style="border-color: var(--color-secondary);" placeholder="` + endPagePlaceholder + `">
           </div>
         </div>
-        <div>
-          <label class="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" name="entire_book" value="true" class="w-4 h-4 rounded border-secondary text-primary focus:ring-primary/20" hx-on:change="var f=document.getElementById('page-fields'); if(f)f.style.display=this.checked?'none':''">
-            <span class="text-sm text-text">Read entire book</span>
-          </label>
+        <div id="rl-collection-fields" style="display:` + func() string { if isExternal { return "none" } else { return "" } }() + `;">
+          <div>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" name="entire_book" value="true" class="w-4 h-4 rounded border-secondary text-primary focus:ring-primary/20" hx-on:change="var f=document.getElementById('rl-page-fields'); if(f)f.style.display=this.checked?'none':''">
+              <span class="text-sm text-text">Read entire book</span>
+            </label>
+          </div>
+          <div>
+            <label for="rl-reader" class="block text-sm font-medium text-text mb-1">Reader <span class="text-error">*</span></label>
+            <select id="rl-reader" name="reader_name" required class="w-full px-3 py-2 rounded-lg border bg-surface text-sm" style="border-color: var(--color-secondary);" hx-on:change="var o=document.getElementById('rl-reader-other'); if(o)o.classList.toggle('hidden',this.value!=='other'); if(this.value==='other'&&o)o.focus()">
+              <option value="">Select reader...</option>` + fmOptions + `
+              <option value="other">Other (type manually)</option>
+            </select>
+            <input type="text" id="rl-reader-other" name="reader_name_manual" class="w-full px-3 py-2 rounded-lg border bg-surface text-sm mt-2 hidden" style="border-color: var(--color-secondary);" placeholder="Enter reader name">
+          </div>
+        </div>
+        <div id="rl-external-fields" style="display:` + func() string { if isExternal { return "" } else { return "none" } }() + `;">
+          <div>
+            <label for="rl-external-title" class="block text-sm font-medium text-text mb-1">Title <span class="text-error">*</span></label>
+            <input type="text" id="rl-external-title" name="external_title" required class="w-full px-3 py-2 rounded-lg border bg-surface text-sm" style="border-color: var(--color-secondary);" placeholder="Book title">
+          </div>
+          <div>
+            <label for="rl-external-author" class="block text-sm font-medium text-text mb-1">Author</label>
+            <input type="text" id="rl-external-author" name="external_author" class="w-full px-3 py-2 rounded-lg border bg-surface text-sm" style="border-color: var(--color-secondary);" placeholder="Author name">
+          </div>
+          <div>
+            <label for="rl-external-location" class="block text-sm font-medium text-text mb-1">Location</label>
+            <input type="text" id="rl-external-location" name="external_location" class="w-full px-3 py-2 rounded-lg border bg-surface text-sm" style="border-color: var(--color-secondary);" placeholder="e.g., Pikeville Library, Barnes &amp; Noble">
+          </div>
         </div>
         <div>
           <label for="rl-read-at" class="block text-sm font-medium text-text mb-1">Date &amp; Time</label>
           <input type="datetime-local" id="rl-read-at" name="read_at" value="` + time.Now().In(tz).Format("2006-01-02T15:04") + `" class="w-full px-3 py-2 rounded-lg border bg-surface text-sm" style="border-color: var(--color-secondary);">
-        </div>
-        <div>
-          <label for="rl-reader" class="block text-sm font-medium text-text mb-1">Reader <span class="text-error">*</span></label>
-          <select id="rl-reader" name="reader_name" required class="w-full px-3 py-2 rounded-lg border bg-surface text-sm" style="border-color: var(--color-secondary);" hx-on:change="var o=document.getElementById('rl-reader-other'); if(o)o.classList.toggle('hidden',this.value!=='other'); if(this.value==='other'&&o)o.focus()">
-            <option value="">Select reader...</option>` + fmOptions + `
-            <option value="other">Other (type manually)</option>
-          </select>
-          <input type="text" id="rl-reader-other" name="reader_name_manual" class="w-full px-3 py-2 rounded-lg border bg-surface text-sm mt-2 hidden" style="border-color: var(--color-secondary);" placeholder="Enter reader name">
         </div>
         <div>
           <label for="rl-notes" class="block text-sm font-medium text-text mb-1">Notes</label>
