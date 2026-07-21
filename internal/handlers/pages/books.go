@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"html/template"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -333,8 +334,10 @@ func BookSearchHandler(db *sql.DB) http.HandlerFunc {
 		q := strings.TrimSpace(r.URL.Query().Get("q"))
 		if q == "" {
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode([]models.Book{})
-			return
+			if err := json.NewEncoder(w).Encode([]models.Book{}); err != nil {
+				log.Printf("error encoding empty book list: %v", err)
+				return
+			}
 		}
 
 		rows, err := db.Query(
@@ -364,6 +367,8 @@ func BookSearchHandler(db *sql.DB) http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(books)
+		if err := json.NewEncoder(w).Encode(books); err != nil {
+			log.Printf("error encoding books: %v", err)
+		}
 	}
 }

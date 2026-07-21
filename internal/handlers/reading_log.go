@@ -460,11 +460,23 @@ func HTMLReadingLogFormHandler(db *sql.DB) http.HandlerFunc {
       <div class="space-y-4">
         <div>
           <label class="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" id="rl-external-toggle" name="is_external" value="true" class="w-4 h-4 rounded border-secondary text-primary focus:ring-primary/20" ` + func() string { if isExternal { return "checked" } else { return "" } }() + ` hx-on:change="var e=this.checked; document.getElementById('rl-page-fields').style.display=e?'none':''; document.getElementById('rl-collection-fields').style.display=e?'none':''; document.getElementById('rl-external-fields').style.display=e?'':'none'; document.getElementById('rl-external-title').required=e; document.getElementById('rl-reader').required=!e;">
+            <input type="checkbox" id="rl-external-toggle" name="is_external" value="true" class="w-4 h-4 rounded border-secondary text-primary focus:ring-primary/20" ` + func() string {
+			if isExternal {
+				return "checked"
+			} else {
+				return ""
+			}
+		}() + ` hx-on:change="var e=this.checked; document.getElementById('rl-page-fields').style.display=e?'none':''; document.getElementById('rl-collection-fields').style.display=e?'none':''; document.getElementById('rl-external-fields').style.display=e?'':'none'; document.getElementById('rl-external-title').required=e; document.getElementById('rl-reader').required=!e;">
             <span class="text-sm text-text">Not in collection? Add as external book</span>
           </label>
         </div>
-        <div id="rl-page-fields" class="grid grid-cols-2 gap-3" style="display:` + func() string { if isExternal { return "none" } else { return "" } }() + `;">
+        <div id="rl-page-fields" class="grid grid-cols-2 gap-3" style="display:` + func() string {
+			if isExternal {
+				return "none"
+			} else {
+				return ""
+			}
+		}() + `;">
           <div>
             <label for="rl-start-page" class="block text-sm font-medium text-text mb-1">Start Page</label>
             <input type="number" id="rl-start-page" name="start_page" min="1"` + maxPage + ` class="w-full px-3 py-2 rounded-lg border bg-surface text-sm" style="border-color: var(--color-secondary);" placeholder="1">
@@ -474,7 +486,13 @@ func HTMLReadingLogFormHandler(db *sql.DB) http.HandlerFunc {
             <input type="number" id="rl-end-page" name="end_page" min="1"` + maxPage + ` class="w-full px-3 py-2 rounded-lg border bg-surface text-sm" style="border-color: var(--color-secondary);" placeholder="` + endPagePlaceholder + `">
           </div>
         </div>
-        <div id="rl-collection-fields" style="display:` + func() string { if isExternal { return "none" } else { return "" } }() + `;">
+        <div id="rl-collection-fields" style="display:` + func() string {
+			if isExternal {
+				return "none"
+			} else {
+				return ""
+			}
+		}() + `;">
           <div>
             <label class="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" name="entire_book" value="true" class="w-4 h-4 rounded border-secondary text-primary focus:ring-primary/20" hx-on:change="var f=document.getElementById('rl-page-fields'); if(f)f.style.display=this.checked?'none':''">
@@ -490,7 +508,13 @@ func HTMLReadingLogFormHandler(db *sql.DB) http.HandlerFunc {
             <input type="text" id="rl-reader-other" name="reader_name_manual" class="w-full px-3 py-2 rounded-lg border bg-surface text-sm mt-2 hidden" style="border-color: var(--color-secondary);" placeholder="Enter reader name">
           </div>
         </div>
-        <div id="rl-external-fields" style="display:` + func() string { if isExternal { return "" } else { return "none" } }() + `;">
+        <div id="rl-external-fields" style="display:` + func() string {
+			if isExternal {
+				return ""
+			} else {
+				return "none"
+			}
+		}() + `;">
           <div>
             <label for="rl-external-title" class="block text-sm font-medium text-text mb-1">Title <span class="text-error">*</span></label>
             <input type="text" id="rl-external-title" name="external_title" required class="w-full px-3 py-2 rounded-lg border bg-surface text-sm" style="border-color: var(--color-secondary);" placeholder="Book title">
