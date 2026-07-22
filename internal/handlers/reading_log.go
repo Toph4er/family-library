@@ -517,7 +517,7 @@ func HTMLReadingLogFormHandler(db *sql.DB) http.HandlerFunc {
 		}() + `;">
           <div>
             <label for="rl-external-title" class="block text-sm font-medium text-text mb-1">Title <span class="text-error">*</span></label>
-            <input type="text" id="rl-external-title" name="external_title" required class="w-full px-3 py-2 rounded-lg border bg-surface text-sm" style="border-color: var(--color-secondary);" placeholder="Book title">
+            <input type="text" id="rl-external-title" name="external_title" class="w-full px-3 py-2 rounded-lg border bg-surface text-sm" style="border-color: var(--color-secondary);" placeholder="Book title">
           </div>
           <div>
             <label for="rl-external-author" class="block text-sm font-medium text-text mb-1">Author</label>
