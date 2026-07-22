@@ -70,7 +70,7 @@
 
       <!-- Actions -->
       <div class="flex flex-wrap gap-3 pt-2">
-        {{if and .IsAuthenticated (not .IsGuest)}}
+        {{if .IsAdmin}}
         <button
           type="button"
           hx-get="/reading-logs/{{.Book.ID}}/new-form"
