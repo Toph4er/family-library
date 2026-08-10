@@ -5,6 +5,7 @@ services:
     hostname: example.com
     environment:
       - VIRTUAL_HOST=${VIRTUAL_HOST}
+      - HTTPS_METHOD=${HTTPS_METHOD}
       - LETSENCRYPT_HOST=${LETSENCRYPT_HOST}
       - PORT=8080
       - DATABASE_PATH=/app/data/library.db
