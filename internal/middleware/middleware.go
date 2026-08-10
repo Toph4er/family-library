@@ -169,7 +169,7 @@ func (s *rateLimiterStore) cleanupStale() {
 
 // getLimiter returns (or creates) a rate limiter for the given IP.
 //
-// Auth endpoints get a stricter limit (10 requests/hour) while general
+// Auth endpoints get a stricter limit (~30 requests/hour) while general
 // API endpoints get 100 requests/minute.
 func (s *rateLimiterStore) getLimiter(ip string, strict bool) *rate.Limiter {
 	key := ip
@@ -189,8 +189,8 @@ func (s *rateLimiterStore) getLimiter(ip string, strict bool) *rate.Limiter {
 
 	var limiter *rate.Limiter
 	if strict {
-		// ~10 requests per hour for auth endpoints (burst of 5, then 1 per 6 min).
-		limiter = rate.NewLimiter(rate.Every(6*time.Minute), 5)
+		// ~30 requests per hour for auth endpoints (burst of 10, then 1 per 2 min).
+		limiter = rate.NewLimiter(rate.Every(2*time.Minute), 10)
 	} else {
 		// ~100 requests per minute for general API (burst of 10, then 1 per 600ms).
 		limiter = rate.NewLimiter(rate.Every(600*time.Millisecond), 10)
