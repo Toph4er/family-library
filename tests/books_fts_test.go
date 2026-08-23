@@ -128,6 +128,59 @@ func TestBookSelector_ApostropheDoesNot500(t *testing.T) {
 	}
 }
 
+// Regression tests for the nested-modal bug: the search input swaps HTMX
+// responses into #book-list (innerHTML), so a search response containing the
+// full modal produces a modal-inside-a-modal (duplicate IDs, occluded close
+// button). Search responses must be bare book-list fragments; only the
+// initial load (no q) may return the full modal.
+//
+// Note: the markers below use `id="modal-backdrop"` rather than the bare class
+// name, because the book-list <a> items legitimately reference the
+// `.modal-backdrop` class to close the modal when a book is selected.
+func TestBookSelector_SearchReturnsPartial(t *testing.T) {
+	env := setupTestEnv(t)
+	seedBook(t, env, "Test Driven Development", "A. Smith")
+
+	handler := handlers.HTMLBookSelectorHandler(env.db.DB)
+	req := httptest.NewRequest("GET", "/reading-logs/book-selector", nil)
+	req.URL.RawQuery = url.Values{"q": {"test"}}.Encode()
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	body := rec.Body.String()
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET /reading-logs/book-selector?q=test -> %d: %s", rec.Code, body)
+	}
+	for _, marker := range []string{`id="modal-backdrop"`, "modal-book-search-input", `role="dialog"`, "Select a Book"} {
+		if strings.Contains(body, marker) {
+			t.Errorf("search response must be a partial book-list fragment, but it contains %q: %s", marker, body)
+		}
+	}
+	if !strings.Contains(body, "Test Driven Development") {
+		t.Errorf("expected the matching book in the partial results: %s", body)
+	}
+}
+
+func TestBookSelector_InitialLoadReturnsFullModal(t *testing.T) {
+	env := setupTestEnv(t)
+	seedBook(t, env, "Test Driven Development", "A. Smith")
+
+	handler := handlers.HTMLBookSelectorHandler(env.db.DB)
+	req := httptest.NewRequest("GET", "/reading-logs/book-selector", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	body := rec.Body.String()
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET /reading-logs/book-selector -> %d: %s", rec.Code, body)
+	}
+	for _, marker := range []string{`id="modal-backdrop"`, "modal-book-search-input", `role="dialog"`, `id="book-list"`, "Select a Book"} {
+		if !strings.Contains(body, marker) {
+			t.Errorf("initial-load response must be the full modal, but it is missing %q: %s", marker, body)
+		}
+	}
+}
+
 // seedBook inserts a book (title + authors) into the test database and keeps
 // the FTS index in sync (external-content FTS5 tables are not auto-synced; the
 // app writes both tables explicitly, e.g. reading_log.go external-book path).

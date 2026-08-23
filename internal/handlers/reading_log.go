@@ -308,7 +308,9 @@ func DeleteReadingLogHandler(db *sql.DB) http.HandlerFunc {
 
 // HTMLBookSelectorHandler returns a modal HTML fragment listing books for logging a reading session.
 // GET /reading-logs/book-selector?q=<search>
-// When q is present, uses FTS5 to search book titles. Otherwise lists the first 50 books alphabetically.
+// When q is present, uses FTS5 to search book titles and returns only the
+// book-list fragment (for the #book-list innerHTML swap inside the modal).
+// Otherwise lists the first 50 books alphabetically inside the full modal.
 func HTMLBookSelectorHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := strings.TrimSpace(r.URL.Query().Get("q"))
@@ -349,6 +351,16 @@ func HTMLBookSelectorHandler(db *sql.DB) http.HandlerFunc {
 			}
 		}
 
+		if q != "" {
+			// Search from within the modal: HTMX swaps this into #book-list
+			// (innerHTML), so return only the book-list items — not the full
+			// modal, which would nest a duplicate modal inside the book list.
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			_, _ = w.Write([]byte(bookOptions))
+			return
+		}
+
+		// Initial load: return the full modal.
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		_, _ = w.Write([]byte(`
 <div id="modal-backdrop" class="modal-backdrop" hx-on:click="if(event.target===this)this.closest('.modal-backdrop').remove()">
