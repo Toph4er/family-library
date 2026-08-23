@@ -18,14 +18,15 @@ import (
 
 // SafeFTS5Query converts a raw user search string into a syntactically
 // safe FTS5 MATCH expression. Each whitespace-separated token is wrapped in
-// double quotes (embedded double quotes are doubled to escape), so the input
-// is always treated as literal phrases joined by implicit AND. Without this,
+// double quotes (embedded double quotes are doubled to escape) and suffixed
+// with `*`, so the input is treated as literal prefix phrases joined by
+// implicit AND (e.g. `bear` matches `bear`, `bears`). Without the quoting,
 // characters like apostrophes, ':', '-', '*', or parentheses are parsed as
 // FTS5 syntax and produce errors such as: fts5: syntax error near "'".
 func SafeFTS5Query(q string) string {
 	fields := strings.Fields(q)
 	for i, f := range fields {
-		fields[i] = `"` + strings.ReplaceAll(f, `"`, `""`) + `"`
+		fields[i] = `"` + strings.ReplaceAll(f, `"`, `""`) + `"*`
 	}
 	return strings.Join(fields, " ")
 }
