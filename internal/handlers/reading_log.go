@@ -357,7 +357,7 @@ func HTMLBookSelectorHandler(db *sql.DB) http.HandlerFunc {
       <h2 class="text-xl font-heading font-semibold text-primary">Select a Book</h2>
       <button type="button" hx-on:click="this.closest('.modal-backdrop').remove()" class="text-text-light hover:text-text transition-colors text-2xl no-underline" aria-label="Close modal">×</button>
     </div>
-    <input type="text" id="book-search-input" placeholder="Search books..."
+    <input type="text" id="modal-book-search-input" name="q" placeholder="Search books..."
            class="w-full px-4 py-2 rounded-lg border bg-surface mb-4"
            hx-get="/reading-logs/book-selector"
            hx-trigger="input changed delay:300ms"
