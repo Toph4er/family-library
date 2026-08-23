@@ -16,6 +16,20 @@ import (
 	"github.com/Toph4er/family-library/internal/models"
 )
 
+// SafeFTS5Query converts a raw user search string into a syntactically
+// safe FTS5 MATCH expression. Each whitespace-separated token is wrapped in
+// double quotes (embedded double quotes are doubled to escape), so the input
+// is always treated as literal phrases joined by implicit AND. Without this,
+// characters like apostrophes, ':', '-', '*', or parentheses are parsed as
+// FTS5 syntax and produce errors such as: fts5: syntax error near "'".
+func SafeFTS5Query(q string) string {
+	fields := strings.Fields(q)
+	for i, f := range fields {
+		fields[i] = `"` + strings.ReplaceAll(f, `"`, `""`) + `"`
+	}
+	return strings.Join(fields, " ")
+}
+
 // RenderBooksPage renders the books listing page (auth required).
 // Supports ?q= search parameter for filtering books.
 func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.CookieStore, sessionName string) http.HandlerFunc {
@@ -53,7 +67,7 @@ func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 		if q != "" {
 			err := db.QueryRow(
 				"SELECT COUNT(*) FROM books_fts JOIN books ON books_fts.rowid = books.id WHERE books_fts MATCH ?",
-				q,
+				SafeFTS5Query(q),
 			).Scan(&total)
 			if err != nil {
 				renderHTMXError(w, r, http.StatusInternalServerError)
@@ -93,7 +107,7 @@ func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 		if q != "" {
 			rows, err = db.Query(
 				"SELECT books.id, books.title, books.authors, books.isbn, books.cover_image_url, books.created_at FROM books_fts JOIN books ON books_fts.rowid = books.id WHERE books_fts MATCH ? ORDER BY books.title ASC LIMIT ? OFFSET ?",
-				q, perPage, offset,
+				SafeFTS5Query(q), perPage, offset,
 			)
 		} else {
 			rows, err = db.Query(
@@ -342,7 +356,7 @@ func BookSearchHandler(db *sql.DB) http.HandlerFunc {
 
 		rows, err := db.Query(
 			"SELECT books.id, books.title, books.authors, books.source FROM books_fts JOIN books ON books_fts.rowid = books.id WHERE books_fts MATCH ? ORDER BY books.title ASC LIMIT 20",
-			q,
+			SafeFTS5Query(q),
 		)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

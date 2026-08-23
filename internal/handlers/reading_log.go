@@ -318,7 +318,7 @@ func HTMLBookSelectorHandler(db *sql.DB) http.HandlerFunc {
 		if q != "" {
 			rows, err = db.Query(
 				"SELECT books.id, books.title FROM books_fts JOIN books ON books_fts.rowid = books.id WHERE books_fts MATCH ? ORDER BY books.title ASC LIMIT 50",
-				q,
+				pages.SafeFTS5Query(q),
 			)
 		} else {
 			rows, err = db.Query("SELECT id, title FROM books ORDER BY title ASC LIMIT 50")
