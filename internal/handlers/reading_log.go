@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -587,14 +586,9 @@ func HTMLCreateReadingLogHandler(db *sql.DB) http.HandlerFunc {
 				return
 			}
 
-			// Insert into FTS5 table for search
-			_, err = db.Exec(
-				"INSERT INTO books_fts (rowid, title, authors) VALUES (?, ?, ?)",
-				bookID, externalTitle, externalAuthor,
-			)
-			if err != nil {
-				log.Printf("Warning: failed to insert into books_fts: %v", err)
-			}
+			// The FTS index is maintained automatically by the books_fts_ai
+			// trigger (migrations/00017_books_fts_triggers.sql); no manual
+			// books_fts write is needed here.
 		} else {
 			// Use the existing book_id from the form
 			bookIDStr := strings.TrimSpace(r.FormValue("book_id"))

@@ -8,6 +8,7 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"github.com/Toph4er/family-library/internal/db"
+	"github.com/Toph4er/family-library/internal/handlers/pages"
 	"github.com/Toph4er/family-library/internal/models"
 )
 
@@ -245,6 +246,10 @@ func (r *sqliteBookRepository) UpdatePartial(ctx context.Context, id int64, inpu
 
 // List returns books with optional filtering and pagination.
 // Uses FTS5 for full-text search when a filter is provided.
+//
+// NOTE: no callers — verify before removing. The FTS MATCH query is sanitized
+// with pages.SafeFTS5Query so raw user input can't produce an FTS5 syntax error
+// (consistent with the live handlers in internal/handlers/pages).
 func (r *sqliteBookRepository) List(ctx context.Context, filter string, page, perPage int) ([]models.Book, int, error) {
 	if page < 1 {
 		page = 1
@@ -258,14 +263,18 @@ func (r *sqliteBookRepository) List(ctx context.Context, filter string, page, pe
 	var books []models.Book
 
 	if filter != "" {
-		// FTS5 search — join back to books table for ORDER BY title.
-		countQuery := `SELECT COUNT(*) FROM books_fts JOIN books ON books_fts.rowid = books.id WHERE books_fts MATCH ?`
-		if err := r.db.QueryRowContext(ctx, countQuery, filter).Scan(&total); err != nil {
+		// FTS5 search. Select from books (single table, so db.BookColumns'
+		// unqualified names stay unambiguous) and restrict to ids that match
+		// the FTS index. Sanitize the user query so raw FTS5 syntax can't
+		// break the MATCH expression.
+		safeFilter := pages.SafeFTS5Query(filter)
+		countQuery := `SELECT COUNT(*) FROM books WHERE id IN (SELECT rowid FROM books_fts WHERE books_fts MATCH ?)`
+		if err := r.db.QueryRowContext(ctx, countQuery, safeFilter).Scan(&total); err != nil {
 			return nil, 0, fmt.Errorf("count search results: %w", err)
 		}
 
-		dataQuery := `SELECT ` + db.BookColumns + ` FROM books_fts JOIN books ON books_fts.rowid = books.id WHERE books_fts MATCH ? ORDER BY books.title ASC LIMIT ? OFFSET ?` // #nosec G202 -- BookColumns is a constant
-		if err := r.db.SelectContext(ctx, &books, dataQuery, filter, perPage, offset); err != nil {
+		dataQuery := `SELECT ` + db.BookColumns + ` FROM books WHERE id IN (SELECT rowid FROM books_fts WHERE books_fts MATCH ?) ORDER BY books.title ASC LIMIT ? OFFSET ?` // #nosec G202 -- BookColumns is a constant
+		if err := r.db.SelectContext(ctx, &books, dataQuery, safeFilter, perPage, offset); err != nil {
 			return nil, 0, fmt.Errorf("search books: %w", err)
 		}
 	} else {
@@ -286,6 +295,10 @@ func (r *sqliteBookRepository) List(ctx context.Context, filter string, page, pe
 // The query is matched against title, authors, isbn, genres, themes, awards,
 // and reading_levels. If fields are specified, they are used as column
 // filters (e.g., "title:term" searches only the title column).
+//
+// NOTE: no callers — verify before removing. The FTS MATCH query is sanitized
+// with pages.SafeFTS5Query so raw user input can't produce an FTS5 syntax error
+// (consistent with the live handlers in internal/handlers/pages).
 func (r *sqliteBookRepository) Search(ctx context.Context, query string, fields []string, page, perPage int) ([]models.Book, int, error) {
 	if page < 1 {
 		page = 1
@@ -299,19 +312,23 @@ func (r *sqliteBookRepository) Search(ctx context.Context, query string, fields 
 		return r.List(ctx, "", page, perPage)
 	}
 
-	// Build an FTS5 query that restricts to specified fields if given.
-	ftsQuery := query
+	// Sanitize the user query so raw FTS5 syntax can't break the MATCH
+	// expression, then optionally restrict it to the given columns.
+	safeQuery := pages.SafeFTS5Query(query)
+	ftsQuery := safeQuery
 	if len(fields) > 0 {
 		// Use FTS5 column filters: "field1:term OR field2:term"
 		var clauses []string
 		for _, field := range fields {
-			clauses = append(clauses, field+":"+query)
+			clauses = append(clauses, field+":"+safeQuery)
 		}
 		ftsQuery = strings.Join(clauses, " OR ")
 	}
 
-	countQuery := `SELECT COUNT(*) FROM books_fts JOIN books ON books_fts.rowid = books.id WHERE books_fts MATCH ?`
-	dataQuery := `SELECT ` + db.BookColumns + ` FROM books_fts JOIN books ON books_fts.rowid = books.id WHERE books_fts MATCH ? ORDER BY books.title ASC LIMIT ? OFFSET ?` // #nosec G202 -- BookColumns is a constant
+	// Select from books (single table) so db.BookColumns' unqualified names
+	// stay unambiguous, restricting to ids that match the FTS index.
+	countQuery := `SELECT COUNT(*) FROM books WHERE id IN (SELECT rowid FROM books_fts WHERE books_fts MATCH ?)`
+	dataQuery := `SELECT ` + db.BookColumns + ` FROM books WHERE id IN (SELECT rowid FROM books_fts WHERE books_fts MATCH ?) ORDER BY books.title ASC LIMIT ? OFFSET ?` // #nosec G202 -- BookColumns is a constant
 
 	var total int
 	if err := r.db.QueryRowContext(ctx, countQuery, ftsQuery).Scan(&total); err != nil {
