@@ -12,18 +12,31 @@
 -- Standard FTS5 external-content pattern: three triggers maintain the index,
 -- and a final 'rebuild' command back-fills rows that were written before the
 -- triggers existed (the existing production gap).
+--
+-- NOTE: goose's SQL parser is line-based and splits on ';' — it cannot see
+-- CREATE TRIGGER … BEGIN … END bodies. Without the StatementBegin/StatementEnd
+-- annotations below, the first statement goose executes is an unclosed
+-- 'CREATE TRIGGER … BEGIN … VALUES (…);' which SQLite rejects with
+-- "incomplete input" and aborts the migration (and the server boot).
+-- Do not remove the annotations.
+
+-- +goose StatementBegin
 CREATE TRIGGER books_fts_ai AFTER INSERT ON books
 BEGIN
     INSERT INTO books_fts(rowid, title, authors, isbn, genres, themes, awards, reading_levels)
     VALUES (new.id, new.title, new.authors, new.isbn, new.genres, new.themes, new.awards, new.reading_levels);
 END;
+-- +goose StatementEnd
 
+-- +goose StatementBegin
 CREATE TRIGGER books_fts_ad AFTER DELETE ON books
 BEGIN
     INSERT INTO books_fts(books_fts, rowid, title, authors, isbn, genres, themes, awards, reading_levels)
     VALUES ('delete', old.id, old.title, old.authors, old.isbn, old.genres, old.themes, old.awards, old.reading_levels);
 END;
+-- +goose StatementEnd
 
+-- +goose StatementBegin
 CREATE TRIGGER books_fts_au AFTER UPDATE ON books
 BEGIN
     INSERT INTO books_fts(books_fts, rowid, title, authors, isbn, genres, themes, awards, reading_levels)
@@ -31,6 +44,7 @@ BEGIN
     INSERT INTO books_fts(rowid, title, authors, isbn, genres, themes, awards, reading_levels)
     VALUES (new.id, new.title, new.authors, new.isbn, new.genres, new.themes, new.awards, new.reading_levels);
 END;
+-- +goose StatementEnd
 
 -- Back-fill the FTS index from the content table so books written before
 -- these triggers existed become searchable.
