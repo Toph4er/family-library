@@ -26,6 +26,7 @@
       hx-get="/reading-logs/book-selector"
       hx-target="body"
       hx-swap="beforeend"
+      hx-on:click="var m=document.getElementById('modal-backdrop'); if(m) m.remove();"
       hx-on::after-request="htmx.process(document.getElementById('modal-backdrop'))"
       class="px-6 py-3 rounded-xl font-medium text-white shadow-sm text-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 bg-primary"
       aria-label="Log a new reading session"
