@@ -1,0 +1,37 @@
+# compose.local.yaml — self-host quickstart (no reverse proxy needed)
+#
+#   cp .env.example .env        # then fill in the 4 required secrets
+#   docker compose -f compose.local.yaml up -d
+#   → http://localhost:8080     # or http://localhost:${HOST_PORT}
+#
+# The container always listens on 8080 internally (image healthcheck +
+# EXPOSE are pinned to it); HOST_PORT controls the port published on your
+# host. VIRTUAL_HOST / LETSENCRYPT_HOST / HTTPS_METHOD in .env are
+# intentionally ignored here — they only matter for the reverse-proxy
+# setup (see compose.yaml).
+services:
+  library:
+    image: ghcr.io/toph4er/family-library:latest
+    build:
+      context: .
+    container_name: library
+    ports:
+      - "${HOST_PORT:-8080}:8080"
+    environment:
+      - PORT=8080
+      - DATABASE_PATH=/app/data/library.db
+      - ADMIN_USERNAME=${ADMIN_USERNAME}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - GUEST_PASSWORD=${GUEST_PASSWORD}
+      # Set ENV=production if you front it with TLS to enable Secure cookies.
+      - ENV=${ENV:-development}
+      - CORS_ORIGIN=${CORS_ORIGIN:-}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - TZ=${TZ:-America/New_York}
+    volumes:
+      - library-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  library-data:

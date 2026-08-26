@@ -113,7 +113,7 @@ The Dockerfile uses a three-stage build:
 | `ADMIN_USERNAME` | No | Initial admin username (seeded on first run) |
 | `ADMIN_PASSWORD` | No | Initial admin password (seeded on first run) |
 | `GUEST_PASSWORD` | No | Shared guest password (stored hashed in settings) |
-| `PORT` | No | Server port (default: `8080`) |
+| `HOST_PORT` | No | Host port published by `compose.local.yaml` (default: `8080`) — the app always listens on `8080` inside the container |
 | `DATABASE_PATH` | No | SQLite database path (default: `/app/data/library.db`) |
 | `LOG_LEVEL` | No | Logging level: `debug`, `info`, `warn`, `error` (default: `info`) |
 | `CORS_ORIGIN` | No | Allowed CORS origin (default: `https://example.com`) |
@@ -149,9 +149,33 @@ docker compose up -d
 
 No CI/CD pipeline is required for self-hosting. The included `.gitlab-ci.yml` is only for the author's automated deployment.
 
+## Local Quickstart (no reverse proxy)
+
+The fastest way to try it — no domain, no nginx-proxy, no TLS. If you just want direct access on your own machine, stop here:
+
+```bash
+# Clone the repository
+git clone https://github.com/Toph4er/family-library.git
+cd family-library
+
+# Copy the environment file and fill in the 4 required values
+cp .env.example .env
+# Edit .env: ADMIN_USERNAME, ADMIN_PASSWORD, GUEST_PASSWORD, and
+# SESSION_SECRET — the one that's a boot trap: the server refuses to
+# start without it, and it must be 32+ random characters.
+# `openssl rand -hex 32` generates a valid one (hint is in .env.example).
+
+# Start the app
+docker compose -f compose.local.yaml up -d
+```
+
+Then open <http://localhost:8080> — or `http://localhost:${HOST_PORT}` if you changed `HOST_PORT` in `.env`.
+
+On first start, Compose pulls the public `ghcr.io/toph4er/family-library:latest` image; if the pull is unavailable it builds from source (the compose file carries both an `image:` and a `build:` entry).
+
 ## Reverse Proxy & SSL
 
-This project is designed to run behind [nginx-proxy](https://github.com/nginx-proxy/nginx-proxy) and [acme-companion](https://github.com/nginx-proxy/acme-companion) for automatic reverse proxying and SSL certificate management.
+This project is designed to run behind [nginx-proxy](https://github.com/nginx-proxy/nginx-proxy) and [acme-companion](https://github.com/nginx-proxy/acme-companion) for automatic reverse proxying and SSL certificate management. (For direct access without a domain, use the [Local Quickstart](#local-quickstart-no-reverse-proxy) above instead.)
 
 ### Requirements
 
