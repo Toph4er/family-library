@@ -18,6 +18,17 @@ A self-hosted web application for tracking and managing a child's book collectio
 - **RESTful API** — Full JSON API under `/api/v1` for programmatic access
 - **Security** — CSRF protection, rate limiting, HSTS, CSP with nonces, and per-IP request throttling
 
+## Screenshots
+
+### Landing Page
+![Landing Page](screenshots/library-landing.png)
+
+### Dashboard
+![Dashboard](screenshots/library-dashboard.png)
+
+### Book Collection
+![Book Collection](screenshots/library-book-view.png)
+
 ## Tech Stack
 
 - **Backend:** Go 1.26 + chi router + SQLite
@@ -146,6 +157,7 @@ This project is designed to run behind [nginx-proxy](https://github.com/nginx-pr
 
 1. **nginx-proxy** and **acme-companion** must be running on the same Docker network (named `reverse-proxy` by default)
 2. The `reverse-proxy` network must be created as an **external** network (the compose file references `external: true`)
+3. You must have a domain name (or subdomain) and point DNS records at the nginx-proxy (use a port forward through firewall, Cloudflared tunnel, or other method to expose it to the Internet)
 
 ### Setup
 
@@ -186,17 +198,6 @@ You can use any reverse proxy (Traefik, Caddy, manual nginx, etc.) instead. Just
 - The `CORS_ORIGIN` variable matches your domain
 - The `ENV` variable is set to `production` (enables Secure cookie flag)
 
-## Screenshots
-
-### Landing Page
-![Landing Page](screenshots/library-landing.png)
-
-### Dashboard
-![Dashboard](screenshots/library-dashboard.png)
-
-### Book Collection
-![Book Collection](screenshots/library-book-view.png)
-
 ## CI/CD Pipeline
 
 A GitLab CI pipeline is included (`.gitlab-ci.yml`) for automated testing, building, and deployment. It is **not required** for self-hosting — see the Docker instructions above.
@@ -205,6 +206,10 @@ A GitLab CI pipeline is included (`.gitlab-ci.yml`) for automated testing, build
 2. **Build** — Multi-stage Docker build and push to registry
 3. **Security** — Trivy filesystem scan, `gosec` static analysis, `golangci-lint`
 4. **Deploy** — Pull latest image, start container, health check, and automatic rollback on failure
+
+## Disclosures
+
+Please review [DISCLOSURES.md](DISCLOSURES.md) for information about AI/LLM usage, third-party integrations, data privacy, and contributor disclosure requirements.
 
 ## License
 
