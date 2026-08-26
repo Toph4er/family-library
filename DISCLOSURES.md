@@ -22,7 +22,7 @@ When you spin this project up for yourself, it creates a new unique-to-you datab
 
 # Contribution Disclosure Requirements
 
-Contributors are welcome to use LLM tools for Pull Requests (PR). You are expected to use good discretion and personally validate functionality BEFORE submitting your PR. All PRs will be reviewed by the maintainer before merging into `main`.
+[Contributors](CONTRIBUTING.md) are welcome to use LLM tools for Pull Requests (PR). You are expected to use good discretion and personally validate functionality BEFORE submitting your PR. All PRs will be reviewed by the maintainer before merging into `main`.
 
 **Contributors MUST disclose any AI/LLM usage in the PR including the models used, whether they are local or cloud hosted, and provide an attestation of Human review.**
 

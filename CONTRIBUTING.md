@@ -42,6 +42,10 @@ golangci-lint run ./...
 3. Keep `golangci-lint run ./...`, `go vet ./...`, and `go test ./...` green.
 4. Reference the issue in your PR and include a short summary of what changed and why.
 
+## AI contributions
+
+AI contribution permitted - see [DISCLOSURES.md](DISCLOSURES.md) for details and requirements.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
