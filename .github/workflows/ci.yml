@@ -137,11 +137,7 @@ jobs:
         run: gosec -exclude-generated -exclude=G104 ./...
 
   # ---- Stage: security (was: golangci-lint) ----
-  # KNOWN ISSUE: the repo's .golangci.yml is v1-format, but golangci-lint v2
-  # (used below, and now also `@latest` on GitLab) refuses to load it:
-  #   "can't load config: unsupported version of the configuration"
-  # Fix (one-time, outside .github/): run `golangci-lint migrate` and commit
-  # the migrated .golangci.yml. See CI report of 2026-08-26 for details.
+  # .golangci.yml is v2-format (migrated 2026-08-26); golangci-lint-action@v9 v2.12 passes.
   golangci-lint:
     name: golangci-lint
     runs-on: ubuntu-latest
