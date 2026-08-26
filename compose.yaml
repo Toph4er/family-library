@@ -1,6 +1,8 @@
 services:
   library:
-    image: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA:-latest}
+    image: ${CI_REGISTRY_IMAGE:-ghcr.io/toph4er/family-library}:${CI_COMMIT_SHORT_SHA:-latest}
+    build:
+      context: .
     container_name: library
     hostname: example.com
     environment:
@@ -14,6 +16,7 @@ services:
       - SESSION_SECRET=${SESSION_SECRET}
       - GUEST_PASSWORD=${GUEST_PASSWORD}
       - LOG_LEVEL=${LOG_LEVEL:-info}
+      - TZ=${TZ:-America/New_York}
     volumes:
       - library-data:/app/data
     networks:

@@ -43,7 +43,7 @@ family-library/
 │   └── web/                # HTML templates, CSS, and static assets
 │       ├── partials/       # Reusable template fragments (book cards, pagination, modals, etc.)
 │       └── styles.css      # Tailwind source CSS (compiled to tailwind.css by build)
-├── migrations/             # SQL migration files (14 migrations, applied with goose)
+├── migrations/             # SQL migration files (17 migrations, applied with goose)
 ├── tests/                  # Integration tests (auth, books, settings, wishlist, HTML handlers)
 ├── .dockerignore           # Docker build exclusions
 ├── Dockerfile              # Multi-stage build (CSS builder → Go binary → Alpine runtime)
@@ -86,6 +86,8 @@ cp .env.example .env
 # 2. Build and run with Docker Compose
 docker compose up -d
 ```
+
+The compose file defaults to pulling `ghcr.io/toph4er/family-library:latest`. Pulling a public GHCR package requires a one-time `docker login ghcr.io` (any GitHub token works). If you'd rather not log in, compose will build the image from source instead (it has a `build:` section alongside the `image:` line).
 
 The Dockerfile uses a three-stage build:
 1. **CSS builder** — installs Node.js dependencies and compiles Tailwind CSS

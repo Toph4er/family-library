@@ -1,0 +1,161 @@
+# CI — GitHub Actions port of the GitLab pipeline (.gitlab-ci.yml)
+# Mirrors GitLab stages: test -> build -> security.
+# The GitLab `deploy` stage is intentionally NOT ported (build/test/security only).
+#
+# Triggers mirror the GitLab rules "main or MR":
+#   - push to main
+#   - any pull request
+#
+# No deploy job. No secrets beyond the automatic GITHUB_TOKEN (used only for
+# the GHCR push on main).
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Default: read-only. The docker-build job escalates to packages:write for GHCR.
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---- Stage: test (was: backend-test) ----
+  test:
+    name: backend-test (vet + test + 15% coverage gate)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.26'
+      - name: go mod download (retry x3, as in GitLab pipeline)
+        run: |
+          for i in 1 2 3; do
+            go mod download && break
+            echo "go mod download attempt $i failed, retrying..."
+            sleep $((i * 5))
+          done
+      - name: go vet
+        run: go vet ./...
+      - name: go test with coverage
+        run: go test -coverpkg=github.com/Toph4er/family-library/... ./... -coverprofile=coverage.out
+      - name: Coverage report + 15% gate (awk instead of bc)
+        run: |
+          go tool cover -func=coverage.out
+          TOTAL_COV=$(go tool cover -func=coverage.out | grep "total:" | awk '{print $3}' | sed 's/%//')
+          if ! awk -v c="$TOTAL_COV" 'BEGIN { exit (c < 15) ? 1 : 0 }'; then
+            echo "Coverage ${TOTAL_COV}% is below the 15% threshold"
+            exit 1
+          fi
+          echo "Coverage ${TOTAL_COV}% meets the 15% threshold"
+      - name: Upload coverage.out
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage
+          path: coverage.out
+          retention-days: 14
+
+  # ---- Stage: build (was: docker-build) ----
+  # Builds on every run; pushes to GHCR only on push to main (not on PRs).
+  docker-build:
+    name: docker-build (GHCR push on main)
+    runs-on: ubuntu-latest
+    needs: test
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v6
+      # NOTE: docker is preinstalled on hosted ubuntu-latest runners; this step
+      # is belt-and-braces for the daemon. If the tag resolves wrong, delete it.
+      - name: Set up Docker
+        uses: docker/setup-docker@v4
+      - name: Compute short SHA (mirrors $CI_COMMIT_SHORT_SHA)
+        id: sha
+        run: echo "short=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Log in to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and (on main) push
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: |
+            ghcr.io/toph4er/family-library:latest
+            ghcr.io/toph4er/family-library:${{ steps.sha.outputs.short }}
+
+  # ---- Stage: security (was: trivy-scan) ----
+  trivy:
+    name: trivy (fs vuln scan, fail on HIGH/CRITICAL)
+    runs-on: ubuntu-latest
+    needs: test
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install trivy (same installer as the GitLab job)
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+            | sh -s -- -b /usr/local/bin
+      - name: Scan
+        run: trivy fs --scanners vuln --exit-code 1 --severity HIGH,CRITICAL .
+
+  # ---- Stage: security (was: gosec) ----
+  gosec:
+    name: gosec
+    runs-on: ubuntu-latest
+    needs: test
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.26'
+      - name: Install gosec (pinned, same version as the GitLab job)
+        run: go install github.com/securego/gosec/v2/cmd/gosec@v2.26.1
+      - name: go mod download (retry x3)
+        run: |
+          for i in 1 2 3; do
+            go mod download && break
+            echo "go mod download attempt $i failed, retrying..."
+            sleep $((i * 5))
+          done
+      - name: Run gosec
+        run: gosec -exclude-generated -exclude=G104 ./...
+
+  # ---- Stage: security (was: golangci-lint) ----
+  # KNOWN ISSUE: the repo's .golangci.yml is v1-format, but golangci-lint v2
+  # (used below, and now also `@latest` on GitLab) refuses to load it:
+  #   "can't load config: unsupported version of the configuration"
+  # Fix (one-time, outside .github/): run `golangci-lint migrate` and commit
+  # the migrated .golangci.yml. See CI report of 2026-08-26 for details.
+  golangci-lint:
+    name: golangci-lint
+    runs-on: ubuntu-latest
+    needs: test
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.26'
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.12
+          args: ./...

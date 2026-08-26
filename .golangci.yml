@@ -1,43 +1,49 @@
-run:
-  timeout: 5m
-
+version: "2"
 linters:
   enable:
-    - errcheck
-    - gosimple
-    - govet
-    - ineffassign
-    - staticcheck
-    - unused
-    - gofmt
-    - goimports
     - misspell
     - revive
     - unconvert
-
-linters-settings:
-  revive:
+  settings:
+    revive:
+      rules:
+        - name: package-comments
+          disabled: true
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
     rules:
-      - name: package-comments
-        disabled: true
-
+      - linters:
+          - errcheck
+          - govet
+          - revive
+          - unconvert
+        path: _test\.go
+      - linters:
+          - dupl
+        path: tests/
+      - linters:
+          - staticcheck
+        path: _test\.go
+        text: 'SA1019:'
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 issues:
-  exclude-rules:
-    # Exclude some linters from running on tests
-    - path: _test\.go
-      linters:
-        - govet
-        - revive
-        - errcheck
-        - unconvert
-    # Exclude duplicate code in test files
-    - path: tests/
-      linters:
-        - dupl
-    # Deprecated handlers kept for test compatibility
-    - path: _test\.go
-      linters:
-        - staticcheck
-      text: "SA1019:"
   max-issues-per-linter: 50
   max-same-issues: 10
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

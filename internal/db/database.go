@@ -27,7 +27,7 @@ func Open(path string) (*sqlx.DB, error) {
 
 	// Enable Write-Ahead Logging for better concurrent read performance
 	// and safer backup behavior.
-	if _, err := database.DB.Exec("PRAGMA journal_mode = WAL"); err != nil {
+	if _, err := database.Exec("PRAGMA journal_mode = WAL"); err != nil {
 		database.Close() // #nosec G104 — cleanup on error path, primary error is returned
 		return nil, err
 	}
@@ -35,13 +35,13 @@ func Open(path string) (*sqlx.DB, error) {
 	// Set busy timeout to 10 seconds. This tells SQLite how long to wait
 	// before returning a "database is locked" error when another connection
 	// holds a write lock.
-	if _, err := database.DB.Exec("PRAGMA busy_timeout = 10000"); err != nil {
+	if _, err := database.Exec("PRAGMA busy_timeout = 10000"); err != nil {
 		database.Close() // #nosec G104 — cleanup on error path, primary error is returned
 		return nil, err
 	}
 
 	// Enable foreign key enforcement (disabled by default in SQLite).
-	if _, err := database.DB.Exec("PRAGMA foreign_keys = ON"); err != nil {
+	if _, err := database.Exec("PRAGMA foreign_keys = ON"); err != nil {
 		database.Close() // #nosec G104 — cleanup on error path, primary error is returned
 		return nil, err
 	}

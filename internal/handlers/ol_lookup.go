@@ -248,7 +248,7 @@ func olRequestWithRetry(ctx context.Context, url string, maxRetries int) ([]byte
 
 		resp, err := apiHTTPClient.Do(req) // #nosec G704 — OL API endpoint
 		if err != nil {
-			lastErr = fmt.Errorf("Open Library HTTP request: %w", err)
+			lastErr = fmt.Errorf("open library http request: %w", err)
 			lastStatus = 0
 			continue
 		}
@@ -277,7 +277,7 @@ func olRequestWithRetry(ctx context.Context, url string, maxRetries int) ([]byte
 			}
 		}
 
-		lastErr = fmt.Errorf("Open Library returned status %d", resp.StatusCode)
+		lastErr = fmt.Errorf("open library returned status %d", resp.StatusCode)
 	}
 
 	if lastStatus != http.StatusOK {
@@ -287,7 +287,7 @@ func olRequestWithRetry(ctx context.Context, url string, maxRetries int) ([]byte
 	}
 
 	if lastErr == nil {
-		lastErr = fmt.Errorf("Open Library request failed after %d attempts", maxRetries+1)
+		lastErr = fmt.Errorf("open library request failed after %d attempts", maxRetries+1)
 	}
 	return body, lastStatus, lastErr
 }
@@ -338,14 +338,14 @@ func fetchFromOpenLibrary(isbn string) (*models.Book, string, error) {
 	u := fmt.Sprintf("%s/isbn/%s.json", olConfig.BaseURL, url.PathEscape(isbn))
 	body, statusCode, err := olRequestWithRetry(context.Background(), u, 2)
 	if err != nil {
-		return nil, "", fmt.Errorf("Open Library request failed after retries: %w", err)
+		return nil, "", fmt.Errorf("open library request failed after retries: %w", err)
 	}
 
 	if statusCode == http.StatusNotFound {
 		return nil, "", nil
 	}
 	if statusCode != http.StatusOK {
-		return nil, "", fmt.Errorf("Open Library returned status %d", statusCode)
+		return nil, "", fmt.Errorf("open library returned status %d", statusCode)
 	}
 
 	var olResp map[string]interface{}

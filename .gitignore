@@ -22,6 +22,12 @@ Thumbs.db
 # Build artifacts
 coverage/
 .coverage
+coverage.out
+
+# Local data & databases
+*.db
+library.db
+data/
 
 # Node
 node_modules/
