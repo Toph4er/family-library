@@ -75,10 +75,6 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v6
-      # NOTE: docker is preinstalled on hosted ubuntu-latest runners; this step
-      # is belt-and-braces for the daemon. If the tag resolves wrong, delete it.
-      - name: Set up Docker
-        uses: docker/setup-docker@v4
       - name: Compute short SHA (mirrors $CI_COMMIT_SHORT_SHA)
         id: sha
         run: echo "short=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
@@ -106,10 +102,13 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
-      - name: Install trivy (same installer as the GitLab job)
+      - name: Install Trivy (pinned v0.74.0)
         run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
-            | sh -s -- -b /usr/local/bin
+          curl -sfL --retry 5 --retry-delay 3 --retry-all-errors \
+            -o /tmp/trivy.tar.gz \
+            https://github.com/aquasecurity/trivy/releases/download/v0.74.0/trivy_0.74.0_Linux-64bit.tar.gz
+          tar -xzf /tmp/trivy.tar.gz -C /usr/local/bin trivy
+          trivy --version
       - name: Scan
         run: trivy fs --scanners vuln --exit-code 1 --severity HIGH,CRITICAL .
 
