@@ -65,7 +65,8 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 		users := make([]map[string]interface{}, 0)
 		for userRows.Next() {
 			var id int64
-			var username, role, displayName, createdAt string
+			var username, role, createdAt string
+			var displayName *string
 			if err := userRows.Scan(&id, &username, &role, &displayName, &createdAt); err != nil {
 				renderHTMXError(w, r, http.StatusInternalServerError)
 				return
@@ -74,7 +75,7 @@ func RenderSettingsPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 				"id":           id,
 				"username":     username,
 				"role":         role,
-				"display_name": displayName,
+				"display_name": derefString(displayName),
 				"created_at":   createdAt,
 			})
 		}

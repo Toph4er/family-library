@@ -239,8 +239,8 @@ func (a *Auth) SeedAdminUser(username, password string) error {
 	}
 
 	_, err = a.db.Exec(
-		"INSERT INTO users (username, password_hash, role) VALUES (?, ?, 'admin')",
-		username, hash,
+		"INSERT INTO users (username, password_hash, role, display_name) VALUES (?, ?, 'admin', ?)",
+		username, hash, username,
 	)
 	return err
 }
