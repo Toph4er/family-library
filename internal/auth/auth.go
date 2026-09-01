@@ -245,21 +245,13 @@ func (a *Auth) SeedAdminUser(username, password string) error {
 	return err
 }
 
-// SeedGuestPassword sets the initial guest password
+// SeedGuestPassword applies the guest password from the GUEST_PASSWORD
+// environment variable. The env var is the single source of truth: it is
+// (re-)applied on every container start, so rotating the password means
+// updating the env and restarting. There is intentionally no in-app editor
+// for this setting; generic settings updates to guest_password_hash are
+// blocked (see pages.SensitiveKeys).
 func (a *Auth) SeedGuestPassword(password string) error {
-	hash, err := HashPassword(password)
-	if err != nil {
-		return err
-	}
-	_, err = a.db.Exec(
-		"UPDATE settings SET value = ? WHERE key = 'guest_password_hash'",
-		hash,
-	)
-	return err
-}
-
-// UpdateGuestPassword updates the guest password
-func (a *Auth) UpdateGuestPassword(password string) error {
 	hash, err := HashPassword(password)
 	if err != nil {
 		return err

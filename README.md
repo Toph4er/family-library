@@ -112,7 +112,7 @@ The Dockerfile uses a three-stage build:
 | `SESSION_SECRET` | Yes | Secret key for session signing (32+ random chars) |
 | `ADMIN_USERNAME` | No | Initial admin username (seeded on first run) |
 | `ADMIN_PASSWORD` | No | Initial admin password (seeded on first run) |
-| `GUEST_PASSWORD` | No | Shared guest password (stored hashed in settings) |
+| `GUEST_PASSWORD` | No | Shared guest password (stored hashed in settings). Configured **only** via this env var — there is no in-app editor; it is re-applied from the environment on every container start, so change it by updating `.env` and restarting |
 | `HOST_PORT` | No | Host port published by `compose.local.yaml` (default: `8080`) — the app always listens on `8080` inside the container |
 | `DATABASE_PATH` | No | SQLite database path (default: `/app/data/library.db`) |
 | `LOG_LEVEL` | No | Logging level: `debug`, `info`, `warn`, `error` (default: `info`) |
