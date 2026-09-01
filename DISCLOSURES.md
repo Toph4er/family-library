@@ -14,7 +14,7 @@ This project leverages the [Open Library API](https://openlibrary.org/developers
 
 # Data Privacy
 
-Every effort has been taken by the maintainer, [@Toph4er](https://github.com/Toph4er), to ensure this project respects YOUR data privacy and sovereignty. This project includes zero telemetry or analytics tracking beyond what GitHub tracks by default for downloads, contributions, etc. You have the right to fully inspect the code base and verify these claims. If you do discover any violations of this assertion, please [file an Issue](https://github.com/Toph4er/family-library/issues) report with the details immediately.
+Every effort has been taken by the maintainer, [@Toph4er](https://github.com/Toph4er), to ensure this project respects YOUR data privacy and sovereignty. This project includes zero telemetry or analytics tracking beyond what GitHub tracks by default for downloads, contributions, etc. You have the right to fully inspect the code base and verify these claims. If you do discover any violations of this assertion, please [file an Issue](https://github.com/Toph4er/family-library/issues) report with the details immediately. See [SECURITY.md](SECURITY.md) for sensitive vulnerability reporting guidance.
 
 When you spin this project up for yourself, it creates a new unique-to-you database instance that you alone control. If you decide to make contributions back to the project, please take care to practice good `.gitignore` hygiene to not leak your own data.
 
