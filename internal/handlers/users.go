@@ -221,6 +221,7 @@ func HTMLUpdateUserHandler(db *sql.DB) http.HandlerFunc {
 
 		displayName := r.FormValue("display_name")
 		role := r.FormValue("role")
+		password := r.FormValue("password")
 
 		var fields []updateField
 		if displayName != "" {
@@ -228,6 +229,17 @@ func HTMLUpdateUserHandler(db *sql.DB) http.HandlerFunc {
 		}
 		if role != "" {
 			fields = append(fields, updateField{column: "role", value: role})
+		}
+		if password != "" {
+			// A non-blank password means "set a new password"; a blank one means
+			// "keep current" (matches the "(leave blank to keep current)" label in
+			// the edit modal). Hashing is identical to the create path.
+			hash, err := auth.HashPassword(password)
+			if err != nil {
+				HTMXErrorResponse(w, r, http.StatusInternalServerError, "Failed to hash password")
+				return
+			}
+			fields = append(fields, updateField{column: "password_hash", value: hash})
 		}
 
 		if len(fields) == 0 {

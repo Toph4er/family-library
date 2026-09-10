@@ -32,7 +32,24 @@ func NewRouter(database *sqlx.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Ha
 
 	// -- Standard chi middleware --
 	r.Use(chimiddleware.RequestID)
-	r.Use(chimiddleware.RealIP)
+	// H1 fix + per-visitor keying: chi v5.3.x DEPRECATED RealIP — it mutates
+	// r.RemoteAddr from attacker-controlled True-Client-IP / X-Real-IP /
+	// X-Forwarded-For, which let an attacker reset the login rate limiter
+	// (spoofed IP) and poison logs (see GO-2026-5777/5775/5774, GHSA-3fxj-6jh8-hvhx /
+	// GHSA-rjr7-jggh-pgcp / GHSA-9g5q-2w5x-hmxf).
+	//
+	// The topology is confirmed (client → Cloudflare → cloudflared → nginx →
+	// library) and nginx forwards CF-Connecting-IP — the real visitor IP that
+	// Cloudflare sets. ClientIPFromHeader is chi's safe replacement when you
+	// trust exactly one header: it stores that header's value in the request
+	// context (read via chi middleware GetClientIP) and reads NO other client
+	// header, so r.RemoteAddr is never mutated and X-Real-IP / True-Client-IP /
+	// X-Forwarded-For are ignored. This is safe because Cloudflare
+	// unconditionally overwrites CF-Connecting-IP itself. If the header is
+	// absent (a request that did not come through Cloudflare/nginx), ClientIP()
+	// falls back gracefully to the host part of r.RemoteAddr — the TCP peer —
+	// which is still non-spoofable.
+	r.Use(chimiddleware.ClientIPFromHeader("CF-Connecting-IP"))
 	r.Use(chimiddleware.Recoverer)
 
 	// -- Custom middleware --

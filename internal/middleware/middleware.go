@@ -7,10 +7,12 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"log/slog"
+	"net"
 	"net/http"
 	"sync"
 	"time"
 
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"golang.org/x/time/rate"
 )
 
@@ -106,7 +108,7 @@ func RequestLogger(next http.Handler) http.Handler {
 			"method", r.Method,
 			"path", r.URL.Path,
 			"query", r.URL.RawQuery,
-			"remote_addr", r.RemoteAddr,
+			"remote_addr", ClientIP(r),
 			"status", wrapped.status,
 			"duration", duration.String(),
 			"request_id", r.Context().Value("request.id"),
@@ -203,6 +205,30 @@ func (s *rateLimiterStore) getLimiter(ip string, strict bool) *rate.Limiter {
 	return limiter
 }
 
+// ClientIP returns the trusted client IP for the request. It reads the value
+// stored by chi's ClientIPFromHeader("CF-Connecting-IP") middleware — the real
+// visitor IP that Cloudflare sets (it unconditionally overwrites the header)
+// and nginx forwards to us. If that middleware is not in the chain (e.g. in
+// unit tests) or the CF-Connecting-IP header is absent, it falls back to the
+// host part of r.RemoteAddr — the TCP peer — which is network-set and not
+// attacker-controllable per-request.
+//
+// This is deliberately NOT derived from any other client-supplied header
+// (X-Forwarded-For, X-Real-IP, True-Client-IP). chi's legacy RealIP middleware
+// trusted those headers and rewrote r.RemoteAddr, letting an attacker reset
+// this limiter per request (CVE GO-2026-5774/5775/5777). See the comment in
+// internal/api/router.go for the topology and trust rationale.
+func ClientIP(r *http.Request) string {
+	if ip := chimiddleware.GetClientIP(r.Context()); ip != "" {
+		return ip
+	}
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return r.RemoteAddr
+	}
+	return host
+}
+
 // RateLimiter enforces per-IP rate limiting on API and auth requests.
 //
 // Auth endpoints (/api/v1/auth/* and /auth/login, /auth/guest-login) are
@@ -223,7 +249,9 @@ func RateLimiter(next http.Handler) http.Handler {
 
 		if isAuth {
 			// Auth endpoints get the stricter limit regardless of prefix.
-			limiter := limiterStore.getLimiter(r.RemoteAddr, true)
+			// Key on the trusted TCP peer (ClientIP), never on r.RemoteAddr or
+			// any client header — see ClientIP for why.
+			limiter := limiterStore.getLimiter(ClientIP(r), true)
 			if !limiter.Allow() {
 				writeRateLimitResponse(w, r)
 				return
@@ -239,7 +267,8 @@ func RateLimiter(next http.Handler) http.Handler {
 		}
 
 		strict := isAPIAuth
-		limiter := limiterStore.getLimiter(r.RemoteAddr, strict)
+		// Same trusted-IP key as the auth path above (see ClientIP).
+		limiter := limiterStore.getLimiter(ClientIP(r), strict)
 
 		if !limiter.Allow() {
 			writeRateLimitResponse(w, r)

@@ -704,6 +704,128 @@ func TestHTMLCreateUserHandler_DuplicateUsername(t *testing.T) {
 	}
 }
 
+// ---------- HTML Update User Handler (password change, H3) ----------
+
+// TestHTMLUpdateUserHandler_PasswordOnly verifies that a password-only update
+// (display_name and role blank, password set) actually updates password_hash:
+// the new password passes auth.CheckPassword and the old one fails. This is
+// the regression test for the H3 "password-change silent no-op" finding.
+func TestHTMLUpdateUserHandler_PasswordOnly(t *testing.T) {
+	env := setupTestEnv(t)
+
+	// Create a dedicated user to update (do NOT touch the seeded admin that
+	// loginAndGetCookie depends on).
+	oldHash, err := auth.HashPassword("oldpass123")
+	if err != nil {
+		t.Fatalf("failed to hash old password: %v", err)
+	}
+	result, err := env.db.Exec(
+		"INSERT INTO users (username, password_hash, role, display_name) VALUES (?, ?, ?, ?)",
+		"updateuser", oldHash, "admin", "Update User",
+	)
+	if err != nil {
+		t.Fatalf("failed to insert user: %v", err)
+	}
+	id, _ := result.LastInsertId()
+
+	form := url.Values{}
+	form.Set("display_name", "")
+	form.Set("role", "")
+	form.Set("password", "newpass456")
+
+	req := httptest.NewRequest("PUT", "/settings/users/"+fmt.Sprintf("%d", id), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	r := buildAdminHTMLRouter(t, env, "PUT", "/settings/users/{id}", handlers.HTMLUpdateUserHandler(env.db.DB))
+
+	cookie := loginAndGetCookie(t, env)
+	req.Header.Set("Cookie", cookie)
+
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var newStoredHash string
+	if err := env.db.QueryRow("SELECT password_hash FROM users WHERE id = ?", id).Scan(&newStoredHash); err != nil {
+		t.Fatalf("failed to read post-update hash: %v", err)
+	}
+	if newStoredHash == oldHash {
+		t.Fatalf("expected password_hash to change, but it was unchanged")
+	}
+
+	if !auth.CheckPassword("newpass456", newStoredHash) {
+		t.Fatal("expected new password to pass CheckPassword, but it failed")
+	}
+	if auth.CheckPassword("oldpass123", newStoredHash) {
+		t.Fatal("expected old password to FAIL CheckPassword, but it passed")
+	}
+}
+
+// TestHTMLUpdateUserHandler_EmptyPasswordKeepsCurrent verifies that a blank
+// password (the "(leave blank to keep current)" case) leaves password_hash
+// untouched while the other fields still update.
+func TestHTMLUpdateUserHandler_EmptyPasswordKeepsCurrent(t *testing.T) {
+	env := setupTestEnv(t)
+
+	oldHash, err := auth.HashPassword("keepme123")
+	if err != nil {
+		t.Fatalf("failed to hash password: %v", err)
+	}
+	result, err := env.db.Exec(
+		"INSERT INTO users (username, password_hash, role, display_name) VALUES (?, ?, ?, ?)",
+		"keepuser", oldHash, "admin", "Keep User",
+	)
+	if err != nil {
+		t.Fatalf("failed to insert user: %v", err)
+	}
+	id, _ := result.LastInsertId()
+
+	// display_name set, password BLANK.
+	form := url.Values{}
+	form.Set("display_name", "Renamed User")
+	form.Set("role", "admin")
+	form.Set("password", "")
+
+	req := httptest.NewRequest("PUT", "/settings/users/"+fmt.Sprintf("%d", id), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	r := buildAdminHTMLRouter(t, env, "PUT", "/settings/users/{id}", handlers.HTMLUpdateUserHandler(env.db.DB))
+
+	cookie := loginAndGetCookie(t, env)
+	req.Header.Set("Cookie", cookie)
+
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	// password_hash must be byte-for-byte unchanged (blank password = keep current).
+	var currentHash string
+	if err := env.db.QueryRow("SELECT password_hash FROM users WHERE id = ?", id).Scan(&currentHash); err != nil {
+		t.Fatalf("failed to read hash: %v", err)
+	}
+	if currentHash != oldHash {
+		t.Fatalf("expected password_hash to be unchanged for a blank password, but it changed")
+	}
+	if !auth.CheckPassword("keepme123", currentHash) {
+		t.Fatal("expected current password to still pass CheckPassword")
+	}
+
+	// display_name should have been updated (proves the UPDATE ran at all).
+	var dn string
+	if err := env.db.QueryRow("SELECT display_name FROM users WHERE id = ?", id).Scan(&dn); err != nil {
+		t.Fatalf("failed to read display_name: %v", err)
+	}
+	if dn != "Renamed User" {
+		t.Fatalf("expected display_name='Renamed User', got %q", dn)
+	}
+}
+
 func TestHTMLDeleteUserHandler_Success(t *testing.T) {
 	env := setupTestEnv(t)
 
