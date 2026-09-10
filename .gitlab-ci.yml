@@ -5,7 +5,7 @@ stages:
   - deploy
 
 variables:
-  GO_VERSION: "1.26"
+  GO_VERSION: "1.27.1"
 
 # ---- Test Stage ----
 
@@ -83,6 +83,24 @@ gosec:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == "main"
 
+govulncheck:
+  stage: security
+  image: golang:${GO_VERSION}-alpine
+  before_script:
+    - apk add --no-cache git
+    - go install golang.org/x/vuln/cmd/govulncheck@v1.8.0
+  script:
+    - | # Retry go mod download to handle transient proxy.golang.org errors
+      for i in 1 2 3; do
+        go mod download && break
+        echo "go mod download attempt $i failed, retrying..."
+        sleep $((i * 5))
+      done
+    - govulncheck ./...
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+
 golangci-lint:
   stage: security
   image: golang:${GO_VERSION}-alpine
@@ -113,6 +131,7 @@ deploy:
     - docker-build
     - trivy-scan
     - gosec
+    - govulncheck
     - golangci-lint
   before_script:
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"

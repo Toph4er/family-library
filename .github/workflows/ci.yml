@@ -35,7 +35,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.26'
+          go-version: '1.27.1'
       - name: go mod download (retry x3, as in GitLab pipeline)
         run: |
           for i in 1 2 3; do
@@ -123,7 +123,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.26'
+          go-version: '1.27.1'
       - name: Install gosec (pinned, same version as the GitLab job)
         run: go install github.com/securego/gosec/v2/cmd/gosec@v2.26.1
       - name: go mod download (retry x3)
@@ -135,6 +135,30 @@ jobs:
           done
       - name: Run gosec
         run: gosec -exclude-generated -exclude=G104 ./...
+
+  # ---- Stage: security (was: govulncheck) ----
+  govulncheck:
+    name: govulncheck (stdlib/dep CVE scan)
+    runs-on: ubuntu-latest
+    needs: test
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.27.1'
+      - name: Install govulncheck (pinned, same version as the GitLab job)
+        run: go install golang.org/x/vuln/cmd/govulncheck@v1.8.0
+      - name: go mod download (retry x3)
+        run: |
+          for i in 1 2 3; do
+            go mod download && break
+            echo "go mod download attempt $i failed, retrying..."
+            sleep $((i * 5))
+          done
+      - name: Run govulncheck
+        run: govulncheck ./...
 
   # ---- Stage: security (was: golangci-lint) ----
   # .golangci.yml is v2-format (migrated 2026-08-26); golangci-lint-action@v9 v2.12 passes.
@@ -148,7 +172,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.26'
+          go-version: '1.27.1'
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
