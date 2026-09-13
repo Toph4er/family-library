@@ -243,9 +243,20 @@ func RateLimiter(next http.Handler) http.Handler {
 			return
 		}
 
+		// L9: CORS preflights (OPTIONS) must not consume rate-limit budget —
+		// every cross-origin request is preceded by one, so counting them would
+		// silently halve each visitor's effective allowance.
+		if r.Method == http.MethodOptions {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		// Determine if this is a strict (auth) or general (API) path.
 		isAuth := r.URL.Path == "/auth/login" || r.URL.Path == "/auth/guest-login"
-		isAPIAuth := len(r.URL.Path) >= 11 && r.URL.Path[:11] == "/api/v1/auth"
+		// L9: "/api/v1/auth" is 12 characters — the prefix check must slice
+		// 12, not 11, or it can never match and /api/v1/auth/* silently gets
+		// the general limiter (~1/600ms) instead of the strict one (~1/2min).
+		isAPIAuth := len(r.URL.Path) >= 12 && r.URL.Path[:12] == "/api/v1/auth"
 
 		if isAuth {
 			// Auth endpoints get the stricter limit regardless of prefix.

@@ -100,7 +100,7 @@ func (a *Auth) Login(w http.ResponseWriter, r *http.Request, username, password 
 	session.Values[RoleKey] = user.Role
 	session.Values[UsernameKey] = user.Username
 	session.Values[IsGuestKey] = false
-	session.Options.MaxAge = 24 * 60 * 60 // 24 hours for admin
+	session.Options.MaxAge = 30 * 24 * 60 * 60 // 30 days for admin (L8)
 
 	// Don't save here — the CSRF middleware will save the shared session
 	// after the handler completes, preserving both the rotated token and

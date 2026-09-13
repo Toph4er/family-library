@@ -73,6 +73,12 @@ func NewRouter(database *sqlx.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Ha
 		MaxAge:           300,
 	}))
 
+	// CSRF middleware factory (M2). Applied to the state-changing HTML routes
+	// below so they carry the same CSRF protection as the /api/v1 sub-mux.
+	// Order is authz-first (RequireAdminHTML → 403) then CSRF → 403, so an
+	// unauthenticated/guest request fails the authz check before CSRF.
+	csrf := middleware.CSRFProtection(authSvc.Store(), auth.SessionID)
+
 	// -- Static files --
 	r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("internal/web"))))
 
@@ -92,10 +98,10 @@ func NewRouter(database *sqlx.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Ha
 	r.Post("/auth/login", handlers.HTMLLoginHandler(authSvc))
 	r.Post("/auth/guest-login", handlers.HTMLGuestLoginHandler(authSvc))
 	r.Put("/settings/update/{key}", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLUpdateSettingHandler(database.DB)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(csrf(handlers.HTMLUpdateSettingHandler(database.DB))).ServeHTTP(w, r)
 	})
 	r.Post("/settings/guest-visibility/update", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLUpdateGuestVisibilityHandler(database.DB)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(csrf(handlers.HTMLUpdateGuestVisibilityHandler(database.DB))).ServeHTTP(w, r)
 	})
 
 	// User management (HTMX, under /settings)
@@ -106,13 +112,13 @@ func NewRouter(database *sqlx.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Ha
 		authSvc.RequireAdminHTML(handlers.HTMLUserFormHandler(database.DB)).ServeHTTP(w, r)
 	})
 	r.Post("/settings/users", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLCreateUserHandler(database.DB)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(csrf(handlers.HTMLCreateUserHandler(database.DB))).ServeHTTP(w, r)
 	})
 	r.Put("/settings/users/{id}", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLUpdateUserHandler(database.DB)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(csrf(handlers.HTMLUpdateUserHandler(database.DB))).ServeHTTP(w, r)
 	})
 	r.Delete("/settings/users/{id}", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLDeleteUserHandler(database.DB)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(csrf(handlers.HTMLDeleteUserHandler(database.DB))).ServeHTTP(w, r)
 	})
 
 	// Family member management (HTMX, under /settings)
@@ -123,13 +129,13 @@ func NewRouter(database *sqlx.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Ha
 		authSvc.RequireAdminHTML(handlers.HTMLFamilyMemberFormHandler(database)).ServeHTTP(w, r)
 	})
 	r.Post("/settings/family-members", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLCreateFamilyMemberHandler(database.DB)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(csrf(handlers.HTMLCreateFamilyMemberHandler(database.DB))).ServeHTTP(w, r)
 	})
 	r.Put("/settings/family-members/{id}", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLUpdateFamilyMemberHandler(database.DB)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(csrf(handlers.HTMLUpdateFamilyMemberHandler(database.DB))).ServeHTTP(w, r)
 	})
 	r.Delete("/settings/family-members/{id}", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLDeleteFamilyMemberHandler(database.DB)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(csrf(handlers.HTMLDeleteFamilyMemberHandler(database.DB))).ServeHTTP(w, r)
 	})
 
 	// / — public landing page; authenticated users are redirected to /books
@@ -163,10 +169,10 @@ func NewRouter(database *sqlx.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Ha
 
 	// Book form POST handlers (admin only)
 	r.Post("/books/create", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLCreateBookHandler(database.DB)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(csrf(handlers.HTMLCreateBookHandler(database.DB))).ServeHTTP(w, r)
 	})
 	r.Post("/books/{id}/update", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLUpdateBookHandler(database.DB)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(csrf(handlers.HTMLUpdateBookHandler(database.DB))).ServeHTTP(w, r)
 	})
 	// Wishlist (open to guests for viewing; admin-only for management)
 	r.Get("/wishlist", handlers.RenderWishlistPage(cfg.Templates["wishlist"], database.DB, authSvc.Store(), auth.SessionID))
@@ -185,10 +191,10 @@ func NewRouter(database *sqlx.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Ha
 		})).ServeHTTP(w, r)
 	})
 	r.Post("/wishlist/create", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLCreateWishlistItemHandler(database.DB)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(csrf(handlers.HTMLCreateWishlistItemHandler(database.DB))).ServeHTTP(w, r)
 	})
 	r.Post("/wishlist/{id}/update", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLUpdateWishlistItemHandler(database.DB)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(csrf(handlers.HTMLUpdateWishlistItemHandler(database.DB))).ServeHTTP(w, r)
 	})
 	r.Get("/settings", func(w http.ResponseWriter, r *http.Request) {
 		authSvc.RequireAdminHTML(handlers.RenderSettingsPage(cfg.Templates["settings"], database.DB, authSvc.Store(), auth.SessionID)).ServeHTTP(w, r)
@@ -205,16 +211,16 @@ func NewRouter(database *sqlx.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Ha
 		authSvc.RequireAdminHTML(handlers.HTMLReadingLogFormHandler(database.DB)).ServeHTTP(w, r)
 	})
 	r.Post("/reading-logs", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLCreateReadingLogHandler(database.DB)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(csrf(handlers.HTMLCreateReadingLogHandler(database.DB))).ServeHTTP(w, r)
 	})
 	r.Delete("/reading-logs/{id}", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLDeleteReadingLogHandler(database.DB)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(csrf(handlers.HTMLDeleteReadingLogHandler(database.DB))).ServeHTTP(w, r)
 	})
 	r.Get("/reading-logs/{id}/edit-form", func(w http.ResponseWriter, r *http.Request) {
 		authSvc.RequireAdminHTML(handlers.HTMLReadingLogEditFormHandler(database.DB)).ServeHTTP(w, r)
 	})
 	r.Put("/reading-logs/{id}", func(w http.ResponseWriter, r *http.Request) {
-		authSvc.RequireAdminHTML(handlers.HTMLUpdateReadingLogHandler(database.DB)).ServeHTTP(w, r)
+		authSvc.RequireAdminHTML(csrf(handlers.HTMLUpdateReadingLogHandler(database.DB))).ServeHTTP(w, r)
 	})
 
 	// -- API routes --

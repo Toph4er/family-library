@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
@@ -85,6 +86,103 @@ func TestClientIP_FallsBackToRemoteAddr(t *testing.T) {
 	}
 	if got != peerIP {
 		t.Fatalf("ClientIP = %q; want %q (the host part of r.RemoteAddr)", got, peerIP)
+	}
+}
+
+// TestRateLimiter_OptionsPreflightNotCounted verifies L9(a): CORS preflights
+// (OPTIONS) do not consume the per-visitor budget. The burst is 10, so
+// 9 POSTs + an OPTIONS + a 10th POST must pass (the 11th is then throttled).
+// If OPTIONS were counted, the 10th POST would already be throttled.
+func TestRateLimiter_OptionsPreflightNotCounted(t *testing.T) {
+	const visitor = "198.51.100.203"
+
+	r := chi.NewRouter()
+	r.Use(chimiddleware.ClientIPFromHeader("CF-Connecting-IP"))
+	r.Use(middleware.RateLimiter)
+	r.Post("/api/v1/thing", func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	do := func(method string) int {
+		req := httptest.NewRequest(method, "/api/v1/thing", nil)
+		req.RemoteAddr = "192.0.2.61:41000"
+		req.Header.Set("CF-Connecting-IP", visitor)
+		rec := httptest.NewRecorder()
+		r.ServeHTTP(rec, req)
+		return rec.Code
+	}
+
+	// 9 POSTs (9 of the 10-burst used).
+	for i := 0; i < 9; i++ {
+		if code := do("POST"); code != http.StatusOK {
+			t.Fatalf("POST #%d: expected 200, got %d", i+1, code)
+		}
+	}
+	// OPTIONS preflight — must be free, and must not be throttled itself.
+	if code := do("OPTIONS"); code == http.StatusTooManyRequests {
+		t.Fatalf("OPTIONS preflight was throttled: %d", code)
+	}
+	// 10th POST: passes only if the OPTIONS consumed no budget.
+	if code := do("POST"); code != http.StatusOK {
+		t.Fatalf("POST after OPTIONS: expected 200, got %d — OPTIONS preflight consumed rate-limit budget", code)
+	}
+	// 11th POST: over the burst — must be throttled either way.
+	if code := do("POST"); code != http.StatusTooManyRequests {
+		t.Fatalf("11th POST after OPTIONS: expected 429 (burst exhausted), got %d", code)
+	}
+}
+
+// TestRateLimiter_APIAuthStrictLimit verifies L9(c): /api/v1/auth/* actually
+// gets the strict limiter (burst 10, then ~1 request/2min). Before the fix
+// the prefix check compared path[:11] against the 12-char "/api/v1/auth",
+// which can never match — so API auth routes silently got the general
+// limiter (~1 request/600ms) instead.
+func TestRateLimiter_APIAuthStrictLimit(t *testing.T) {
+	const strictVisitor = "198.51.100.204" // → /api/v1/auth/login
+	const generalVisitor = "198.51.100.205" // → /api/v1/other
+
+	r := chi.NewRouter()
+	r.Use(chimiddleware.ClientIPFromHeader("CF-Connecting-IP"))
+	r.Use(middleware.RateLimiter)
+	both := func(w http.ResponseWriter, req *http.Request) { w.WriteHeader(http.StatusOK) }
+	r.Post("/api/v1/auth/login", both)
+	r.Post("/api/v1/other", both)
+
+	do := func(visitor, path string) int {
+		req := httptest.NewRequest("POST", path, nil)
+		req.RemoteAddr = "192.0.2.62:41000"
+		req.Header.Set("CF-Connecting-IP", visitor)
+		rec := httptest.NewRecorder()
+		r.ServeHTTP(rec, req)
+		return rec.Code
+	}
+
+	// Exhaust both bursts (10) and confirm the 11th is throttled for both.
+	for _, pair := range []struct {
+		visitor, path string
+	}{
+		{strictVisitor, "/api/v1/auth/login"},
+		{generalVisitor, "/api/v1/other"},
+	} {
+		for i := 0; i < 10; i++ {
+			if code := do(pair.visitor, pair.path); code != http.StatusOK {
+				t.Fatalf("%s POST #%d: expected 200, got %d", pair.path, i+1, code)
+			}
+		}
+		if code := do(pair.visitor, pair.path); code != http.StatusTooManyRequests {
+			t.Fatalf("%s POST #11: expected 429, got %d", pair.path, code)
+		}
+	}
+
+	// After 800ms the GENERAL limiter (~1/600ms) has refilled one token, but
+	// the STRICT limiter (~1/2min) has not. If /api/v1/auth silently used the
+	// general limiter, the strict visitor's 12th POST would now pass.
+	time.Sleep(800 * time.Millisecond)
+	if code := do(generalVisitor, "/api/v1/other"); code != http.StatusOK {
+		t.Fatalf("general route after 800ms: expected 200 (refilled), got %d", code)
+	}
+	if code := do(strictVisitor, "/api/v1/auth/login"); code != http.StatusTooManyRequests {
+		t.Fatalf("/api/v1/auth after 800ms: expected 429 (strict limiter), got %d — API auth routes are not getting the strict limit", code)
 	}
 }
 

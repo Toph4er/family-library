@@ -267,12 +267,14 @@ func TestHTMLCreateBookHandler_NotAuthenticated(t *testing.T) {
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
-	// RequireAdminHTML redirects unauthenticated users to /
-	if rec.Code != http.StatusFound {
-		t.Fatalf("expected redirect (302), got %d", rec.Code)
+	// L10: RequireAdminHTML answers 403 Forbidden for non-admin users
+	// (matching the API layer's RequireAdmin) instead of the legacy 302
+	// redirect to /.
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("expected 403 Forbidden, got %d", rec.Code)
 	}
-	if loc := rec.Header().Get("Location"); loc != "/" {
-		t.Fatalf("expected redirect to /, got %q", loc)
+	if !strings.Contains(rec.Body.String(), "403 Forbidden") {
+		t.Fatalf("expected the 403 HTML body, got %q", rec.Body.String())
 	}
 }
 
@@ -531,9 +533,9 @@ func TestHTMLUpdateGuestVisibilityHandler_InvalidJSON(t *testing.T) {
 	}
 }
 
-// ---------- Middleware: RequireAdminHTML redirects ----------
+// ---------- Middleware: RequireAdminHTML authz ----------
 
-func TestRequireAdminHTML_RedirectsGuest(t *testing.T) {
+func TestRequireAdminHTML_DeniesGuest(t *testing.T) {
 	env := setupTestEnv(t)
 
 	// Login as guest
@@ -561,11 +563,13 @@ func TestRequireAdminHTML_RedirectsGuest(t *testing.T) {
 	rec = httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusFound {
-		t.Fatalf("expected redirect (302), got %d", rec.Code)
+	// L10: guests get 403 Forbidden (not a redirect) on admin-only HTML routes,
+	// matching the API layer's RequireAdmin.
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("expected 403 Forbidden, got %d", rec.Code)
 	}
-	if loc := rec.Header().Get("Location"); loc != "/" {
-		t.Fatalf("expected redirect to /, got %q", loc)
+	if !strings.Contains(rec.Body.String(), "403 Forbidden") {
+		t.Fatalf("expected the 403 HTML body, got %q", rec.Body.String())
 	}
 }
 
@@ -978,12 +982,14 @@ func TestHTMLCreateWishlistItemHandler_NotAuthenticated(t *testing.T) {
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
-	// RequireAdminHTML redirects unauthenticated users to /
-	if rec.Code != http.StatusFound {
-		t.Fatalf("expected redirect (302), got %d", rec.Code)
+	// L10: RequireAdminHTML answers 403 Forbidden for non-admin users
+	// (matching the API layer's RequireAdmin) instead of the legacy 302
+	// redirect to /.
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("expected 403 Forbidden, got %d", rec.Code)
 	}
-	if loc := rec.Header().Get("Location"); loc != "/" {
-		t.Fatalf("expected redirect to /, got %q", loc)
+	if !strings.Contains(rec.Body.String(), "403 Forbidden") {
+		t.Fatalf("expected the 403 HTML body, got %q", rec.Body.String())
 	}
 }
 

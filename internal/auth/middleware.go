@@ -74,15 +74,18 @@ func (a *Auth) RequireAuthHTML(next http.Handler) http.Handler {
 	})
 }
 
-// RequireAdminHTML is an HTML-aware variant of RequireAdmin that redirects
-// non-admin users to / instead of returning a JSON error.
-// Guests and unauthenticated users are both redirected.
+// RequireAdminHTML is an HTML-aware variant of RequireAdmin that returns a
+// 403 Forbidden response for non-admin users (L10: HTML authz failures answer
+// 403, matching the API layer's RequireAdmin, instead of a 302 redirect to /).
+// Guests and unauthenticated users are both rejected.
 // Use this for admin-only page routes.
 func (a *Auth) RequireAdminHTML(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, ok := a.GetUserFromSession(r)
 		if !ok || user.IsGuest {
-			http.Redirect(w, r, "/", http.StatusFound)
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusForbidden)
+			_, _ = w.Write([]byte("<!doctype html><title>403 Forbidden</title><h1>403 Forbidden</h1>"))
 			return
 		}
 
