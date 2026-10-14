@@ -5,6 +5,11 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/pressly/goose/v3"
+
+	"github.com/Toph4er/family-library/internal/auth"
+	"github.com/Toph4er/family-library/internal/db"
 )
 
 // webDir is the internal/web directory relative to this test's working dir
@@ -49,5 +54,51 @@ func TestStaticAssetServer_DeniesDirectoryListing(t *testing.T) {
 	h.ServeHTTP(rec, req)
 	if rec.Code != http.StatusNotFound {
 		t.Errorf("expected 404 for the directory root, got %d (body=%q)", rec.Code, rec.Body.String())
+	}
+}
+
+// newTestRouter builds the real router over a fresh migrated in-memory DB so
+// route-level auth wiring can be pinned without a live server. Templates are
+// nil: the anonymous tests below only assert the redirect, which happens in
+// RequireAuthHTML before any template is touched.
+func newTestRouter(t *testing.T) http.Handler {
+	t.Helper()
+
+	database, err := db.Open(":memory:")
+	if err != nil {
+		t.Fatalf("open test database: %v", err)
+	}
+	t.Cleanup(func() { database.Close() })
+
+	if err := goose.SetDialect("sqlite"); err != nil {
+		t.Fatalf("goose dialect: %v", err)
+	}
+	if err := goose.Up(database.DB, "../../migrations"); err != nil {
+		t.Fatalf("migrations: %v", err)
+	}
+
+	authSvc := auth.New(database.DB, []byte("test-session-secret-that-is-32-bytes!!"))
+	authSvc.Store().Options.Secure = false
+	return NewRouter(database, authSvc, &RouterConfig{})
+}
+
+// TestRouter_WishlistRequiresSessionAuth pins the /wishlist auth gap fix:
+// the page route must be wrapped in RequireAuthHTML (Guest-or-Admin) exactly
+// like /books and /reading-log, so an anonymous GET 302s to /login instead
+// of rendering. Before the fix /wishlist rendered publicly with 200.
+func TestRouter_WishlistRequiresSessionAuth(t *testing.T) {
+	router := newTestRouter(t)
+
+	for _, path := range []string{"/wishlist", "/books", "/reading-log"} {
+		req := httptest.NewRequest("GET", path, nil)
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusFound {
+			t.Fatalf("GET %s anonymous: expected 302, got %d — route is not session-auth guarded", path, rec.Code)
+		}
+		if loc := rec.Header().Get("Location"); loc != "/login" {
+			t.Fatalf("GET %s anonymous: expected redirect to /login, got %q", path, loc)
+		}
 	}
 }

@@ -180,8 +180,12 @@ func NewRouter(database *sqlx.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Ha
 	r.Post("/books/{id}/update", func(w http.ResponseWriter, r *http.Request) {
 		authSvc.RequireAdminHTML(csrf(handlers.HTMLUpdateBookHandler(database.DB))).ServeHTTP(w, r)
 	})
-	// Wishlist (open to guests for viewing; admin-only for management)
-	r.Get("/wishlist", handlers.RenderWishlistPage(cfg.Templates["wishlist"], database.DB, authSvc.Store(), auth.SessionID))
+	// Wishlist (session-auth required for viewing — Guests or Admin;
+	// anonymous visitors are redirected to /login exactly like /books and
+	// /reading-log. Admin-only for management.)
+	r.Get("/wishlist", func(w http.ResponseWriter, r *http.Request) {
+		authSvc.RequireAuthHTML(handlers.RenderWishlistPage(cfg.Templates["wishlist"], database.DB, authSvc.Store(), auth.SessionID)).ServeHTTP(w, r)
+	})
 	r.Get("/wishlist/add", func(w http.ResponseWriter, r *http.Request) {
 		authSvc.RequireAdminHTML(handlers.RenderWishlistFormPage(cfg.Templates["wishlist-form"], database.DB, authSvc.Store(), auth.SessionID, false, 0)).ServeHTTP(w, r)
 	})
