@@ -138,7 +138,7 @@ func TestRateLimiter_OptionsPreflightNotCounted(t *testing.T) {
 // which can never match — so API auth routes silently got the general
 // limiter (~1 request/600ms) instead.
 func TestRateLimiter_APIAuthStrictLimit(t *testing.T) {
-	const strictVisitor = "198.51.100.204" // → /api/v1/auth/login
+	const strictVisitor = "198.51.100.204"  // → /api/v1/auth/login
 	const generalVisitor = "198.51.100.205" // → /api/v1/other
 
 	r := chi.NewRouter()
