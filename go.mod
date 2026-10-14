@@ -2,7 +2,7 @@ module github.com/Toph4er/family-library
 
 go 1.26.0
 
-toolchain go1.27.1
+toolchain go1.27.2
 
 require (
 	github.com/go-chi/chi/v5 v5.3.2
