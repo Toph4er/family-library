@@ -124,8 +124,13 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: '1.27.2'
-      - name: Install gosec (pinned, same version as the GitLab job)
-        run: go install github.com/securego/gosec/v2/cmd/gosec@v2.26.1
+      # build with x/tools>=v0.50.0: gosec upstream pins are pre-go1.27.2 export-data (V5); drop override once gosec releases against x/tools>=0.50
+      - name: Install gosec (pinned, built with x/tools override — same as the GitLab job)
+        run: |
+          mkdir -p /tmp/gosecbuild && cd /tmp/gosecbuild
+          go mod init tmp/gosecbuild
+          go get github.com/securego/gosec/v2/cmd/gosec@v2.29.0 golang.org/x/tools@v0.50.0
+          go build -ldflags "-X main.Version=v2.29.0" -o "$(go env GOPATH)/bin/gosec" github.com/securego/gosec/v2/cmd/gosec
       - name: go mod download (retry x3)
         run: |
           for i in 1 2 3; do
