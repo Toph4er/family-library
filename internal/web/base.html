@@ -185,11 +185,13 @@
     [x-cloak] { display: none !important; }
   </style>
 
-  <!-- Alpine.js (must load before HTMX for x-data attributes) -->
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
+  <!-- Alpine.js — @alpinejs/csp build (no eval / new Function, so it works
+       without 'unsafe-eval'). Pinned with SRI integrity. Must load before
+       HTMX for x-data attributes. -->
+  <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/csp@3.14.8/dist/cdn.min.js" integrity="sha384-ToFwPnlRgZIoDDSatKvWLkecUR4Py5dma633TT4TVBQfs4nHKXXexI3v72xi5LnC" crossorigin="anonymous"></script>
 
-  <!-- HTMX -->
-  <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js"></script>
+  <!-- HTMX (SRI-pinned) -->
+  <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
 
   <script nonce="{{ .Nonce }}">
     // HTMX configuration: inject CSRF token into all requests.

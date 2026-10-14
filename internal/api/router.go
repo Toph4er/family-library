@@ -5,7 +5,9 @@ import (
 	"html/template"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
@@ -80,7 +82,11 @@ func NewRouter(database *sqlx.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Ha
 	csrf := middleware.CSRFProtection(authSvc.Store(), auth.SessionID)
 
 	// -- Static files --
-	r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("internal/web"))))
+	// Serve only real asset types (CSS/JS/images/fonts) from internal/web and
+	// 404 everything else — this closes the L3 issue where the bare
+	// http.FileServer would auto-list the directory and serve the .html
+	// template sources to anyone who requested them.
+	r.Handle("/static/*", http.StripPrefix("/static/", staticAssetServer("internal/web")))
 
 	// -- Health check (public) --
 	healthHandler := handlers.NewHealthHandler(database.DB)
@@ -266,4 +272,38 @@ func NewRouter(database *sqlx.DB, authSvc *auth.Auth, cfg *RouterConfig) http.Ha
 	})
 
 	return r
+}
+
+// staticAssetExts is the set of file extensions the /static route will serve.
+// Anything not listed — most importantly .html template sources — is 404'd.
+var staticAssetExts = map[string]bool{
+	".css":   true,
+	".js":    true,
+	".png":   true,
+	".jpg":   true,
+	".jpeg":  true,
+	".gif":   true,
+	".webp":  true,
+	".svg":   true,
+	".ico":   true,
+	".woff":  true,
+	".woff2": true,
+	".ttf":   true,
+	".eot":   true,
+}
+
+// staticAssetServer serves static assets from dir but refuses any file whose
+// extension is not in staticAssetExts. This keeps the internal/web template
+// sources (base.html, book-detail.html, …) and any directory listing from
+// being exposed under /static/*, while still serving the real assets
+// (tailwind.css, styles.css, and any future images/fonts).
+func staticAssetServer(dir string) http.Handler {
+	fileServer := http.FileServer(http.Dir(dir))
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !staticAssetExts[strings.ToLower(filepath.Ext(r.URL.Path))] {
+			http.NotFound(w, r)
+			return
+		}
+		fileServer.ServeHTTP(w, r)
+	})
 }

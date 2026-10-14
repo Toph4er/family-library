@@ -156,7 +156,16 @@ func RenderBooksPage(tmpl *template.Template, db *sql.DB, store *sessions.Cookie
 		ctx.PaginationStart = startItem
 		ctx.PaginationEnd = endItem
 
-		filterBooksForGuest(r, books)
+		// Apply the admin's guest visibility to guests only: pointer fields
+		// the admin marked non-visible are nulled so the templates' {{if}}
+		// guards hide them. Admins see the full record (ctx.IsGuest is false).
+		if ctx.IsGuest {
+			if vis := loadGuestVisibility(db); vis != nil {
+				for i := range books {
+					books[i].ApplyVisibility(vis)
+				}
+			}
+		}
 
 		renderPage(w, r, tmpl, "books.html", ctx)
 	}
@@ -186,7 +195,14 @@ func RenderBookDetailPage(tmpl *template.Template, db *sql.DB, store *sessions.C
 		book = *b
 
 		ctx.Book = &book
-		filterBookForGuest(r, &book)
+		// Apply the admin's guest visibility to guests only — pointer fields
+		// the admin marked non-visible are nulled so the template's {{if}}
+		// guards hide them. Admins see the full record (ctx.IsGuest is false).
+		if ctx.IsGuest {
+			if vis := loadGuestVisibility(db); vis != nil {
+				book.ApplyVisibility(vis)
+			}
+		}
 
 		renderPage(w, r, tmpl, "book-detail.html", ctx)
 	}
@@ -291,50 +307,29 @@ func RenderBookFormPage(tmpl *template.Template, db *sql.DB, store *sessions.Coo
 	}
 }
 
-// filterBooksForGuest removes books from the list that a guest user cannot see.
-func filterBooksForGuest(r *http.Request, books []models.Book) {
-	if !isGuestRequest(r) {
-		return
+// loadGuestVisibility reads the admin's default_guest_visibility setting — the
+// same blob the settings UI edits under "Guest book visibility". It maps each
+// book field to whether it is visible to guests. Returns nil when the setting
+// is absent or malformed, in which case callers leave the book unfiltered
+// (matching FilterForGuest's empty-blob = show-all convention).
+func loadGuestVisibility(db *sql.DB) map[string]bool {
+	if db == nil {
+		return nil
 	}
-	filtered := make([]models.Book, 0, len(books))
-	for _, b := range books {
-		if canGuestSeeBook(r, &b) {
-			filtered = append(filtered, b)
-		}
+	var value string
+	if err := db.QueryRow(
+		"SELECT value FROM settings WHERE key = 'default_guest_visibility'",
+	).Scan(&value); err != nil {
+		return nil
 	}
-	// Note: we can't modify the slice in-place since it's passed by value
-	// The caller should use the returned slice if guest filtering is needed
-	_ = filtered
-}
-
-// filterBookForGuest hides sensitive fields from guest users.
-func filterBookForGuest(r *http.Request, book *models.Book) {
-	if !isGuestRequest(r) {
-		return
+	if value == "" {
+		return nil
 	}
-	// Hide sensitive fields for guests
-	if book.GiftFrom != nil {
-		book.GiftFrom = nil
+	var vis map[string]bool
+	if err := json.Unmarshal([]byte(value), &vis); err != nil {
+		return nil
 	}
-	if book.GiftRelationship != nil {
-		book.GiftRelationship = nil
-	}
-	if book.DateReceived != nil {
-		book.DateReceived = nil
-	}
-	if book.Notes != nil {
-		book.Notes = nil
-	}
-}
-
-func isGuestRequest(r *http.Request) bool {
-	return r.Header.Get("X-Guest-Request") == "true"
-}
-
-func canGuestSeeBook(r *http.Request, book *models.Book) bool {
-	// Guests can see all books unless explicitly restricted
-	_ = r
-	return true
+	return vis
 }
 
 // BookSearchHandler returns a JSON list of books matching the FTS5 search query.
@@ -360,7 +355,8 @@ func BookSearchHandler(db *sql.DB) http.HandlerFunc {
 			SafeFTS5Query(q),
 		)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			log.Printf("book search query failed: %v", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 		defer rows.Close()
@@ -379,6 +375,15 @@ func BookSearchHandler(db *sql.DB) http.HandlerFunc {
 		}
 		if books == nil {
 			books = []models.Book{}
+		}
+
+		// This endpoint is public, so whatever it returns is guest-visible:
+		// apply the admin's guest visibility (nil out authors when the admin
+		// has marked authors non-visible).
+		if vis := loadGuestVisibility(db); vis != nil && !vis["authors"] {
+			for i := range books {
+				books[i].Authors = nil
+			}
 		}
 
 		w.Header().Set("Content-Type", "application/json")

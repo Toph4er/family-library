@@ -44,10 +44,112 @@ type Book struct {
 	UpdatedAt          string  `json:"updated_at" db:"updated_at"`
 }
 
+// ApplyVisibility nils out the pointer fields the admin has marked
+// non-visible to guests. A field is shown only when v explicitly maps it to
+// true; an absent key or false value both hide the field (matching the
+// settings UI, where unchecked fields are hidden). Passing a nil map applies
+// no restriction. Only pointer fields are affected — non-pointer identity
+// fields (Title, Quantity, ReadCount) cannot be nulled and are left as-is.
+func (b *Book) ApplyVisibility(v map[string]bool) {
+	if v == nil {
+		return
+	}
+	if !v["isbn"] {
+		b.ISBN = nil
+	}
+	if !v["subtitle"] {
+		b.Subtitle = nil
+	}
+	if !v["authors"] {
+		b.Authors = nil
+	}
+	if !v["illustrators"] {
+		b.Illustrators = nil
+	}
+	if !v["publisher"] {
+		b.Publisher = nil
+	}
+	if !v["publication_year"] {
+		b.PublicationYear = nil
+	}
+	if !v["page_count"] {
+		b.PageCount = nil
+	}
+	if !v["book_type"] {
+		b.BookType = nil
+	}
+	if !v["reading_levels"] {
+		b.ReadingLevels = nil
+	}
+	if !v["genres"] {
+		b.Genres = nil
+	}
+	if !v["themes"] {
+		b.Themes = nil
+	}
+	if !v["awards"] {
+		b.Awards = nil
+	}
+	if !v["gift_from"] {
+		b.GiftFrom = nil
+	}
+	if !v["gift_relationship"] {
+		b.GiftRelationship = nil
+	}
+	if !v["date_received"] {
+		b.DateReceived = nil
+	}
+	if !v["condition"] {
+		b.Condition = nil
+	}
+	if !v["location"] {
+		b.Location = nil
+	}
+	if !v["notes"] {
+		b.Notes = nil
+	}
+	if !v["child_rating"] {
+		b.ChildRating = nil
+	}
+	if !v["last_read_date"] {
+		b.LastReadDate = nil
+	}
+	if !v["cover_image_url"] {
+		b.CoverImageURL = nil
+	}
+	if !v["cover_source"] {
+		b.CoverSource = nil
+	}
+	if !v["dewey_decimal_class"] {
+		b.DeweyDecimalClass = nil
+	}
+	if !v["description"] {
+		b.Description = nil
+	}
+	if !v["language"] {
+		b.Language = nil
+	}
+	if !v["subject_places"] {
+		b.SubjectPlaces = nil
+	}
+	if !v["subject_people"] {
+		b.SubjectPeople = nil
+	}
+	if !v["subject_times"] {
+		b.SubjectTimes = nil
+	}
+	if !v["series"] {
+		b.Series = nil
+	}
+	if !v["age_range"] {
+		b.AgeRange = nil
+	}
+}
+
 // FilterForGuest nils out fields that are not visible to guests, based on the
-// GuestVisibleFields JSON blob stored per-book.  Only pointer fields are
-// affected — if a field is marked false, its pointer is set to nil so it
-// omits from JSON output (omitempty) or appears empty in templates.
+// GuestVisibleFields JSON blob stored per-book. Only pointer fields are
+// affected — a field marked false (or absent) has its pointer set to nil so
+// it omits from JSON output (omitempty) or appears empty in templates.
 func (b *Book) FilterForGuest() {
 	if b.GuestVisibleFields == "" {
 		return
@@ -56,97 +158,7 @@ func (b *Book) FilterForGuest() {
 	if err := json.Unmarshal([]byte(b.GuestVisibleFields), &visibility); err != nil {
 		return // malformed JSON — leave as-is
 	}
-	// Default: fields not listed are visible.
-	if !visibility["isbn"] {
-		b.ISBN = nil
-	}
-	if !visibility["subtitle"] {
-		b.Subtitle = nil
-	}
-	if !visibility["authors"] {
-		b.Authors = nil
-	}
-	if !visibility["illustrators"] {
-		b.Illustrators = nil
-	}
-	if !visibility["publisher"] {
-		b.Publisher = nil
-	}
-	if !visibility["publication_year"] {
-		b.PublicationYear = nil
-	}
-	if !visibility["page_count"] {
-		b.PageCount = nil
-	}
-	if !visibility["book_type"] {
-		b.BookType = nil
-	}
-	if !visibility["reading_levels"] {
-		b.ReadingLevels = nil
-	}
-	if !visibility["genres"] {
-		b.Genres = nil
-	}
-	if !visibility["themes"] {
-		b.Themes = nil
-	}
-	if !visibility["awards"] {
-		b.Awards = nil
-	}
-	if !visibility["gift_from"] {
-		b.GiftFrom = nil
-	}
-	if !visibility["gift_relationship"] {
-		b.GiftRelationship = nil
-	}
-	if !visibility["date_received"] {
-		b.DateReceived = nil
-	}
-	if !visibility["condition"] {
-		b.Condition = nil
-	}
-	if !visibility["location"] {
-		b.Location = nil
-	}
-	if !visibility["notes"] {
-		b.Notes = nil
-	}
-	if !visibility["child_rating"] {
-		b.ChildRating = nil
-	}
-	if !visibility["last_read_date"] {
-		b.LastReadDate = nil
-	}
-	if !visibility["cover_image_url"] {
-		b.CoverImageURL = nil
-	}
-	if !visibility["cover_source"] {
-		b.CoverSource = nil
-	}
-	if !visibility["dewey_decimal_class"] {
-		b.DeweyDecimalClass = nil
-	}
-	if !visibility["description"] {
-		b.Description = nil
-	}
-	if !visibility["language"] {
-		b.Language = nil
-	}
-	if !visibility["subject_places"] {
-		b.SubjectPlaces = nil
-	}
-	if !visibility["subject_people"] {
-		b.SubjectPeople = nil
-	}
-	if !visibility["subject_times"] {
-		b.SubjectTimes = nil
-	}
-	if !visibility["series"] {
-		b.Series = nil
-	}
-	if !visibility["age_range"] {
-		b.AgeRange = nil
-	}
+	b.ApplyVisibility(visibility)
 }
 
 // WishlistItem represents a book on the wishlist

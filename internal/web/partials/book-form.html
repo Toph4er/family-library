@@ -295,6 +295,9 @@ function initScanner() {
   if (typeof Html5Qrcode === 'undefined') {
     var script = document.createElement('script');
     script.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
+    // SRI pin: reject the library if its content hash changes.
+    script.integrity = 'sha384-c9d8RFSL+u3exBOJ4Yp3HUJXS4znl9f+z66d1y54ig+ea249SpqR+w1wyvXz/lk+';
+    script.crossOrigin = 'anonymous';
     script.onload = function() { startScanner(); };
     script.onerror = function() {
       document.getElementById('scanner-viewfinder').innerHTML = '<p class="text-text-light/60 text-sm">Camera library unavailable</p>';

@@ -63,12 +63,14 @@ func SecurityHeaders(next http.Handler) http.Handler {
 		// style-src includes 'unsafe-inline' because inline style= attributes
 		// are pervasive in templates and cannot be nonce-protected (nonces only
 		// work for <script nonce="..."> and <link nonce="..."> tags).
+		//
+		// script-src has NO 'unsafe-eval': Alpine.js is served from the
+		// dedicated @alpinejs/csp build (no eval / new Function) and every
+		// inline script carries the per-request nonce. All third-party scripts
+		// are pinned with SRI integrity hashes (see the internal/web templates).
+		// connect-src is 'self' only — the app makes no cross-origin fetches.
 		nonce := GetCSPNonce(r)
-		// Alpine.js requires 'unsafe-eval' to evaluate x-data/@click/x-show
-		// expressions. This is a known requirement — Alpine.js uses eval()
-		// internally to parse reactive expressions. See:
-		// https://alpinejs.dev/advanced/csp
-		scriptSrc := "'self' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com"
+		scriptSrc := "'self' https://cdn.jsdelivr.net https://unpkg.com"
 		if nonce != "" {
 			scriptSrc += " 'nonce-" + nonce + "'"
 		}
@@ -79,7 +81,7 @@ func SecurityHeaders(next http.Handler) http.Handler {
 				"style-src "+styleSrc+"; "+
 				"img-src 'self' data: https:; "+
 				"font-src 'self' fonts.gstatic.com; "+
-				"connect-src 'self' https://cdn.jsdelivr.net; "+
+				"connect-src 'self'; "+
 				"frame-ancestors 'none'; "+
 				"base-uri 'self'; "+
 				"form-action 'self'",
