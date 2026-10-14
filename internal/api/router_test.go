@@ -102,3 +102,23 @@ func TestRouter_WishlistRequiresSessionAuth(t *testing.T) {
 		}
 	}
 }
+
+// TestRouter_BookSearchRequiresSessionAuth pins the /books/search auth gap
+// fix: the FTS JSON search route must be wrapped in RequireAuthHTML
+// (Guest-or-Admin) exactly like /books and /wishlist, so an anonymous GET
+// 302s to /login instead of leaking titles/authors over the whole
+// collection. Before the fix /books/search returned search JSON publicly.
+func TestRouter_BookSearchRequiresSessionAuth(t *testing.T) {
+	router := newTestRouter(t)
+
+	req := httptest.NewRequest("GET", "/books/search?q=test", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusFound {
+		t.Fatalf("GET /books/search anonymous: expected 302, got %d — route is not session-auth guarded", rec.Code)
+	}
+	if loc := rec.Header().Get("Location"); loc != "/login" {
+		t.Fatalf("GET /books/search anonymous: expected redirect to /login, got %q", loc)
+	}
+}
