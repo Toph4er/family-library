@@ -161,7 +161,7 @@ jobs:
         run: govulncheck ./...
 
   # ---- Stage: security (was: golangci-lint) ----
-  # .golangci.yml is v2-format (migrated 2026-08-26); golangci-lint-action@v9 v2.12 passes.
+  # .golangci.yml is v2-format (migrated 2026-08-26); golangci-lint-action@v9 v2.14 passes.
   golangci-lint:
     name: golangci-lint
     runs-on: ubuntu-latest
@@ -176,5 +176,5 @@ jobs:
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.12
+          version: v2.14
           args: ./...
