@@ -26,8 +26,7 @@
       hx-get="/reading-logs/book-selector"
       hx-target="body"
       hx-swap="beforeend"
-      hx-on:click="var m=document.getElementById('modal-backdrop'); if(m) m.remove();"
-      hx-on::after-request="htmx.process(document.getElementById('modal-backdrop'))"
+      data-remove-modal
       class="px-6 py-3 rounded-xl font-medium text-white shadow-sm text-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 bg-primary"
       aria-label="Log a new reading session"
     >
@@ -99,7 +98,6 @@
                 hx-get="/reading-logs/{{.ID}}/edit-form"
                 hx-target="#modal-target"
                 hx-swap="innerHTML"
-                hx-on::after-request="htmx.process(document.getElementById('modal-backdrop'))"
                 class="text-text-light/40 hover:text-primary transition-colors p-1"
                 aria-label="Edit reading log entry"
               >
@@ -148,10 +146,15 @@
 
 {{define "scripts"}}
 <script nonce="{{ .Nonce }}">
-// Book selector modal is now server-fetched via HTMX (hx-get on button above)
-
+// Book selector modal is server-fetched via HTMX (hx-get on button above).
+// The CSP-safe delegated handlers in base.html wire everything up:
+//   [data-remove-modal]  — clear any stale modal before fetching a new one
+//   [data-modal-close]   — ×/Cancel buttons in server-rendered fragments
+//   .modal-backdrop      — backdrop click dismisses the modal
+// openLogForm is called by the base.html book-result click handler; each
+// result carries data-book-id (see HTMLBookSelectorHandler).
 function openLogForm(bookId) {
-  document.getElementById('modal-backdrop').remove();
+  document.querySelectorAll('.modal-backdrop').forEach(function(m) { m.remove(); });
   htmx.ajax('GET', '/reading-logs/' + bookId + '/new-form', {target: '#modal-target', swap: 'innerHTML'});
 }
 </script>

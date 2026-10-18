@@ -339,7 +339,9 @@ func HTMLBookSelectorHandler(db *sql.DB) http.HandlerFunc {
 				continue
 			}
 			hasBooks = true
-			bookOptions += fmt.Sprintf(`<a href="#" class="block px-4 py-3 rounded-lg hover:bg-background/50 transition-colors text-sm text-text no-underline" hx-on:click="openLogForm(%d); this.closest('.modal-backdrop').remove(); return false;">%s</a>`, id, template.HTMLEscapeString(title))
+			// CSP-safe (v1.0.5): no hx-on:click. The base.html delegated click
+			// handler binds [data-book-id] items in #book-list to openLogForm().
+			bookOptions += fmt.Sprintf(`<a href="#" class="block px-4 py-3 rounded-lg hover:bg-background/50 transition-colors text-sm text-text no-underline" data-book-id="%d">%s</a>`, id, template.HTMLEscapeString(title))
 		}
 
 		if !hasBooks {
@@ -362,11 +364,11 @@ func HTMLBookSelectorHandler(db *sql.DB) http.HandlerFunc {
 		// Initial load: return the full modal.
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		_, _ = w.Write([]byte(`
-<div id="modal-backdrop" class="modal-backdrop" hx-on:click="if(event.target===this)this.closest('.modal-backdrop').remove()">
+<div id="modal-backdrop" class="modal-backdrop">
   <div class="modal-content modal-md p-6" role="dialog" aria-modal="true">
     <div class="flex items-center justify-between mb-4 pb-3 border-b" style="border-color: var(--color-secondary);">
       <h2 class="text-xl font-heading font-semibold text-primary">Select a Book</h2>
-      <button type="button" hx-on:click="this.closest('.modal-backdrop').remove()" class="text-text-light hover:text-text transition-colors text-2xl no-underline" aria-label="Close modal">×</button>
+      <button type="button" data-modal-close class="text-text-light hover:text-text transition-colors text-2xl no-underline" aria-label="Close modal">×</button>
     </div>
     <input type="text" id="modal-book-search-input" name="q" placeholder="Search books..."
            class="w-full px-4 py-2 rounded-lg border bg-surface mb-4"
@@ -459,11 +461,11 @@ func HTMLReadingLogFormHandler(db *sql.DB) http.HandlerFunc {
 
 		// #nosec G705 -- All interpolated values are escaped via template.HTMLEscapeString()
 		_, _ = w.Write([]byte(`
-<div id="modal-backdrop" class="modal-backdrop" hx-on:click="if(event.target===this)document.getElementById('modal-backdrop').remove()">
+<div id="modal-backdrop" class="modal-backdrop">
   <div class="modal-content modal-md p-6" role="dialog" aria-modal="true">
     <div class="flex items-center justify-between mb-4 pb-3 border-b" style="border-color: rgba(139, 69, 19, 0.1);">
       <h2 class="text-xl font-heading font-semibold text-primary">Log Reading</h2>
-      <button type="button" hx-on:click="document.getElementById('modal-backdrop').remove()" class="text-text-light hover:text-text transition-colors text-2xl no-underline" aria-label="Close modal">×</button>
+      <button type="button" data-modal-close class="text-text-light hover:text-text transition-colors text-2xl no-underline" aria-label="Close modal">×</button>
     </div>
     <p class="text-sm text-text-light mb-4">Book: <strong class="text-text">` + template.HTMLEscapeString(bookTitle) + `</strong></p>
     <form hx-post="/reading-logs" hx-target="#modal-target" hx-swap="outerHTML">
@@ -477,7 +479,7 @@ func HTMLReadingLogFormHandler(db *sql.DB) http.HandlerFunc {
 			} else {
 				return ""
 			}
-		}() + ` hx-on:change="var e=this.checked; document.getElementById('rl-page-fields').style.display=e?'none':''; document.getElementById('rl-collection-fields').style.display=e?'none':''; document.getElementById('rl-external-fields').style.display=e?'':'none'; document.getElementById('rl-external-title').required=e; document.getElementById('rl-reader').required=!e;">
+		}() + `>
             <span class="text-sm text-text">Not in collection? Add as external book</span>
           </label>
         </div>
@@ -506,13 +508,13 @@ func HTMLReadingLogFormHandler(db *sql.DB) http.HandlerFunc {
 		}() + `;">
           <div>
             <label class="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" name="entire_book" value="true" class="w-4 h-4 rounded border-secondary text-primary focus:ring-primary/20" hx-on:change="var f=document.getElementById('rl-page-fields'); if(f)f.style.display=this.checked?'none':''">
+              <input type="checkbox" name="entire_book" value="true" class="w-4 h-4 rounded border-secondary text-primary focus:ring-primary/20" data-hide-when-checked="#rl-page-fields">
               <span class="text-sm text-text">Read entire book</span>
             </label>
           </div>
           <div>
             <label for="rl-reader" class="block text-sm font-medium text-text mb-1">Reader <span class="text-error">*</span></label>
-            <select id="rl-reader" name="reader_name" required class="w-full px-3 py-2 rounded-lg border bg-surface text-sm" style="border-color: var(--color-secondary);" hx-on:change="var o=document.getElementById('rl-reader-other'); if(o)o.classList.toggle('hidden',this.value!=='other'); if(this.value==='other'&&o)o.focus()">
+            <select id="rl-reader" name="reader_name" required class="w-full px-3 py-2 rounded-lg border bg-surface text-sm" style="border-color: var(--color-secondary);">
               <option value="">Select reader...</option>` + fmOptions + `
               <option value="other">Other (type manually)</option>
             </select>
@@ -549,7 +551,7 @@ func HTMLReadingLogFormHandler(db *sql.DB) http.HandlerFunc {
         </div>
       </div>
       <div class="flex justify-end gap-3 mt-6">
-        <button type="button" hx-on:click="document.getElementById('modal-backdrop').remove()" class="px-4 py-2 rounded-lg border text-text-light hover:text-text transition-colors no-underline" style="border-color: var(--color-secondary);">Cancel</button>
+        <button type="button" data-modal-close class="px-4 py-2 rounded-lg border text-text-light hover:text-text transition-colors no-underline" style="border-color: var(--color-secondary);">Cancel</button>
         <button type="submit" class="px-4 py-2 rounded-lg font-medium text-white" style="background-color: var(--color-primary);">Log Reading</button>
       </div>
     </form>
@@ -822,11 +824,11 @@ func HTMLReadingLogEditFormHandler(db *sql.DB) http.HandlerFunc {
 
 		// #nosec G705 -- All interpolated values are escaped via template.HTMLEscapeString()
 		_, _ = w.Write([]byte(`
-<div id="modal-backdrop" class="modal-backdrop" hx-on:click="if(event.target===this)document.getElementById('modal-backdrop').remove()">
+<div id="modal-backdrop" class="modal-backdrop">
   <div class="modal-content modal-md p-6" role="dialog" aria-modal="true">
     <div class="flex items-center justify-between mb-4 pb-3 border-b" style="border-color: rgba(139, 69, 19, 0.1);">
       <h2 class="text-xl font-heading font-semibold text-primary">Edit Reading Log</h2>
-      <button type="button" hx-on:click="document.getElementById('modal-backdrop').remove()" class="text-text-light hover:text-text transition-colors text-2xl no-underline" aria-label="Close modal">×</button>
+      <button type="button" data-modal-close class="text-text-light hover:text-text transition-colors text-2xl no-underline" aria-label="Close modal">×</button>
     </div>
     <p class="text-sm text-text-light mb-4">Book: <strong class="text-text">` + template.HTMLEscapeString(rl.BookTitle) + `</strong></p>
     <form hx-put="/reading-logs/` + fmt.Sprintf("%d", id) + `" hx-target="#modal-target" hx-swap="outerHTML">
@@ -849,7 +851,7 @@ func HTMLReadingLogEditFormHandler(db *sql.DB) http.HandlerFunc {
         </div>
         <div>
           <label class="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" name="entire_book" value="true" class="w-4 h-4 rounded border-secondary text-primary focus:ring-primary/20" hx-on:change="var f=document.getElementById('page-fields'); if(f)f.style.display=this.checked?'none':''"` + func() string {
+            <input type="checkbox" name="entire_book" value="true" class="w-4 h-4 rounded border-secondary text-primary focus:ring-primary/20" data-hide-when-checked="#page-fields"` + func() string {
 			if rl.EntireBook {
 				return ` checked`
 			} else {
@@ -865,7 +867,7 @@ func HTMLReadingLogEditFormHandler(db *sql.DB) http.HandlerFunc {
         </div>
         <div>
           <label for="rl-reader" class="block text-sm font-medium text-text mb-1">Reader <span class="text-error">*</span></label>
-          <select id="rl-reader" name="reader_name" required class="w-full px-3 py-2 rounded-lg border bg-surface text-sm" style="border-color: var(--color-secondary);" hx-on:change="var o=document.getElementById('rl-reader-other'); if(o)o.classList.toggle('hidden',this.value!=='other'); if(this.value==='other'&&o)o.focus()">
+          <select id="rl-reader" name="reader_name" required class="w-full px-3 py-2 rounded-lg border bg-surface text-sm" style="border-color: var(--color-secondary);">
             <option value="">Select reader...</option>` + fmOptions + `
             <option value="other"` + func() string {
 			if rl.ReaderName == "other" {
@@ -895,7 +897,7 @@ func HTMLReadingLogEditFormHandler(db *sql.DB) http.HandlerFunc {
         </div>
       </div>
       <div class="flex justify-end gap-3 mt-6">
-        <button type="button" hx-on:click="document.getElementById('modal-backdrop').remove()" class="px-4 py-2 rounded-lg border text-text-light hover:text-text transition-colors no-underline" style="border-color: var(--color-secondary);">Cancel</button>
+        <button type="button" data-modal-close class="px-4 py-2 rounded-lg border text-text-light hover:text-text transition-colors no-underline" style="border-color: var(--color-secondary);">Cancel</button>
         <button type="submit" class="px-4 py-2 rounded-lg font-medium text-white" style="background-color: var(--color-primary);">Save Changes</button>
       </div>
     </form>

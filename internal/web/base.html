@@ -60,7 +60,7 @@
   </script>
 </head>
 <body class="min-h-screen flex flex-col">
-  <div id="page-wrapper" class="flex flex-col min-h-screen" x-data="{ mobileMenuOpen: false }" x-cloak>
+  <div id="page-wrapper" class="flex flex-col min-h-screen">
 
     <!-- Skip to content link (WCAG 2.1 AA) -->
     <a href="#main-content" class="skip-link">
@@ -99,19 +99,23 @@
             {{end}}
           </nav>
 
-          <!-- Hamburger button (mobile only) -->
+          <!-- Hamburger button (mobile only). The mobile menu is toggled by the
+               CSP-safe delegated script at the bottom of this layout
+               (data-nav-toggle): hx-on:*/inline handlers and Alpine
+               object-literal expressions are silently dead under the M6 CSP
+               (no 'unsafe-eval'; @alpinejs/csp build). -->
           <button
             type="button"
-            @click="mobileMenuOpen = !mobileMenuOpen"
+            data-nav-toggle
             class="md:hidden text-text-light hover:text-primary transition-colors p-2 rounded-lg hover:bg-background"
-            :aria-expanded="mobileMenuOpen"
+            aria-expanded="false"
             aria-controls="mobile-menu"
             aria-label="Toggle navigation menu"
           >
-            <svg class="w-6 h-6" x-show="!mobileMenuOpen" x-cloak viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <svg class="w-6 h-6 nav-icon nav-icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
               <path d="M3 12h18M3 6h18M3 18h18" />
             </svg>
-            <svg class="w-6 h-6" x-show="mobileMenuOpen" x-cloak viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <svg class="w-6 h-6 nav-icon nav-icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
           </button>
@@ -119,37 +123,29 @@
       </div>
     </header>
 
-    <!-- Mobile menu dropdown — sibling of header so it sits in normal document flow with a solid background -->
+    <!-- Mobile menu dropdown — sibling of header so it sits in normal document flow with a solid background. Visibility is CSS (#mobile-menu / .is-open) + the delegated toggle script, CSP-safely. -->
     <div
       id="mobile-menu"
-      x-show="mobileMenuOpen"
-      x-cloak
-      x-transition:enter="transition ease-out duration-200"
-      x-transition:enter-start="opacity-0 -translate-y-2"
-      x-transition:enter-end="opacity-100 translate-y-0"
-      x-transition:leave="transition ease-in duration-150"
-      x-transition:leave-start="opacity-100 translate-y-0"
-      x-transition:leave-end="opacity-0 -translate-y-2"
       class="md:hidden border-t shadow-lg border-secondary/20 bg-surface"
       role="menu"
     >
       <div class="max-w-7xl mx-auto px-4 pb-2">
         <div class="flex flex-col gap-2 pt-3">
           {{if .IsAuthenticated}}
-          <a href="/dashboard" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Dashboard</a>
+          <a href="/dashboard" role="menuitem" data-nav-close class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Dashboard</a>
           {{end}}
-          <a href="/books" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Books</a>
+          <a href="/books" role="menuitem" data-nav-close class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Books</a>
           {{if .IsAuthenticated}}
-          <a href="/reading-log" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Reading Log</a>
+          <a href="/reading-log" role="menuitem" data-nav-close class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Reading Log</a>
           {{end}}
-          <a href="/wishlist" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Wishlist</a>
+          <a href="/wishlist" role="menuitem" data-nav-close class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Wishlist</a>
           {{if .IsAuthenticated}}
           {{if .IsAdmin}}
-          <a href="/settings" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Settings</a>
+          <a href="/settings" role="menuitem" data-nav-close class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Settings</a>
           {{end}}
-          <a href="/logout" role="menuitem" class="text-error hover:text-error/80 transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Logout</a>
+          <a href="/logout" role="menuitem" data-nav-close class="text-error hover:text-error/80 transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Logout</a>
           {{else}}
-          <a href="/login" role="menuitem" class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Login</a>
+          <a href="/login" role="menuitem" data-nav-close class="text-primary hover:text-text-light transition-colors font-medium text-sm py-2 px-3 rounded-lg hover:bg-background no-underline block">Login</a>
           {{end}}
         </div>
       </div>
@@ -183,6 +179,19 @@
   <!-- Alpine.js x-cloak: required for Alpine to hide elements before initialization -->
   <style nonce="{{ .Nonce }}">
     [x-cloak] { display: none !important; }
+    /* Mobile menu visibility (replaces Alpine x-show/x-cloak, which the
+       @alpinejs/csp build cannot evaluate). Toggled via .is-open by the
+       delegated script; force-hidden at desktop widths regardless. */
+    #mobile-menu { display: none; }
+    #mobile-menu.is-open { display: block; }
+    @media (min-width: 768px) {
+      /* Desktop: the inline menu is the nav; the mobile menu must stay hidden
+         even when .is-open (class added on a narrow screen then resized). */
+      #mobile-menu, #mobile-menu.is-open { display: none !important; }
+    }
+    .nav-icon-close { display: none; }
+    [data-nav-toggle].is-open .nav-icon-menu { display: none; }
+    [data-nav-toggle].is-open .nav-icon-close { display: block; }
   </style>
 
   <!-- Alpine.js — @alpinejs/csp build (no eval / new Function, so it works
@@ -241,6 +250,125 @@
       }
     });
 
+    // CSP-safe mobile menu + modal + form-toggle wiring (v1.0.5).
+    // The M6 CSP forbids 'unsafe-eval', which silently kills every inline
+    // script handler: htmx compiles hx-on:* attributes with new Function
+    // (EvalError → no-op), and the @alpinejs/csp build cannot parse
+    // object-literal/negation x-* expressions. All such behaviors are
+    // delegated here with plain DOM listeners bound to data-* attributes,
+    // stable ids, and classes. Document-level delegation (not element
+    // listeners) also makes this work for HTMX-swapped modal fragments.
+    // This script runs at the end of <body>, so the DOM below it exists.
+    (function() {
+      // Mobile menu: [data-nav-toggle] opens/closes #mobile-menu;
+      // [data-nav-close] links close it before navigating away.
+      document.addEventListener('click', function(e) {
+        if (!e.target.closest) return;
+        var toggle = e.target.closest('[data-nav-toggle]');
+        if (toggle) {
+          var menu = document.getElementById('mobile-menu');
+          if (menu) {
+            var open = menu.classList.toggle('is-open');
+            toggle.classList.toggle('is-open', open);
+            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+          }
+          return;
+        }
+        if (e.target.closest('[data-nav-close]')) {
+          var m = document.getElementById('mobile-menu');
+          if (m) m.classList.remove('is-open');
+          var t = document.querySelector('[data-nav-toggle]');
+          if (t) { t.classList.remove('is-open'); t.setAttribute('aria-expanded', 'false'); }
+        }
+      });
+
+      // Modals & toasts: [data-modal-close] (×, Cancel, toast dismiss) removes
+      // the enclosing backdrop or toast; a click directly on the backdrop
+      // surface (outside the dialog) also dismisses it.
+      document.addEventListener('click', function(e) {
+        if (!e.target.closest) return;
+        var btn = e.target.closest('[data-modal-close]');
+        if (btn) {
+          var holder = btn.closest('.modal-backdrop') || btn.closest('.toast');
+          if (holder) holder.remove();
+          return;
+        }
+        var backdrop = e.target.closest('.modal-backdrop');
+        if (backdrop && e.target === backdrop) backdrop.remove();
+      });
+
+      // Triggers that fetch a fresh modal ([data-remove-modal], e.g. "Log
+      // Reading"): drop any stale modal first so backdrops never stack.
+      document.addEventListener('click', function(e) {
+        if (e.target.closest && e.target.closest('[data-remove-modal]')) {
+          document.querySelectorAll('.modal-backdrop').forEach(function(s) { s.remove(); });
+        }
+      });
+
+      // Form field toggles (reading-log new/edit forms):
+      // - [data-hide-when-checked="#sel,#sel"]: hide targets while checked.
+      // - #rl-external-toggle: external-book mode swaps sections + required.
+      // - #rl-reader: "other" reveals and focuses the manual name input.
+      document.addEventListener('change', function(e) {
+        var el = e.target;
+        if (!el || !el.getAttribute) return;
+        var hideSel = el.getAttribute('data-hide-when-checked');
+        if (hideSel) {
+          hideSel.split(',').forEach(function(sel) {
+            var t = document.querySelector(sel.trim());
+            if (t) t.style.display = el.checked ? 'none' : '';
+          });
+        }
+        if (el.id === 'rl-external-toggle') {
+          var ext = !!el.checked;
+          var pf = document.getElementById('rl-page-fields');
+          var cf = document.getElementById('rl-collection-fields');
+          var ef = document.getElementById('rl-external-fields');
+          if (pf) pf.style.display = ext ? 'none' : '';
+          if (cf) cf.style.display = ext ? 'none' : '';
+          if (ef) ef.style.display = ext ? '' : 'none';
+          var et = document.getElementById('rl-external-title');
+          if (et) et.required = ext;
+          var rd = document.getElementById('rl-reader');
+          if (rd) rd.required = !ext;
+          return;
+        }
+        if (el.id === 'rl-reader') {
+          var other = document.getElementById('rl-reader-other');
+          if (other) {
+            other.classList.toggle('hidden', el.value !== 'other');
+            if (el.value === 'other') other.focus();
+          }
+        }
+      });
+
+      // Book-selector results (reading-log modal): items carry data-book-id;
+      // tapping one opens the Log Reading form for that book. openLogForm is
+      // defined in the /reading-log page scripts (nonce'd), so guard.
+      document.addEventListener('click', function(e) {
+        var item = e.target.closest && e.target.closest('#book-list [data-book-id]');
+        if (!item) return;
+        e.preventDefault();
+        if (typeof window.openLogForm === 'function') {
+          window.openLogForm(item.getAttribute('data-book-id'));
+        }
+      });
+
+      // Star-rating buttons (book form): set the hidden field, repaint stars.
+      document.addEventListener('click', function(e) {
+        var star = e.target.closest && e.target.closest('[data-star-rating]');
+        if (!star) return;
+        var r = parseInt(star.getAttribute('data-star-rating'), 10);
+        var hidden = document.getElementById('child_rating');
+        if (hidden) hidden.value = String(r);
+        star.parentElement.querySelectorAll('[data-star-rating]').forEach(function(s) {
+          var v = parseInt(s.getAttribute('data-star-rating'), 10);
+          s.classList.toggle('text-accent', v <= r);
+          s.classList.toggle('text-text-light/30', v > r);
+        });
+      });
+    })();
+
     // Collapsible sections
     document.querySelectorAll('[data-collapse-trigger]').forEach(function(trigger) {
       trigger.addEventListener('click', function() {
@@ -252,8 +380,6 @@
         target.setAttribute('hidden', String(expanded));
       });
     });
-
-    // Close mobile menu on link click (handled by Alpine @click on links)
   </script>
 
   <!-- TagInput module -->
