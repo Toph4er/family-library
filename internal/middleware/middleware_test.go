@@ -8,7 +8,7 @@ import (
 )
 
 // TestSecurityHeadersCSP_Tightened pins M6: the CSP must NOT contain
-// 'unsafe-eval' (Alpine is now served from the @alpinejs/csp build), and
+// 'unsafe-eval' (no script may need eval — Alpine was removed in v1.0.5), and
 // connect-src must be 'self' only (the app makes no cross-origin fetches),
 // while still carrying a per-request nonce and the CDN script origins.
 func TestSecurityHeadersCSP_Tightened(t *testing.T) {
@@ -35,7 +35,8 @@ func TestSecurityHeadersCSP_Tightened(t *testing.T) {
 	if strings.Contains(csp, "connect-src 'self' http") {
 		t.Errorf("connect-src must not include CDN hosts: %s", csp)
 	}
-	// script-src must still allow the CDN origins (Alpine/HTMX/qrcode) and
+	// script-src must still allow the CDN origins (HTMX/qrcode; jsdelivr is
+	// retained after Alpine's removal — tightening CSP is a separate call) and
 	// carry a per-request nonce for inline scripts.
 	if !strings.Contains(csp, "https://cdn.jsdelivr.net") || !strings.Contains(csp, "https://unpkg.com") {
 		t.Errorf("script-src must allow the CDN origins: %s", csp)

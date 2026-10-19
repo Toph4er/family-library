@@ -103,7 +103,7 @@
                CSP-safe delegated script at the bottom of this layout
                (data-nav-toggle): hx-on:*/inline handlers and Alpine
                object-literal expressions are silently dead under the M6 CSP
-               (no 'unsafe-eval'; @alpinejs/csp build). -->
+               (no 'unsafe-eval'). -->
           <button
             type="button"
             data-nav-toggle
@@ -176,11 +176,12 @@
   <!-- Toast container -->
   <div id="toast-container" class="toast-container"></div>
 
-  <!-- Alpine.js x-cloak: required for Alpine to hide elements before initialization -->
+  <!-- x-cloak CSS: vestigial safety net from the removed Alpine.js runtime;
+       no x-cloak attributes remain in the templates. Harmless to keep. -->
   <style nonce="{{ .Nonce }}">
     [x-cloak] { display: none !important; }
-    /* Mobile menu visibility (replaces Alpine x-show/x-cloak, which the
-       @alpinejs/csp build cannot evaluate). Toggled via .is-open by the
+    /* Mobile menu visibility (replaces the Alpine x-show/x-cloak idiom that
+       the @alpinejs/csp build could not evaluate). Toggled via .is-open by the
        delegated script; force-hidden at desktop widths regardless. */
     #mobile-menu { display: none; }
     #mobile-menu.is-open { display: block; }
@@ -193,11 +194,6 @@
     [data-nav-toggle].is-open .nav-icon-menu { display: none; }
     [data-nav-toggle].is-open .nav-icon-close { display: block; }
   </style>
-
-  <!-- Alpine.js — @alpinejs/csp build (no eval / new Function, so it works
-       without 'unsafe-eval'). Pinned with SRI integrity. Must load before
-       HTMX for x-data attributes. -->
-  <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/csp@3.14.8/dist/cdn.min.js" integrity="sha384-ToFwPnlRgZIoDDSatKvWLkecUR4Py5dma633TT4TVBQfs4nHKXXexI3v72xi5LnC" crossorigin="anonymous"></script>
 
   <!-- HTMX (SRI-pinned) -->
   <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
