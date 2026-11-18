@@ -10,7 +10,7 @@ A self-hosted web application for tracking and managing a child's book collectio
 - **Wishlist management** — Track desired books with purchase links (Amazon, ThriftBooks) and mark items as fulfilled
 - **Reading log** — Record reading sessions with page ranges, reader name, and notes
 - **HTMX-powered UI** — Dynamic, partial-page updates without a full SPA framework
-- **Alpine.js** — Lightweight interactivity for modals, dropdowns, and form validation
+- **CSP-safe interactivity** — Modals, dropdowns, and form toggles via plain delegated JavaScript (no eval-based libraries; works under the strict CSP)
 - **Tailwind CSS** — Utility-first styling (pre-built, no CDN)
 - **Admin & guest authentication** — Role-based access with bcrypt-hashed passwords and cookie sessions
 - **Per-field guest visibility** — Control which book fields guests can see
@@ -31,8 +31,8 @@ A self-hosted web application for tracking and managing a child's book collectio
 
 ## Tech Stack
 
-- **Backend:** Go 1.26 + chi router + SQLite
-- **Frontend:** Go `html/template` + HTMX + Alpine.js + Tailwind CSS
+- **Backend:** Go 1.27 + chi router + SQLite
+- **Frontend:** Go `html/template` + HTMX + Tailwind CSS
 - **Database:** SQLite (pure Go driver, no CGO) with [goose](https://github.com/pressly/goose/v3) migrations
 - **Deployment:** Docker + nginx reverse proxy
 

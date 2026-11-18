@@ -64,10 +64,11 @@ func SecurityHeaders(next http.Handler) http.Handler {
 		// are pervasive in templates and cannot be nonce-protected (nonces only
 		// work for <script nonce="..."> and <link nonce="..."> tags).
 		//
-		// script-src has NO 'unsafe-eval': Alpine.js is served from the
-		// dedicated @alpinejs/csp build (no eval / new Function) and every
-		// inline script carries the per-request nonce. All third-party scripts
-		// are pinned with SRI integrity hashes (see the internal/web templates).
+		// script-src has NO 'unsafe-eval': the Alpine.js runtime was removed
+		// (v1.0.5) — interactivity is plain delegated JS bound to data-*
+		// attributes, and every inline script carries the per-request nonce.
+		// All third-party scripts are pinned with SRI integrity hashes
+		// (see the internal/web templates).
 		// connect-src is 'self' only — the app makes no cross-origin fetches.
 		nonce := GetCSPNonce(r)
 		scriptSrc := "'self' https://cdn.jsdelivr.net https://unpkg.com"

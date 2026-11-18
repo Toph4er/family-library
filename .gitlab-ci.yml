@@ -58,7 +58,8 @@ trivy-scan:
   image: alpine:3.20
   before_script:
     - apk add --no-cache curl
-    - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+    # Trivy pin v0.76.2 — bump both CI trivy pins together (also in .github/workflows/ci.yml). install.sh takes the version tag as a positional arg (not -v).
+    - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.76.2
   script:
     - trivy fs --scanners vuln --exit-code 1 --severity HIGH,CRITICAL .
   rules:

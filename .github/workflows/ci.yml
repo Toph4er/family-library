@@ -102,11 +102,12 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
-      - name: Install Trivy (pinned v0.74.0)
+      # Trivy pin v0.76.2 — bump both CI trivy pins together (also in .gitlab-ci.yml trivy-scan).
+      - name: Install Trivy (pinned v0.76.2)
         run: |
           curl -sfL --retry 5 --retry-delay 3 --retry-all-errors \
             -o /tmp/trivy.tar.gz \
-            https://github.com/aquasecurity/trivy/releases/download/v0.74.0/trivy_0.74.0_Linux-64bit.tar.gz
+            https://github.com/aquasecurity/trivy/releases/download/v0.76.2/trivy_0.76.2_Linux-64bit.tar.gz
           tar -xzf /tmp/trivy.tar.gz -C /usr/local/bin trivy
           trivy --version
       - name: Scan

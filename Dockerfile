@@ -16,7 +16,7 @@ COPY --from=css-builder /app/internal/web/tailwind.css ./internal/web/
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o server ./cmd/library/
 
 # Stage 3: Final image
-FROM alpine:3.21
+FROM alpine:3.24
 RUN apk --no-cache add ca-certificates wget tzdata
 ENV TZ=America/New_York
 WORKDIR /app
