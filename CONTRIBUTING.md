@@ -11,7 +11,7 @@ agreement on the approach, a PR is welcome.
 
 ## Development setup
 
-- Go 1.27.2+ (toolchain go1.27.2; fixes 12 stdlib CVE advisories present in go1.27.1)
+- Go 1.27.4+ (toolchain go1.27.4; patches stdlib advisories through go1.27.4, incl. crypto/x509 and net/http fixes past go1.27.2)
 - Node.js 20+ (only needed to rebuild the Tailwind CSS bundle)
 
 ```bash

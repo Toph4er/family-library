@@ -71,7 +71,7 @@ family-library/
 
 ### Prerequisites
 
-- Go 1.27.2+
+- Go 1.27.4+
 - Node.js 20+ (for Tailwind CSS build)
 - Docker + Docker Compose
 
